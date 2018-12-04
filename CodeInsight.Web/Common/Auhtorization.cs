@@ -18,7 +18,7 @@ namespace CodeInsight.Web.Common
             return GetRepository(request.Cookies)
                 .Map(repo => new GithubRepositoryClient(githubClient, repo))
                 .Map(action)
-                .GetOrElse(new NotFoundResult());
+                .GetOrElse((IActionResult)new NotFoundResult());
         }
         
         private static IOption<Repository> GetRepository(IRequestCookieCollection cookies) =>

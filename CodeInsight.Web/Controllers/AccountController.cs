@@ -22,6 +22,7 @@ namespace CodeInsight.Web.Controllers
             HttpContext.Response.Cookies.Append("REPO_OWNER", owner);
             HttpContext.Response.Cookies.Append("REPO_NAME", repositoryName);
 
+            // TODO: Redirect properly
             return Redirect("TODO: redirect");
         }
     }
