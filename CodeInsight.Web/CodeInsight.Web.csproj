@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Chart.Mvc">
+          <Version>1.0.0.2</Version>
+        </PackageReference>
+        <PackageReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CodeInsight.Domain\CodeInsight.Domain.csproj" />
+      <ProjectReference Include="..\CodeInsight.Github\CodeInsight.Github.csproj" />
+      <ProjectReference Include="..\CodeInsight.Library\CodeInsight.Library.csproj" />
+      <ProjectReference Include="..\CodeInsight.PullRequests\CodeInsight.PullRequests.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\images\banner1.svg" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\banner2.svg" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\banner3.svg" />
+    </ItemGroup>
+
+</Project>

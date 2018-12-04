@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="csharp-monad">
+        <Version>1.0.1</Version>
+      </PackageReference>
+      <PackageReference Include="FuncSharp">
+        <Version>1.2.4</Version>
+      </PackageReference>
+      <PackageReference Include="Octokit">
+        <Version>0.32.0</Version>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CodeInsight.Domain\CodeInsight.Domain.csproj" />
+      <ProjectReference Include="..\CodeInsight.Library\CodeInsight.Library.csproj" />
+      <ProjectReference Include="..\CodeInsight.PullRequests\CodeInsight.PullRequests.csproj" />
+    </ItemGroup>
+
+</Project>
