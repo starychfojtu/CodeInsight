@@ -12,18 +12,19 @@ namespace CodeInsight.Web.Controllers
             return View();
         }
         
-        public async Task<IActionResult> AnonymousSignIn(string owner, string repositoryName)
+        // TODO: Implement real sign in
+        public async Task<IActionResult> AnonymousSignIn(string owner = null, string repositoryName = null)
         {
-            var client = new GitHubClient(new ProductHeaderValue("starychfojtu"));
-            var repository = await client.Repository.Get(owner, repositoryName);
+//            var client = new GitHubClient(new ProductHeaderValue("starychfojtu"));
+//            var repository = await client.Repository.Get(owner ?? "starychfojtu", repositoryName ?? "SmartRecipes");
             
             // TODO: Check if repository exists;
             
-            HttpContext.Response.Cookies.Append("REPO_OWNER", owner);
-            HttpContext.Response.Cookies.Append("REPO_NAME", repositoryName);
+            HttpContext.Response.Cookies.Append("REPO_OWNER", "starychfojtu");
+            HttpContext.Response.Cookies.Append("REPO_NAME", "SmartRecipes");
 
             // TODO: Redirect properly
-            return Redirect("TODO: redirect");
+            return Redirect("/PullRequest/Index");
         }
     }
 }
