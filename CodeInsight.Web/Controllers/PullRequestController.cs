@@ -1,42 +1,48 @@
-﻿using CodeInsight.Library;
+﻿using System;
+using System.Threading.Tasks;
+using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using CodeInsight.Web.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
+using Octokit;
 using static CodeInsight.Library.Prelude;
-using static CodeInsight.Web.Common.Authorization;
+using static CodeInsight.Web.Common.Authentication;
 
 namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : Controller
     {
-        public IActionResult Index() => 
-            AuthorizedAction(HttpContext.Request, client =>
+        private readonly IHostingEnvironment environment;
+
+        public PullRequestController(IHostingEnvironment environment)
+        {
+            this.environment = environment;
+        }
+
+        public Task<IActionResult> Index() => 
+            PullRequestAction(HttpContext.Request, repository =>
             {
-                var start = new LocalDate(2018, 11, 20);
-                var createdAt = start.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant();
-                var pr1 = new PullRequest(NonEmptyString.Create("1").Get(), 10, 20, createdAt, Some(createdAt.Plus(Duration.FromDays(5))), None<Instant>());
-                var pr2 = new PullRequest(NonEmptyString.Create("2").Get(), 20, 40, createdAt, Some(createdAt.Plus(Duration.FromDays(9))), None<Instant>());
-                var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), 30, 60, createdAt, None<Instant>(), None<Instant>());
-                var prs = new [] { pr1, pr2, pr3 };
-            
-    //            var repo = new Repository(NonEmptyString.Create("siroky").Get(), NonEmptyString.Create("FuncSharp").Get());
-    //            var nowUtc = DateTime.UtcNow;
-    //            var vm = await Github.PullRequests
-    //                .Get(repo, new DateTimeInterval(new DateTime(2010, 10, 10), nowUtc))
-    //                .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, nowUtc))
-    //                .Map(s => new PullRequestIndexViewModel(s))
-    //                .Execute(new GitHubClient(new ProductHeaderValue("starychfojtu")));
-    
-                var interval = new ZonedDateInterval(
-                    new DateInterval(
-                        start,
-                        start.Plus(Period.FromDays(10))
-                    ), 
-                    DateTimeZone.Utc
+                // TODO: Make this per user
+                var zone = DateTimeZone.Utc;
+                var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
+                var interval = new DateInterval(
+                    today.Minus(Period.FromMonths(12)),
+                    today
                 );
-                var statistics = RepositoryStatisticsCalculator.Calculate(prs, interval);
-                return View(new PullRequestIndexViewModel(statistics));
+                
+                return repository.GetAll()
+                    .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, new ZonedDateInterval(interval, zone)))
+                    .Map(s => new PullRequestIndexViewModel(s))
+                    .Map(vm => (IActionResult)View(vm));
             });
+
+        private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f) =>
+            AuthorizedAction(request, environment, client => f(client.Match<IPullRequestRepository>(
+                gitHubClient => new Github.PullRequestRepository(gitHubClient),
+                none => new SampleRepository()
+            )));
     }
 }

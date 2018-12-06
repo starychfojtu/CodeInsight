@@ -15,5 +15,8 @@ namespace CodeInsight.Library
 
         public static IOption<NonEmptyString> Create(string value) =>
             string.IsNullOrEmpty(value) ? None<NonEmptyString>() : Some(new NonEmptyString(value));
+
+        public override string ToString() =>
+            Value;
     }
 }
