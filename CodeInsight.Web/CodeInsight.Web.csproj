@@ -8,6 +8,9 @@
         <PackageReference Include="Chart.Mvc">
           <Version>1.0.0.2</Version>
         </PackageReference>
+        <PackageReference Include="FuncSharp">
+          <Version>1.2.4</Version>
+        </PackageReference>
         <PackageReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
@@ -22,6 +25,10 @@
       <_ContentIncludedByDefault Remove="wwwroot\images\banner1.svg" />
       <_ContentIncludedByDefault Remove="wwwroot\images\banner2.svg" />
       <_ContentIncludedByDefault Remove="wwwroot\images\banner3.svg" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Views\Account" />
     </ItemGroup>
 
 </Project>

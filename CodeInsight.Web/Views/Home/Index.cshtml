@@ -1,0 +1,13 @@
+﻿@model CodeInsight.Web.Models.Home.HomeIndexViewModel
+
+<div class="container">
+    <div class="row">
+        <h2>Sign in</h2>
+        <form asp-controller="Account" asp-action="AnonymousSignIn" method="POST">
+            @Html.EditorFor(m => m.Owner)
+            @Html.EditorFor(m => m.Repository)
+            <button type="submit">Post</button>
+        </form>
+    </div>
+</div>
+
