@@ -29,7 +29,7 @@ namespace CodeInsight.Web.Controllers
                 var zone = DateTimeZone.Utc;
                 var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
                 var interval = new DateInterval(
-                    today.Minus(Period.FromMonths(12)),
+                    today.Minus(Period.FromMonths(1)),
                     today
                 );
                 

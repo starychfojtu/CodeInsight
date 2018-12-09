@@ -1,5 +1,6 @@
 ﻿@using System.Collections.Immutable
-@using CodeInsight.Library
+@using System.Drawing
+@using CodeInsight.Web.Common
 @using FuncSharp
 @model PullRequestIndexViewModel
 
@@ -24,8 +25,14 @@
     var stats = Model.Statistics;
     var dates = stats.Interval.DateInterval.ToImmutableList();
     var labels = dates.Select(d => $"\"{d.Day}.{d.Month}.\"");
+    
     var values = dates.Select(d => stats.Get(d)
         .Map(s => s.AverageLifeTime.Hours.ToString())
+        .GetOrElse("NaN")
+    );
+    
+    var weightedValues = dates.Select(d => stats.Get(d)
+        .Map(s => s.ChangesWeightedAverageLifeTime.Hours.ToString())
         .GetOrElse("NaN")
     );
 }
@@ -37,10 +44,20 @@
             type: 'line',
             data: {
                 labels: [@Html.Raw(string.Join(',', labels))],
-                datasets: [{
-                    data: [@string.Join(',', values)],
-                    fill: false,
-                }]
+                datasets: [
+                    {
+                        data: [@Html.Raw(string.Join(',', values))],
+                        label: "Average lifetime",
+                        borderColor: @Html.Raw(Color.CornflowerBlue.ToArgbString()),
+                        fill: false,
+                    },
+                    {
+                        data: [@Html.Raw(string.Join(',', weightedValues))],
+                        label: "Weighted average lifetime by changes (addtions + deletions)",
+                        borderColor: @Html.Raw(Color.LawnGreen.ToArgbString()),
+                        fill: false,
+                    }
+                ]
             },
             options: {
                 scales: {
@@ -54,4 +71,3 @@
         });
     </script>
 }
-
