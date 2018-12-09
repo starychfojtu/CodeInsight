@@ -1,3 +1,4 @@
+using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using NodaTime;
@@ -15,9 +16,9 @@ namespace CodeInsight.Tests
             var end = new LocalDate(2018, 11, 30);
             var dayBeforeEnd = end.Minus(Period.FromDays(1));
             var createdAt = start.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant();
-            var pr1 = new PullRequest(NonEmptyString.Create("1").Get(), 10, 20, createdAt, Some(createdAt.Plus(Duration.FromDays(5))), None<Instant>());
-            var pr2 = new PullRequest(NonEmptyString.Create("2").Get(), 20, 40, createdAt, Some(createdAt.Plus(Duration.FromDays(9))), None<Instant>());
-            var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), 100, 60, createdAt, None<Instant>(), None<Instant>());
+            var pr1 = new PullRequest(NonEmptyString.Create("1").Get(), new AccountId("A"), 10, 20, createdAt, Some(createdAt.Plus(Duration.FromDays(5))), None<Instant>());
+            var pr2 = new PullRequest(NonEmptyString.Create("2").Get(), new AccountId("A"), 20, 40, createdAt, Some(createdAt.Plus(Duration.FromDays(9))), None<Instant>());
+            var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), new AccountId("A"), 100, 60, createdAt, None<Instant>(), None<Instant>());
             var prs = new [] { pr1, pr2, pr3 };
 
             var interval = new ZonedDateInterval(

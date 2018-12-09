@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using FuncSharp;
@@ -32,6 +33,7 @@ namespace CodeInsight.Github
         private static PullRequest ToDomain(Octokit.PullRequest pr) =>
             new PullRequest(
                 NonEmptyString.Create(pr.Number.ToString()).Get(),
+                new AccountId(pr.User.Id.ToString()),
                 (uint) pr.Deletions,
                 (uint) pr.Additions,
                 Instant.FromDateTimeOffset(pr.CreatedAt),

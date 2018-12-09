@@ -1,3 +1,4 @@
+using CodeInsight.Domain;
 using CodeInsight.Library;
 using FuncSharp;
 using NodaTime;
@@ -7,9 +8,17 @@ namespace CodeInsight.PullRequests
 {
     public sealed class PullRequest
     {
-        public PullRequest(NonEmptyString id, uint deletions, uint additions, Instant createdAt, IOption<Instant> mergedAt, IOption<Instant> closedAt)
+        public PullRequest(
+            NonEmptyString id,
+            AccountId createdBy,
+            uint deletions,
+            uint additions,
+            Instant createdAt,
+            IOption<Instant> mergedAt,
+            IOption<Instant> closedAt)
         {
             Id = id;
+            CreatedBy = createdBy;
             Deletions = deletions;
             Additions = additions;
             CreatedAt = createdAt;
@@ -19,6 +28,8 @@ namespace CodeInsight.PullRequests
 
         public NonEmptyString Id { get; }
         
+        public AccountId CreatedBy { get; }
+
         public uint Deletions { get; }
         
         public uint Additions { get; }
