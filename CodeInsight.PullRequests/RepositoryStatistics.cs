@@ -1,4 +1,3 @@
-using System;
 using FuncSharp;
 using NodaTime;
 
@@ -28,7 +27,8 @@ namespace CodeInsight.PullRequests
 
         public double AverageDeletions => Deletions / (double)PullRequestCount;
         public double AverageAdditions => Additions / (double)PullRequestCount;
-        public Duration AverageLifeTime => Duration.FromTicks((long)(Lifetime.TotalTicks / PullRequestCount));
+        public Duration AverageLifeTime => Lifetime / PullRequestCount;
+        public Duration WightedAverageLifeTime => Lifetime * (Additions + Deletions) / PullRequestCount;
         
         public static RepositoryStatistics FromPullRequest(Instant nowUtc, PullRequest pr) =>
             new RepositoryStatistics(pr.Deletions, pr.Additions, pr.Lifetime.GetOrElse(nowUtc - pr.CreatedAt), 1);

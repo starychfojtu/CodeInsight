@@ -1,18 +1,14 @@
+using FuncSharp;
 using NodaTime;
 
 namespace CodeInsight.Library
 {
-    public class ZonedDateInterval
+    public class ZonedDateInterval : Product2<DateInterval, DateTimeZone>
     {
-        public ZonedDateInterval(DateInterval dateInterval, DateTimeZone zone)
-        {
-            DateInterval = dateInterval;
-            Zone = zone;
-        }
+        public ZonedDateInterval(DateInterval dateInterval, DateTimeZone zone) : base(dateInterval, zone) {}
 
-        public DateInterval DateInterval { get; }
-        
-        public DateTimeZone Zone { get; }
+        public DateInterval DateInterval => ProductValue1;
+        public DateTimeZone Zone => ProductValue2;
 
         public ZonedDateTime Start =>
             DateInterval.Start.AtStartOfDayInZone(Zone);

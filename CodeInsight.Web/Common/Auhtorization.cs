@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
-using static CodeInsight.Library.Prelude;
 using Repository = CodeInsight.Domain.Repository;
 
 namespace CodeInsight.Web.Common
@@ -34,21 +33,5 @@ namespace CodeInsight.Web.Common
             from cookieOwner in cookies.Get("REPO_OWNER")
             from owner in NonEmptyString.Create(cookieOwner)
             select new Repository(name, owner);
-    }
-
-    // TODO: Move extensions
-    public static class IRequestCookieCollectionExtensions
-    {
-        public static IOption<string> Get(this IRequestCookieCollection collection, string key) =>
-            collection.TryGetValue(key, out var value) ? Some(value) : None<string>();
-    }
-    
-    public static class IOptionExtensions
-    {
-        public static IOption<B> Select<A, B>(this IOption<A> option, Func<A, B> f) =>
-            option.Map(f);
-        
-        public static IOption<C> SelectMany<A, B, C>(this IOption<A> option, Func<A, IOption<B>> bind, Func<A, B, C> project) =>
-            option.FlatMap(a => bind(a).Map(b => project(a, b)));
     }
 }

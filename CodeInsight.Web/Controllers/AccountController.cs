@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
 
@@ -6,9 +7,20 @@ namespace CodeInsight.Web.Controllers
 {
     public class AccountController : Controller
     {
-        // TODO: Implement real sign in
+        private readonly IHostingEnvironment environment;
+
+        public AccountController(IHostingEnvironment environment)
+        {
+            this.environment = environment;
+        }
+        
         public async Task<IActionResult> AnonymousSignIn(string owner, string repository)
         {
+            if (environment.IsDevelopment())
+            {
+                return RedirectToAction(nameof(PullRequestController.Index), "PullRequest");
+            }
+            
             var client = new GitHubClient(new ProductHeaderValue("starychfojtu"));
 
             try
@@ -20,7 +32,7 @@ namespace CodeInsight.Web.Controllers
 
                 return RedirectToAction(nameof(PullRequestController.Index), "PullRequest");
             }
-            catch (NotFoundException e)
+            catch (NotFoundException)
             {
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }

@@ -3,20 +3,11 @@ using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.Library
 {
-    public struct NonEmptyString
+    public sealed class NonEmptyString : NewType<string>
     {
-        private NonEmptyString(string value) => 
-            Value = value;
-
-        public string Value { get; }
-
-        public static implicit operator string(NonEmptyString s) =>
-            s.Value;
-
+        private NonEmptyString(string value) : base(value) {}
+        
         public static IOption<NonEmptyString> Create(string value) =>
             string.IsNullOrEmpty(value) ? None<NonEmptyString>() : Some(new NonEmptyString(value));
-
-        public override string ToString() =>
-            Value;
     }
 }

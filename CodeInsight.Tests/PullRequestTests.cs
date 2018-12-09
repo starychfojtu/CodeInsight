@@ -11,6 +11,7 @@ namespace CodeInsight.Tests
         [Fact]
         public void GetRepositoryStatistics()
         {
+            // 5 * 30 + 60 * 9 + 10 * 90 = 
             var start = new LocalDate(2018, 11, 20);
             var end = new LocalDate(2018, 11, 30);
             var dayBeforeEnd = end.Minus(Period.FromDays(1));
@@ -27,9 +28,17 @@ namespace CodeInsight.Tests
             
             var statistics = RepositoryStatisticsCalculator.Calculate(prs, interval);
             
-            Assert.Equal(8, statistics.Get(start).Get().AverageLifeTime.Days);
-            Assert.Equal(9, statistics.Get(dayBeforeEnd).Get().AverageLifeTime.Days);
-            Assert.Equal(10, statistics.Get(end).Get().AverageLifeTime.Days);
+            var startStats = statistics.Get(start).Get();
+            var dayBeforeEndStats = statistics.Get(dayBeforeEnd).Get();
+            var endStats = statistics.Get(end).Get();
+            
+            Assert.Equal(8, startStats.AverageLifeTime.Days);
+            Assert.Equal(9, dayBeforeEndStats.AverageLifeTime.Days);
+            Assert.Equal(10, endStats.AverageLifeTime.Days);
+            
+            Assert.Equal(8, startStats.WightedAverageLifeTime.Days);
+            Assert.Equal(9, dayBeforeEndStats.WightedAverageLifeTime.Days);
+            Assert.Equal(10, endStats.WightedAverageLifeTime.Days);
         }
     }
 }
