@@ -9,12 +9,14 @@ namespace CodeInsight.PullRequests
             uint deletions,
             uint additions,
             Duration lifeTime,
-            uint pullRequestCount)
+            uint pullRequestCount,
+            Duration changesWeightedLifetime)
         {
             Deletions = deletions;
             Additions = additions;
             Lifetime = lifeTime;
             PullRequestCount = pullRequestCount;
+            ChangesWeightedLifetime = changesWeightedLifetime;
         }
         
         public uint Deletions { get; }
@@ -24,16 +26,28 @@ namespace CodeInsight.PullRequests
         public Duration Lifetime { get; }
         
         public uint PullRequestCount { get; }
+        
+        public Duration ChangesWeightedLifetime { get; }
 
+        public uint Changes => Additions + Deletions;
         public double AverageDeletions => Deletions / (double)PullRequestCount;
         public double AverageAdditions => Additions / (double)PullRequestCount;
         public Duration AverageLifeTime => Lifetime / PullRequestCount;
-        public Duration WightedAverageLifeTime => Lifetime * (Additions + Deletions) / PullRequestCount;
-        
-        public static RepositoryStatistics FromPullRequest(Instant nowUtc, PullRequest pr) =>
-            new RepositoryStatistics(pr.Deletions, pr.Additions, pr.Lifetime.GetOrElse(nowUtc - pr.CreatedAt), 1);
-        
+        public Duration ChangesWeightedAverageLifeTime => ChangesWeightedLifetime / Changes;
+
+        public static RepositoryStatistics FromPullRequest(Instant nowUtc, PullRequest pr)
+        {
+            var lifeTime = pr.Lifetime.GetOrElse(nowUtc - pr.CreatedAt);
+            return new RepositoryStatistics(pr.Deletions, pr.Additions, lifeTime, 1, lifeTime * (pr.Additions + pr.Deletions));
+        }
+            
         public static RepositoryStatistics Append(RepositoryStatistics a, RepositoryStatistics b) =>
-            new RepositoryStatistics(a.Deletions + b.Deletions, a.Additions + b.Additions, a.Lifetime + b.Lifetime, a.PullRequestCount + b.PullRequestCount);
+            new RepositoryStatistics(
+                a.Deletions + b.Deletions,
+                a.Additions + b.Additions,
+                a.Lifetime + b.Lifetime,
+                a.PullRequestCount + b.PullRequestCount,
+                a.ChangesWeightedLifetime + b.ChangesWeightedLifetime
+            );
     }
 }

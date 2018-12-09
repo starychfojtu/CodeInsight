@@ -11,14 +11,13 @@ namespace CodeInsight.Tests
         [Fact]
         public void GetRepositoryStatistics()
         {
-            // 5 * 30 + 60 * 9 + 10 * 90 = 
             var start = new LocalDate(2018, 11, 20);
             var end = new LocalDate(2018, 11, 30);
             var dayBeforeEnd = end.Minus(Period.FromDays(1));
             var createdAt = start.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant();
             var pr1 = new PullRequest(NonEmptyString.Create("1").Get(), 10, 20, createdAt, Some(createdAt.Plus(Duration.FromDays(5))), None<Instant>());
             var pr2 = new PullRequest(NonEmptyString.Create("2").Get(), 20, 40, createdAt, Some(createdAt.Plus(Duration.FromDays(9))), None<Instant>());
-            var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), 30, 60, createdAt, None<Instant>(), None<Instant>());
+            var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), 100, 60, createdAt, None<Instant>(), None<Instant>());
             var prs = new [] { pr1, pr2, pr3 };
 
             var interval = new ZonedDateInterval(
@@ -36,9 +35,9 @@ namespace CodeInsight.Tests
             Assert.Equal(9, dayBeforeEndStats.AverageLifeTime.Days);
             Assert.Equal(10, endStats.AverageLifeTime.Days);
             
-            Assert.Equal(8, startStats.WightedAverageLifeTime.Days);
-            Assert.Equal(9, dayBeforeEndStats.WightedAverageLifeTime.Days);
-            Assert.Equal(10, endStats.WightedAverageLifeTime.Days);
+            Assert.Equal(9, startStats.ChangesWeightedAverageLifeTime.Days);
+            Assert.Equal(9, dayBeforeEndStats.ChangesWeightedAverageLifeTime.Days);
+            Assert.Equal(10, endStats.ChangesWeightedAverageLifeTime.Days);
         }
     }
 }
