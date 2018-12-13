@@ -38,6 +38,23 @@ namespace CodeInsight.Web.Controllers
                     .Map(s => new PullRequestIndexViewModel(s))
                     .Map(vm => (IActionResult)View(vm));
             });
+        
+        public Task<IActionResult> PerAuthors() => 
+            PullRequestAction(HttpContext.Request, repository =>
+            {
+                // TODO: Make this per user
+                var zone = DateTimeZone.Utc;
+                var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
+                var interval = new DateInterval(
+                    today.Minus(Period.FromMonths(1)),
+                    today
+                );
+                
+                return repository.GetAll()
+                    .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, new ZonedDateInterval(interval, zone)))
+                    .Map(s => new PullRequestIndexViewModel(s))
+                    .Map(vm => (IActionResult)View(vm));
+            });
 
         private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f) =>
             AuthorizedAction(request, environment, client => f(client.Match<IPullRequestRepository>(

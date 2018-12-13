@@ -10,7 +10,7 @@ namespace CodeInsight.PullRequests
     {
         public PullRequest(
             NonEmptyString id,
-            AccountId createdBy,
+            AccountId authorId,
             uint deletions,
             uint additions,
             Instant createdAt,
@@ -18,7 +18,7 @@ namespace CodeInsight.PullRequests
             IOption<Instant> closedAt)
         {
             Id = id;
-            CreatedBy = createdBy;
+            AuthorId = authorId;
             Deletions = deletions;
             Additions = additions;
             CreatedAt = createdAt;
@@ -28,7 +28,7 @@ namespace CodeInsight.PullRequests
 
         public NonEmptyString Id { get; }
         
-        public AccountId CreatedBy { get; }
+        public AccountId AuthorId { get; }
 
         public uint Deletions { get; }
         

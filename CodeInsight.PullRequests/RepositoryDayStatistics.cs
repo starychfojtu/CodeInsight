@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using CodeInsight.Domain;
 using CodeInsight.Library;
 using FuncSharp;
 using NodaTime;
@@ -21,6 +22,24 @@ namespace CodeInsight.PullRequests
 
         public IOption<RepositoryStatistics> Get(LocalDate date) =>
             data.Get(date).Map(ToStatistics);
+
+
+        public IOption<DataCube1<AccountId, RepositoryStatistics>> GetByAuthor(LocalDate date) =>
+            data.Get(date).Map(prs =>
+            {
+                var stats = new DataCube1<AccountId, RepositoryStatistics>();
+                foreach (var pr in prs)
+                {
+                    stats.SetOrElseUpdate(
+                        pr.AuthorId,
+                        RepositoryStatistics.FromPullRequest(Interval.End.ToInstant(), pr),
+                        RepositoryStatistics.Append
+                    );
+                }
+
+                return stats;
+            });
+            
         
         private RepositoryStatistics ToStatistics(IEnumerable<PullRequest> pullRequests) =>
             pullRequests
