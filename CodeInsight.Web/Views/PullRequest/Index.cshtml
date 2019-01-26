@@ -1,8 +1,8 @@
-﻿@using System.Collections.Immutable
-@using System.Drawing
-@using CodeInsight.Web.Common
-@using FuncSharp
-@model PullRequestIndexViewModel
+﻿@model PullRequestIndexViewModel
+
+@{
+    var chartId = "pr-chart";
+}
 
 <div class="container">
     <div class="row">
@@ -14,60 +14,15 @@
         <div class="card-columns cols-1">
             <div class="card">
                 <div class="card-body">
-                    <canvas id="myChart" width="800" height="800"></canvas>
+                    <canvas id="@chartId" width="800" height="800"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-@{
-    var stats = Model.Statistics;
-    var dates = stats.Interval.DateInterval.ToImmutableList();
-    var labels = dates.Select(d => $"\"{d.Day}.{d.Month}.\"");
-    
-    var values = dates.Select(d => stats.Get(d)
-        .Map(s => s.AverageLifeTime.Hours.ToString())
-        .GetOrElse("NaN")
-    );
-    
-    var weightedValues = dates.Select(d => stats.Get(d)
-        .Map(s => s.ChangesWeightedAverageLifeTime.Hours.ToString())
-        .GetOrElse("NaN")
-    );
-}
-
 @section Scripts {
     <script>
-        var ctx = document.getElementById("myChart").getContext('2d');
-        var myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [@Html.Raw(string.Join(',', labels))],
-                datasets: [
-                    {
-                        data: [@Html.Raw(string.Join(',', values))],
-                        label: "Average lifetime",
-                        borderColor: @Html.Raw(Color.CornflowerBlue.ToArgbString()),
-                        fill: false,
-                    },
-                    {
-                        data: [@Html.Raw(string.Join(',', weightedValues))],
-                        label: "Weighted average lifetime by changes (addtions + deletions)",
-                        borderColor: @Html.Raw(Color.LawnGreen.ToArgbString()),
-                        fill: false,
-                    }
-                ]
-            },
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }]
-                }
-            }
-        });
+        @Html.Raw(Model.Chart.CreateChartCode(chartId));
     </script>
 }

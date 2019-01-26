@@ -41,14 +41,13 @@ namespace CodeInsight.Tests
             Assert.Equal(9, startStats.ChangesWeightedAverageLifeTime.Days);
             Assert.Equal(9, dayBeforeEndStats.ChangesWeightedAverageLifeTime.Days);
             Assert.Equal(10, endStats.ChangesWeightedAverageLifeTime.Days);
-            
-            var startStatsByAuthor = statistics.GetByAuthor(start).Get();
-            var dayBeforeEndStatsByAuthor = statistics.GetByAuthor(dayBeforeEnd).Get();
-            var endStatsByAuthor = statistics.GetByAuthor(end).Get();
 
-            var startStatsOfA = startStatsByAuthor.Get(aId).Get();
-            var dayBeforeEndStatsOfA = dayBeforeEndStatsByAuthor.Get(aId).Get();
-            var endStatsOfA = endStatsByAuthor.Get(aId).Get();
+            var statisticsByAuthors = statistics.GetByAuthorsForInterval().SliceDimension2();
+
+            var statsOfA = statisticsByAuthors.Get(aId).Get();
+            var startStatsOfA = statsOfA.Get(start).Get();
+            var dayBeforeEndStatsOfA = statsOfA.Get(dayBeforeEnd).Get();
+            var endStatsOfA = statsOfA.Get(end).Get();
             
             Assert.Equal(7, startStatsOfA.AverageLifeTime.Days);
             Assert.Equal(10, dayBeforeEndStatsOfA.AverageLifeTime.Days);
@@ -58,9 +57,10 @@ namespace CodeInsight.Tests
             Assert.Equal(10, dayBeforeEndStatsOfA.ChangesWeightedAverageLifeTime.Days);
             Assert.Equal(10, endStatsOfA.ChangesWeightedAverageLifeTime.Days);
             
-            var startStatsOfB = startStatsByAuthor.Get(bId).Get();
-            var dayBeforeEndStatsOfB = dayBeforeEndStatsByAuthor.Get(bId).Get();
-            var endStatsOfB = endStatsByAuthor.Get(bId);
+            var statsOfB = statisticsByAuthors.Get(bId).Get();
+            var startStatsOfB = statsOfB.Get(start).Get();
+            var dayBeforeEndStatsOfB = statsOfB.Get(dayBeforeEnd).Get();
+            var endStatsOfB = statsOfB.Get(end);
             
             Assert.True(endStatsOfB.IsEmpty);
             
@@ -69,7 +69,6 @@ namespace CodeInsight.Tests
             
             Assert.Equal(9, startStatsOfB.ChangesWeightedAverageLifeTime.Days);
             Assert.Equal(9, dayBeforeEndStatsOfB.ChangesWeightedAverageLifeTime.Days);
-           
         }
     }
 }

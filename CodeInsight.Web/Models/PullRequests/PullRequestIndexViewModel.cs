@@ -1,14 +1,14 @@
-using CodeInsight.PullRequests;
+using ChartJSCore.Models;
 
 namespace CodeInsight.Web.Models
 {
     public class PullRequestIndexViewModel
     {
-        public PullRequestIndexViewModel(RepositoryDayStatistics statistics)
+        public PullRequestIndexViewModel(Chart chart)
         {
-            Statistics = statistics;
+            Chart = chart;
         }
 
-        public RepositoryDayStatistics Statistics { get; }
+        public Chart Chart { get; }
     }
 }
