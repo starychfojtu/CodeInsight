@@ -53,8 +53,8 @@ namespace CodeInsight.Web.Controllers
             var (values, weightedValues) = dates
                 .Select(d => statistics.Get(d))
                 .BiSelect(
-                    d => d.Map(s => (double)s.AverageLifeTime.Hours).GetOrElse(double.NaN),
-                    d => d.Map(s => (double)s.ChangesWeightedAverageLifeTime.Hours).GetOrElse(double.NaN)
+                    d => d.Map(s => s.AverageLifeTime.TotalHours).GetOrElse(double.NaN),
+                    d => d.Map(s => s.ChangesWeightedAverageLifeTime.TotalHours).GetOrElse(double.NaN)
                 );
             
             return new Chart
@@ -106,7 +106,7 @@ namespace CodeInsight.Web.Controllers
                 var dateStats = statisticsByAuthor.Get(date).GetOrElse(empty);
                 dataSets.ForEach((accountId, values) =>
                 {
-                    var newValue = dateStats.Get(accountId).Map(s => (double)s.AverageLifeTime.Hours);
+                    var newValue = dateStats.Get(accountId).Map(s => s.AverageLifeTime.TotalHours);
                     values.Add(newValue.GetOrElse(double.NaN));
                 });
             }

@@ -12,9 +12,33 @@ namespace CodeInsight.PullRequests
         public Task<IEnumerable<PullRequest>> GetAll()
         {
             var createdAt = SystemClock.Instance.GetCurrentInstant().Minus(Duration.FromDays(10));
-            var pr1 = new PullRequest(NonEmptyString.Create("1").Get(), new AccountId("A"),  10, 20, createdAt, Some(createdAt.Plus(Duration.FromDays(5))), None<Instant>());
-            var pr2 = new PullRequest(NonEmptyString.Create("2").Get(), new AccountId("A"), 420, 140, createdAt, Some(createdAt.Plus(Duration.FromDays(9))), None<Instant>());
-            var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), new AccountId("B"), 530, 260, createdAt, None<Instant>(), None<Instant>());
+            var pr1 = new PullRequest(
+                NonEmptyString.Create("1").Get(),
+                new AccountId("A"),
+                deletions: 10,
+                additions: 20,
+                createdAt: createdAt,
+                mergedAt: Some(createdAt.Plus(Duration.FromDays(5))),
+                closedAt: None<Instant>()
+            );
+            var pr2 = new PullRequest(
+                NonEmptyString.Create("2").Get(),
+                new AccountId("A"),
+                deletions: 420,
+                additions: 140,
+                createdAt: createdAt,
+                mergedAt: Some(createdAt.Plus(Duration.FromDays(9))),
+                closedAt: None<Instant>()
+            );
+            var pr3 = new PullRequest(
+                NonEmptyString.Create("3").Get(),
+                new AccountId("B"),
+                deletions: 530,
+                additions: 260,
+                createdAt: createdAt,
+                mergedAt: None<Instant>(),
+                closedAt: None<Instant>()
+            );
             return ((IEnumerable<PullRequest>)new [] { pr1, pr2, pr3 }).Async();
         }
     }

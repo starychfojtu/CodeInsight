@@ -28,7 +28,8 @@ namespace CodeInsight.PullRequests
             var stats = new DataCube2<LocalDate, AccountId, RepositoryStatistics>();
             foreach (var date in Interval.DateInterval)
             {
-                foreach (var pr in data.Get(date).Flatten())
+                var pullRequests = data.Get(date).Flatten();
+                foreach (var pr in pullRequests)
                 {
                     stats.SetOrElseUpdate(
                         date,
