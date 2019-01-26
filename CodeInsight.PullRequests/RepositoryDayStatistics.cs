@@ -23,25 +23,6 @@ namespace CodeInsight.PullRequests
         public IOption<RepositoryStatistics> Get(LocalDate date) =>
             data.Get(date).Map(ToStatistics);
 
-        public DataCube2<LocalDate, AccountId, RepositoryStatistics> GetByAuthorsForInterval()
-        {
-            var stats = new DataCube2<LocalDate, AccountId, RepositoryStatistics>();
-            foreach (var date in Interval.DateInterval)
-            {
-                var pullRequests = data.Get(date).Flatten();
-                foreach (var pr in pullRequests)
-                {
-                    stats.SetOrElseUpdate(
-                        date,
-                        pr.AuthorId,
-                        RepositoryStatistics.FromPullRequest(Interval.End.ToInstant(), pr),
-                        RepositoryStatistics.Append
-                    );
-                }
-            }
-            return stats;
-        }
-
         private RepositoryStatistics ToStatistics(IEnumerable<PullRequest> pullRequests) =>
             pullRequests
                 .Select(p => RepositoryStatistics.FromPullRequest(Interval.End.ToInstant(), p))

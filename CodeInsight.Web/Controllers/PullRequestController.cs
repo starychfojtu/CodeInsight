@@ -17,6 +17,7 @@ using NodaTime;
 using Octokit;
 using static CodeInsight.Library.Prelude;
 using static CodeInsight.Web.Common.Authentication;
+using PullRequest = CodeInsight.PullRequests.PullRequest;
 
 namespace CodeInsight.Web.Controllers
 {
@@ -38,42 +39,17 @@ namespace CodeInsight.Web.Controllers
                     today.Minus(Period.FromMonths(1)),
                     today
                 );
+                var zonedDateInterval = new ZonedDateInterval(interval, zone);
                 
                 return repository.GetAll()
-                    .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, new ZonedDateInterval(interval, zone)))
-                    .Map(statistics => CreateChart(statistics))
+                    .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
+                    .Map(statistics => CreateChart(
+                        zonedDateInterval.DateInterval,
+                        CreateDataSet("Average lifetime", statistics, s => s.AverageLifeTime.TotalHours)
+                    ))
                     .Map(chart => new PullRequestIndexViewModel(chart))
                     .Map(vm => (IActionResult)View(vm));
             });
-
-        private Chart CreateChart(RepositoryDayStatistics statistics)
-        {
-            var dates = statistics.Interval.DateInterval;
-            // TODO: use weightedValues for another chart
-            var (values, weightedValues) = dates
-                .Select(d => statistics.Get(d))
-                .BiSelect(
-                    d => d.Map(s => s.AverageLifeTime.TotalHours).GetOrElse(double.NaN),
-                    d => d.Map(s => s.ChangesWeightedAverageLifeTime.TotalHours).GetOrElse(double.NaN)
-                );
-            
-            return new Chart
-            {
-                Type = "line",
-                Data = new Data
-                {
-                    Labels = dates.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
-                    Datasets = new List<Dataset> { 
-                        new LineDataset
-                        {
-                            Label = "Average lifetime",
-                            Data = values.ToImmutableList(),
-                            Fill = "false"
-                        }
-                    }
-                }
-            };
-        }
 
         public Task<IActionResult> PerAuthors() => 
             PullRequestAction(HttpContext.Request, repository =>
@@ -84,47 +60,43 @@ namespace CodeInsight.Web.Controllers
                     today.Minus(Period.FromMonths(1)),
                     today
                 );
+                var zonedInterval = new ZonedDateInterval(interval, zone);
                 
                 return repository.GetAll()
-                    .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, new ZonedDateInterval(interval, zone)))
-                    .Map(statistics => CreatePerAuthorChart(statistics))
+                    .Map(prs => prs
+                        .GroupBy(pr => pr.AuthorId)
+                        .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, zonedInterval))
+                    )
+                    .Map(statistics => CreateChart(
+                        zonedInterval.DateInterval,
+                        statistics.Select(kvp => CreateDataSet(kvp.Key, kvp.Value, s => s.AverageLifeTime.TotalHours)).ToArray()
+                    ))
                     .Map(c => new PullRequestIndexViewModel(c))
                     .Map(vm => (IActionResult)View(vm));
             });
-
-        private Chart CreatePerAuthorChart(RepositoryDayStatistics statistics)
+        
+        private Dataset CreateDataSet(string label, RepositoryDayStatistics statistics, Func<RepositoryStatistics, double> getValue)
         {
             var dates = statistics.Interval.DateInterval;
-            var statisticsByAuthorAndDate = statistics.GetByAuthorsForInterval();
-            var authors = statisticsByAuthorAndDate.Domain2.Distinct();
-            var statisticsByAuthor = statisticsByAuthorAndDate.SliceDimension1();
-            var empty = new DataCube1<AccountId, RepositoryStatistics>();
-            var dataSets = authors.ToDataCube(a => a, _ => new List<double>());
-    
-            foreach (var date in dates)
-            {
-                var dateStats = statisticsByAuthor.Get(date).GetOrElse(empty);
-                dataSets.ForEach((accountId, values) =>
-                {
-                    var newValue = dateStats.Get(accountId).Map(s => s.AverageLifeTime.TotalHours);
-                    values.Add(newValue.GetOrElse(double.NaN));
-                });
-            }
+            var values = dates.Select(d => statistics.Get(d).Map(getValue).GetOrElse(double.NaN));
 
-            var lineDataSets = dataSets.Select((accountId, values) => (Dataset)new LineDataset
+            return new LineDataset
             {
-                Label = accountId,
-                Data = values,
-                Fill = "false",
-            });
-
+                Label = label,
+                Data = values.ToImmutableList(),
+                Fill = "false"
+            };
+        }
+        
+        private Chart CreateChart(DateInterval interval, params Dataset[] dataSets)
+        {
             return new Chart
             {
                 Type = "line",
                 Data = new Data
                 {
-                    Labels = dates.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
-                    Datasets = lineDataSets.ToImmutableList()
+                    Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
+                    Datasets = dataSets
                 }
             };
         }
