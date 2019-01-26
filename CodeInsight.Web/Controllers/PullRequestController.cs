@@ -62,7 +62,7 @@ namespace CodeInsight.Web.Controllers
                 Type = "line",
                 Data = new Data
                 {
-                    Labels = dates.Select(d => $"\"{d.Day}.{d.Month}.\"").ToImmutableList(),
+                    Labels = dates.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
                     Datasets = new List<Dataset> { 
                         new LineDataset
                         {
@@ -95,9 +95,11 @@ namespace CodeInsight.Web.Controllers
         private Chart CreatePerAuthorChart(RepositoryDayStatistics statistics)
         {
             var dates = statistics.Interval.DateInterval;
-            var statisticsByAuthor = statistics.GetByAuthorsForInterval().SliceDimension1();
+            var statisticsByAuthorAndDate = statistics.GetByAuthorsForInterval();
+            var authors = statisticsByAuthorAndDate.Domain2.Distinct();
+            var statisticsByAuthor = statisticsByAuthorAndDate.SliceDimension1();
             var empty = new DataCube1<AccountId, RepositoryStatistics>();
-            var dataSets = new DataCube1<AccountId, IList<double>>();
+            var dataSets = authors.ToDataCube(a => a, _ => new List<double>());
     
             foreach (var date in dates)
             {
@@ -121,7 +123,7 @@ namespace CodeInsight.Web.Controllers
                 Type = "line",
                 Data = new Data
                 {
-                    Labels = dates.Select(d => $"\"{d.Day}.{d.Month}.\"").ToImmutableList(),
+                    Labels = dates.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
                     Datasets = lineDataSets.ToImmutableList()
                 }
             };
