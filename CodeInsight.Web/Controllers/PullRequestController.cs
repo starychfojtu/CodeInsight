@@ -2,22 +2,20 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using ChartJSCore.Models;
 using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
-using CodeInsight.Web.Models;
+using CodeInsight.Web.Common.Charts;
+using CodeInsight.Web.Models.PullRequests;
 using FuncSharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
-using Octokit;
-using static CodeInsight.Library.Prelude;
 using static CodeInsight.Web.Common.Authentication;
-using PullRequest = CodeInsight.PullRequests.PullRequest;
+using Chart = CodeInsight.Web.Common.Charts.Chart;
 
 namespace CodeInsight.Web.Controllers
 {
@@ -44,10 +42,15 @@ namespace CodeInsight.Web.Controllers
                 return repository.GetAll()
                     .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
                     .Map(statistics => CreateChart(
+                        "Average pull request lifetime",
                         zonedDateInterval.DateInterval,
-                        CreateDataSet("Average lifetime", statistics, s => s.AverageLifeTime.TotalHours)
+                        CreateDataSets(
+                            statistics, 
+                            ("Average", s => s.AverageLifeTime.TotalHours),
+                            ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.TotalHours)
+                        )
                     ))
-                    .Map(chart => new PullRequestIndexViewModel(chart))
+                    .Map(charts => new ChartsViewModel(charts.ToEnumerable()))
                     .Map(vm => (IActionResult)View(vm));
             });
 
@@ -67,38 +70,59 @@ namespace CodeInsight.Web.Controllers
                         .GroupBy(pr => pr.AuthorId)
                         .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, zonedInterval))
                     )
-                    .Map(statistics => CreateChart(
-                        zonedInterval.DateInterval,
-                        statistics.Select(kvp => CreateDataSet(kvp.Key, kvp.Value, s => s.AverageLifeTime.TotalHours)).ToArray()
-                    ))
-                    .Map(c => new PullRequestIndexViewModel(c))
+                    .Map(statistics => CreatePerAuthorCharts(zonedInterval.DateInterval, statistics))
+                    .Map(charts => new ChartsViewModel(charts))
                     .Map(vm => (IActionResult)View(vm));
             });
         
-        private Dataset CreateDataSet(string label, RepositoryDayStatistics statistics, Func<RepositoryStatistics, double> getValue)
+        private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, RepositoryDayStatistics> statistics)
         {
-            var dates = statistics.Interval.DateInterval;
-            var values = dates.Select(d => statistics.Get(d).Map(getValue).GetOrElse(double.NaN));
+            yield return CreateChart(
+                "Pull request average lifetimes per author",
+                interval,
+                statistics.SelectMany(kvp => CreateDataSets(kvp.Value, (kvp.Key, s => s.AverageLifeTime.TotalHours))).ToList()
+            );
+            
+            yield return CreateChart(
+                "Pull request changes weight average lifetimes per author",
+                interval,
+                statistics.SelectMany(kvp => CreateDataSets(kvp.Value, (kvp.Key, s => s.ChangesWeightedAverageLifeTime.TotalHours))).ToList()
+            );
+        }
 
-            return new LineDataset
+        private static ImmutableArray<Dataset> CreateDataSets(
+            RepositoryDayStatistics statistics,
+            params (string label, Func<RepositoryStatistics, double> getValue)[] dataSetParameters)
+        {
+            var dataSets = dataSetParameters.Select(p => new Dataset
             {
-                Label = label,
-                Data = values.ToImmutableList(),
-                Fill = "false"
-            };
+                Label = p.label,
+                Data = new List<double>()
+            }).ToArray();
+            
+            var dates = statistics.Interval.DateInterval;
+            foreach (var date in dates)
+            {
+                var statisticsForDate = statistics.Get(date);
+                for (var i = 0; i < dataSets.Length; i++)
+                {
+                    var newValue = statisticsForDate
+                        .Map(dataSetParameters[i].getValue)
+                        .GetOrElse(double.NaN);
+                    dataSets[i].Data.Add(newValue);
+                }
+            }
+
+            return dataSets.ToImmutableArray();
         }
         
-        private Chart CreateChart(DateInterval interval, params Dataset[] dataSets)
+        private static Chart CreateChart(string title, DateInterval interval, IList<Dataset> dataSets)
         {
-            return new Chart
+            return new Chart(title, ChartType.Line, new Data
             {
-                Type = "line",
-                Data = new Data
-                {
-                    Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
-                    Datasets = dataSets
-                }
-            };
+                Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
+                Datasets = dataSets
+            });
         }
 
         private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f) =>
