@@ -8,7 +8,7 @@ using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using CodeInsight.Web.Common.Charts;
-using CodeInsight.Web.Models.PullRequests;
+using CodeInsight.Web.Models;
 using FuncSharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -41,7 +41,7 @@ namespace CodeInsight.Web.Controllers
                 
                 return repository.GetAll()
                     .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
-                    .Map(statistics => CreateChart(
+                    .Map(statistics => Chart.FromInterval(
                         "Average pull request lifetime",
                         zonedDateInterval.DateInterval,
                         CreateDataSets(
@@ -50,7 +50,7 @@ namespace CodeInsight.Web.Controllers
                             ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.TotalHours)
                         )
                     ))
-                    .Map(charts => new ChartsViewModel(charts.ToEnumerable()))
+                    .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
                     .Map(vm => (IActionResult)View(vm));
             });
 
@@ -71,19 +71,19 @@ namespace CodeInsight.Web.Controllers
                         .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, zonedInterval))
                     )
                     .Map(statistics => CreatePerAuthorCharts(zonedInterval.DateInterval, statistics))
-                    .Map(charts => new ChartsViewModel(charts))
+                    .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
                     .Map(vm => (IActionResult)View(vm));
             });
         
         private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, RepositoryDayStatistics> statistics)
         {
-            yield return CreateChart(
+            yield return Chart.FromInterval(
                 "Pull request average lifetimes per author",
                 interval,
                 statistics.SelectMany(kvp => CreateDataSets(kvp.Value, (kvp.Key, s => s.AverageLifeTime.TotalHours))).ToList()
             );
             
-            yield return CreateChart(
+            yield return Chart.FromInterval(
                 "Pull request changes weight average lifetimes per author",
                 interval,
                 statistics.SelectMany(kvp => CreateDataSets(kvp.Value, (kvp.Key, s => s.ChangesWeightedAverageLifeTime.TotalHours))).ToList()
@@ -115,16 +115,6 @@ namespace CodeInsight.Web.Controllers
 
             return dataSets.ToImmutableArray();
         }
-        
-        private static Chart CreateChart(string title, DateInterval interval, IList<Dataset> dataSets)
-        {
-            return new Chart(title, ChartType.Line, new Data
-            {
-                Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
-                Datasets = dataSets
-            });
-        }
-
         private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f) =>
             AuthorizedAction(request, environment, client => f(client.Match<IPullRequestRepository>(
                 gitHubClient => new Github.PullRequestRepository(gitHubClient),

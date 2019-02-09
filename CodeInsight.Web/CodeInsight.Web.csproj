@@ -26,6 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Models\PullRequests" />
       <Folder Include="Views\Account" />
     </ItemGroup>
 

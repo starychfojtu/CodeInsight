@@ -21,10 +21,10 @@ namespace CodeInsight.Web.Common
             }
             
             var githubClient = new GitHubClient(new ProductHeaderValue("starychfojtu"));
-            return GetRepository(request.Cookies)
+            var result = GetRepository(request.Cookies)
                 .Map(repo => Client.Github(new GithubRepositoryClient(githubClient, repo)))
-                .Map(action)
-                .GetOrElse(((IActionResult)new NotFoundResult()).Async());
+                .Map(action);
+            return result.GetOrElse(((IActionResult)new NotFoundResult()).Async());
         }
         
         private static IOption<Repository> GetRepository(IRequestCookieCollection cookies) =>
