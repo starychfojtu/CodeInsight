@@ -47,7 +47,9 @@ namespace CodeInsight.Web.Controllers
                         CreateDataSets(
                             statistics, 
                             ("Average", s => s.AverageLifeTime.TotalHours),
-                            ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.TotalHours)
+                            ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime
+                                .Map(t => t.TotalHours)
+                                .GetOrElse(double.NaN))
                         )
                     ))
                     .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
@@ -86,7 +88,10 @@ namespace CodeInsight.Web.Controllers
             yield return Chart.FromInterval(
                 "Pull request changes weight average lifetimes per author",
                 interval,
-                statistics.SelectMany(kvp => CreateDataSets(kvp.Value, (kvp.Key, s => s.ChangesWeightedAverageLifeTime.TotalHours))).ToList()
+                statistics.SelectMany(kvp => CreateDataSets(
+                    kvp.Value, 
+                    (kvp.Key, s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).GetOrElse(double.NaN))
+                )).ToList()
             );
         }
 

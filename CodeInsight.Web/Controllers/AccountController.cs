@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
 
@@ -26,10 +27,14 @@ namespace CodeInsight.Web.Controllers
             try
             {
                 var repo = await client.Repository.Get(owner, repository);
-            
-                HttpContext.Response.Cookies.Append("REPO_OWNER", repo.Owner.Login);
-                HttpContext.Response.Cookies.Append("REPO_NAME", repo.Name);
 
+                // TODO: For some reason asp.net checks some append policy of cookie, which is true if
+                // TODO: cookie is essential or the response cookie class "CanTrack()".
+                // TODO: Fix SameSite: lax to strict.
+                var options = new CookieOptions { IsEssential = true };
+                Response.Cookies.Append("REPO_OWNER", repo.Owner.Login, options);
+                Response.Cookies.Append("REPO_NAME", repo.Name, options);
+                
                 return RedirectToAction(nameof(PullRequestController.Index), "PullRequest");
             }
             catch (NotFoundException)
