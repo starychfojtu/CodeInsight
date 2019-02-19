@@ -32,11 +32,11 @@ namespace CodeInsight.Web
 
             if (Env.IsDevelopment())
             {
-                services.AddSingleton<IAuthenticator, Authenticator>();
+                services.AddSingleton<IClientAuthenticator, GithubClientAuthenticator>();
             }
             else
             {
-                services.AddSingleton<IAuthenticator, FakeAuthenticator>();
+                services.AddSingleton<IClientAuthenticator, FakeClientAuthenticator>();
             }
         }
 

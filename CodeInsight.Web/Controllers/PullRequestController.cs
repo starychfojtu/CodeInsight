@@ -14,16 +14,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
 using Chart = CodeInsight.Web.Common.Charts.Chart;
+using static CodeInsight.Web.Common.Security.Security;
 
 namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : Controller
     {
-        private readonly IAuthenticator authenticator;
+        private readonly IClientAuthenticator clientAuthenticator;
 
-        public PullRequestController(IAuthenticator authenticator)
+        public PullRequestController(IClientAuthenticator clientAuthenticator)
         {
-            this.authenticator = authenticator;
+            this.clientAuthenticator = clientAuthenticator;
         }
 
         public Task<IActionResult> Index() => 
@@ -114,13 +115,14 @@ namespace CodeInsight.Web.Controllers
             return dataSets.ToImmutableArray();
         }
 
-        private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f)
-        {
-            var repository = authenticator.Authenticate(request).Match<IPullRequestRepository>(
-                gitHubClient => new Github.PullRequestRepository(gitHubClient),
-                none => new SampleRepository()
-            );
-            return f(repository);
-        }
+        private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f) =>
+            AuthorizedAction(clientAuthenticator, request, c =>
+            {
+                var repository = c.Match<IPullRequestRepository>(
+                    gitHubClient => new Github.PullRequestRepository(gitHubClient),
+                    none => new SampleRepository()
+                );
+                return f(repository);
+            });
     }
 }

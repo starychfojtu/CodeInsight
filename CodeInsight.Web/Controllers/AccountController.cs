@@ -1,4 +1,8 @@
+using System;
 using System.Threading.Tasks;
+using CodeInsight.Library;
+using CodeInsight.Web.Common.Security;
+using FuncSharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,39 +12,50 @@ namespace CodeInsight.Web.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly IHostingEnvironment environment;
+        private readonly IClientAuthenticator authenticator;
 
-        public AccountController(IHostingEnvironment environment)
+        public AccountController(IClientAuthenticator authenticator)
         {
-            this.environment = environment;
+            this.authenticator = authenticator;
         }
         
-        public async Task<IActionResult> AnonymousSignIn(string owner, string repository)
+        public Task<IActionResult> AnonymousSignIn(string owner, string repository)
         {
-            if (environment.IsDevelopment())
-            {
-                return RedirectToAction(nameof(PullRequestController.Index), "PullRequest");
-            }
+            return GetSignInParameters(owner, repository)
+                .BindTry(authenticator.Authenticate)
+                .Map(client => client.Match(
+                    c => FinishSignIn(c),
+                    errors => RedirectToAction(nameof(HomeController.Index), "Home"))
+                );
+        }
+
+        private Task<ITry<SignInParameters>> GetSignInParameters(string owner, string repository)
+        {
+            var repo = 
+                from o in NonEmptyString.Create(owner)
+                from r in NonEmptyString.Create(repository)
+                select new SignInParameters(o, r);
             
-            var client = new GitHubClient(new ProductHeaderValue("starychfojtu"));
+            return repo.ToTry(_ => new ApplicationException("Sign in parameters are invalid.")).Async();
+        }
 
-            try
-            {
-                var repo = await client.Repository.Get(owner, repository);
+        private IActionResult FinishSignIn(Client client)
+        {
+            // TODO: For some reason asp.net checks some append policy of cookie, which is true if
+            // TODO: cookie is essential or the response cookie class "CanTrack()".
+            // TODO: Fix SameSite: lax to strict.
 
-                // TODO: For some reason asp.net checks some append policy of cookie, which is true if
-                // TODO: cookie is essential or the response cookie class "CanTrack()".
-                // TODO: Fix SameSite: lax to strict.
-                var options = new CookieOptions { IsEssential = true };
-                Response.Cookies.Append("REPO_OWNER", repo.Owner.Login, options);
-                Response.Cookies.Append("REPO_NAME", repo.Name, options);
-                
-                return RedirectToAction(nameof(PullRequestController.Index), "PullRequest");
-            }
-            catch (NotFoundException)
-            {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
+            client.Match(
+                github =>
+                {
+                    var options = new CookieOptions {IsEssential = true};
+                    Response.Cookies.Append("REPO_OWNER", github.Repository.Owner.Login, options);
+                    Response.Cookies.Append("REPO_NAME",  github.Repository.Name, options);
+                },
+                none => { }
+            );
+            
+            return RedirectToAction(nameof(PullRequestController.Index), "PullRequest");
         }
     }
 }
