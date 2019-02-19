@@ -7,25 +7,23 @@ using ChartJSCore.Models;
 using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
-using CodeInsight.Web.Common.Charts;
+using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models;
 using FuncSharp;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
-using static CodeInsight.Web.Common.Authentication;
 using Chart = CodeInsight.Web.Common.Charts.Chart;
 
 namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : Controller
     {
-        private readonly IHostingEnvironment environment;
+        private readonly IAuthenticator authenticator;
 
-        public PullRequestController(IHostingEnvironment environment)
+        public PullRequestController(IAuthenticator authenticator)
         {
-            this.environment = environment;
+            this.authenticator = authenticator;
         }
 
         public Task<IActionResult> Index() => 
@@ -41,17 +39,12 @@ namespace CodeInsight.Web.Controllers
                 
                 return repository.GetAll()
                     .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
-                    .Map(statistics => Chart.FromInterval(
-                        "Average pull request lifetime",
-                        zonedDateInterval.DateInterval,
-                        CreateDataSets(
-                            statistics, 
-                            ("Average", s => s.AverageLifeTime.TotalHours),
-                            ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime
-                                .Map(t => t.TotalHours)
-                                .GetOrElse(double.NaN))
-                        )
+                    .Map(statistics => CreateDataSets(
+                        statistics,
+                        ("Average", s => s.AverageLifeTime.TotalHours),
+                        ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable())
                     ))
+                    .Map(dataSets => Chart.FromInterval("Average pull request lifetime", zonedDateInterval.DateInterval, dataSets))
                     .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
                     .Map(vm => (IActionResult)View(vm));
             });
@@ -90,14 +83,14 @@ namespace CodeInsight.Web.Controllers
                 interval,
                 statistics.SelectMany(kvp => CreateDataSets(
                     kvp.Value, 
-                    (kvp.Key, s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).GetOrElse(double.NaN))
+                    (kvp.Key, s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable())
                 )).ToList()
             );
         }
 
         private static ImmutableArray<Dataset> CreateDataSets(
             RepositoryDayStatistics statistics,
-            params (string label, Func<RepositoryStatistics, double> getValue)[] dataSetParameters)
+            params (string label, Func<RepositoryStatistics, double?> getValue)[] dataSetParameters)
         {
             var dataSets = dataSetParameters.Select(p => new Dataset
             {
@@ -120,10 +113,14 @@ namespace CodeInsight.Web.Controllers
 
             return dataSets.ToImmutableArray();
         }
-        private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f) =>
-            AuthorizedAction(request, environment, client => f(client.Match<IPullRequestRepository>(
+
+        private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f)
+        {
+            var repository = authenticator.Authenticate(request).Match<IPullRequestRepository>(
                 gitHubClient => new Github.PullRequestRepository(gitHubClient),
                 none => new SampleRepository()
-            )));
+            );
+            return f(repository);
+        }
     }
 }

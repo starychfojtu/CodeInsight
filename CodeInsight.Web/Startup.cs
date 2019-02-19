@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using CodeInsight.Web.Common.Security;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,15 @@ namespace CodeInsight.Web
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            if (Env.IsDevelopment())
+            {
+                services.AddSingleton<IAuthenticator, Authenticator>();
+            }
+            else
+            {
+                services.AddSingleton<IAuthenticator, FakeAuthenticator>();
+            }
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

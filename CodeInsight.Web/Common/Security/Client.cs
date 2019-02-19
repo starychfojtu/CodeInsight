@@ -1,7 +1,7 @@
 using CodeInsight.Github;
 using FuncSharp;
 
-namespace CodeInsight.Web.Common
+namespace CodeInsight.Web.Common.Security
 {
     public sealed class Client : Coproduct2<GithubRepositoryClient, Unit>
     {

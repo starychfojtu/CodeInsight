@@ -1,30 +1,20 @@
-using System;
-using System.Threading.Tasks;
 using CodeInsight.Github;
 using CodeInsight.Library;
 using FuncSharp;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Octokit;
 using Repository = CodeInsight.Domain.Repository;
 
-namespace CodeInsight.Web.Common
+namespace CodeInsight.Web.Common.Security
 {
-    public static class Authentication
+    public class Authenticator : IAuthenticator
     {
-        public static Task<IActionResult> AuthorizedAction(HttpRequest request, IHostingEnvironment environment, Func<Client, Task<IActionResult>> action)
+        public Client Authenticate(HttpRequest request)
         {
-            if (environment.IsDevelopment())
-            {
-                return action(Client.None());
-            }
-            
             var githubClient = new GitHubClient(new ProductHeaderValue("starychfojtu"));
-            var result = GetRepository(request.Cookies)
+            return GetRepository(request.Cookies)
                 .Map(repo => Client.Github(new GithubRepositoryClient(githubClient, repo)))
-                .Map(action);
-            return result.GetOrElse(((IActionResult)new NotFoundResult()).Async());
+                .GetOrElse(Client.None());
         }
         
         private static IOption<Repository> GetRepository(IRequestCookieCollection cookies) =>
