@@ -14,9 +14,8 @@ namespace CodeInsight.Web.Common.Security
             try
             {
                 var repository = await client.Repository.Get(parameters.Owner, parameters.Repository);
-                var githubClient = new GitHubClient(new ProductHeaderValue("starychfojtu"));
-         
-                return Try.Success<Client, AuthenticationError>(Client.Github(new GithubRepositoryClient(githubClient, repository)));
+                var githubClient = Client.Github(new GithubRepositoryClient(client, repository));
+                return Try.Success<Client, AuthenticationError>(githubClient);
             }
             catch (NotFoundException)
             {
