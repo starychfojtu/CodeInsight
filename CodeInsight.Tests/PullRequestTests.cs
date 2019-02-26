@@ -38,9 +38,9 @@ namespace CodeInsight.Tests
             Assert.Equal(9, dayBeforeEndStats.AverageLifeTime.Days);
             Assert.Equal(10, endStats.AverageLifeTime.Days);
             
-            Assert.Equal(9, startStats.ChangesWeightedAverageLifeTime.Days);
-            Assert.Equal(9, dayBeforeEndStats.ChangesWeightedAverageLifeTime.Days);
-            Assert.Equal(10, endStats.ChangesWeightedAverageLifeTime.Days);
+            Assert.Equal(9, startStats.ChangesWeightedAverageLifeTime.Get().Days);
+            Assert.Equal(9, dayBeforeEndStats.ChangesWeightedAverageLifeTime.Get().Days);
+            Assert.Equal(10, endStats.ChangesWeightedAverageLifeTime.Get().Days);
         }
     }
 }

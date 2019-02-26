@@ -31,6 +31,15 @@ namespace CodeInsight.Library
             return await binder(await task);
         }
         
+        public static async Task<ITry<B>> BindTry<A, B>(this Task<ITry<A>> task, Func<A, Task<ITry<B>>> binder)
+        {
+            var a = await task;
+            return await a.Match(
+                s => binder(s),
+                e => Try.Error<B>(e).Async()
+            );
+        }
+        
         public static async Task<ITry<B, E>> BindTry<A, B, E>(this Task<ITry<A, E>> task, Func<A, Task<ITry<B, E>>> binder)
         {
             var a = await task;

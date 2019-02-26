@@ -1,4 +1,5 @@
-﻿using CodeInsight.Web.Common.Security;
+﻿using System;
+using CodeInsight.Web.Common.Security;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -22,21 +23,21 @@ namespace CodeInsight.Web
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<CookiePolicyOptions>(options =>
+            services.AddDistributedMemoryCache();
+            services.AddSession(options =>
             {
-                options.CheckConsentNeeded = context => true;
-                options.MinimumSameSitePolicy = SameSiteMode.None;
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = false;
             });
-
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             if (Env.IsDevelopment())
             {
-                services.AddSingleton<IClientAuthenticator, GithubClientAuthenticator>();
+                services.AddSingleton<IClientAuthenticator, FakeClientAuthenticator>();
             }
             else
             {
-                services.AddSingleton<IClientAuthenticator, FakeClientAuthenticator>();
+                services.AddSingleton<IClientAuthenticator, GithubClientAuthenticator>();
             }
         }
 
@@ -54,7 +55,7 @@ namespace CodeInsight.Web
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            app.UseCookiePolicy();
+            app.UseSession();
 
             app.UseMvc(routes =>
             {

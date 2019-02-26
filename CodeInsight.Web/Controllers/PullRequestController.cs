@@ -20,15 +20,8 @@ namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : Controller
     {
-        private readonly IClientAuthenticator clientAuthenticator;
-
-        public PullRequestController(IClientAuthenticator clientAuthenticator)
-        {
-            this.clientAuthenticator = clientAuthenticator;
-        }
-
         public Task<IActionResult> Index() => 
-            PullRequestAction(HttpContext.Request, repository =>
+            PullRequestAction(HttpContext, repository =>
             {
                 var zone = DateTimeZone.Utc;
                 var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
@@ -51,7 +44,7 @@ namespace CodeInsight.Web.Controllers
             });
 
         public Task<IActionResult> PerAuthors() => 
-            PullRequestAction(HttpContext.Request, repository =>
+            PullRequestAction(HttpContext, repository =>
             {
                 var zone = DateTimeZone.Utc;
                 var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
@@ -115,8 +108,8 @@ namespace CodeInsight.Web.Controllers
             return dataSets.ToImmutableArray();
         }
 
-        private Task<IActionResult> PullRequestAction(HttpRequest request, Func<IPullRequestRepository, Task<IActionResult>> f) =>
-            AuthorizedAction(clientAuthenticator, request, c =>
+        private Task<IActionResult> PullRequestAction(HttpContext httpContext, Func<IPullRequestRepository, Task<IActionResult>> f) =>
+            AuthorizedAction(httpContext, c =>
             {
                 var repository = c.Match<IPullRequestRepository>(
                     gitHubClient => new Github.PullRequestRepository(gitHubClient),

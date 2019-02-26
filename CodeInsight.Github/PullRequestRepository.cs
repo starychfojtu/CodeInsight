@@ -9,7 +9,7 @@ using Monad;
 using NodaTime;
 using Octokit;
 using PullRequest = CodeInsight.PullRequests.PullRequest;
-using Repository = CodeInsight.Domain.Repository;
+using Repository = Octokit.Repository;
 
 namespace CodeInsight.Github
 {
@@ -25,9 +25,9 @@ namespace CodeInsight.Github
         public Task<IEnumerable<PullRequest>> GetAll() =>
             Get(client.Repository).Execute(client.Client);
 
-        public static Reader<IGitHubClient, Task<IEnumerable<PullRequest>>> Get(Repository repo) =>
+        private static Reader<IGitHubClient, Task<IEnumerable<PullRequest>>> Get(Repository repo) =>
             client => client.PullRequest
-                .GetAllForRepository(repo.OwnerName, repo.Name, new PullRequestRequest {State = ItemStateFilter.All})
+                .GetAllForRepository(repo.Owner.Login, repo.Name, new PullRequestRequest {State = ItemStateFilter.All})
                 .Map(prs => prs.Select(ToDomain));
     
         private static PullRequest ToDomain(Octokit.PullRequest pr) =>

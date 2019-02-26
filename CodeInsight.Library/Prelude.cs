@@ -9,5 +9,8 @@ namespace CodeInsight.Library
         
         public static IOption<A> None<A>() =>
             Option.Empty<A>();
+
+        public static IOption<int> SafeDiv(int dividend, int divisor) => 
+            divisor == 0 ? None<int>() : Some(dividend / divisor);
     }
 }

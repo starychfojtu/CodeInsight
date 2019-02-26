@@ -1,5 +1,4 @@
 using Octokit;
-using Repository = CodeInsight.Domain.Repository;
 
 namespace CodeInsight.Github
 {

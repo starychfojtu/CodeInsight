@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using CodeInsight.Domain;
 using CodeInsight.Library;
 using FuncSharp;
 using NodaTime;
@@ -28,7 +27,8 @@ namespace CodeInsight.PullRequests
                 .Select(p => RepositoryStatistics.FromPullRequest(Interval.End.ToInstant(), p))
                 .Aggregate(RepositoryStatistics.Append);
         
-//        private DataCube1<LocalMonth, IImmutableSet<PullRequest>> TransformedToMonths =>
-//            data.Transform(p => Position1.Create(LocalMonth.Create(p.ProductValue1)), (h1, h2) => h1.Union(h2));
+        // TODO: To be used.
+        private DataCube1<LocalMonth, IImmutableSet<PullRequest>> TransformedToMonths =>
+            data.Transform(p => Position1.Create(LocalMonth.Create(p.ProductValue1)), (h1, h2) => h1.Union(h2));
     }
 }
