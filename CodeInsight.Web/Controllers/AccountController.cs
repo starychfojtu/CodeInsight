@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using CodeInsight.Library;
 using CodeInsight.Web.Common;
@@ -5,6 +6,7 @@ using CodeInsight.Web.Common.Security;
 using FuncSharp;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Octokit;
 
 namespace CodeInsight.Web.Controllers
 {

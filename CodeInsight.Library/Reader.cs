@@ -13,6 +13,9 @@ namespace CodeInsight.Library
         public static Task<T> Async<T>(this T obj) =>
             Task.FromResult(obj);
         
+        public static Task<B> Async<A, B>(this A obj) where A : B =>
+            Task.FromResult((B)obj);
+        
         public static B Pipe<A, B>(this A obj, Func<A, B> f) => 
             f(obj);
         

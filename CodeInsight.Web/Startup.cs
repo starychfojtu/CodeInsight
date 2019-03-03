@@ -1,4 +1,6 @@
 ﻿using System;
+using CodeInsight.Github;
+using CodeInsight.Library;
 using CodeInsight.Web.Common.Security;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -30,6 +32,8 @@ namespace CodeInsight.Web
                 options.Cookie.HttpOnly = false;
             });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            
 
             if (Env.IsDevelopment())
             {
