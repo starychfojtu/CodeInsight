@@ -1,17 +1,18 @@
+using CodeInsight.Library;
 using Octokit;
 
 namespace CodeInsight.Github
 {
     public class GithubRepositoryClient
     {
-        public GithubRepositoryClient(IGitHubClient client, Repository repository)
+        public GithubRepositoryClient(IGitHubClient api, long repositoryId)
         {
-            Client = client;
-            Repository = repository;
+            Api = api;
+            RepositoryId = repositoryId;
         }
 
-        public IGitHubClient Client { get; }
+        public IGitHubClient Api { get; }
         
-        public Repository Repository { get; }
+        public long RepositoryId { get; }
     }
 }

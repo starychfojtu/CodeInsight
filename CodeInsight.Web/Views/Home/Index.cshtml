@@ -6,12 +6,7 @@
 
 <div class="container">
     <div class="row">
-        <h2>Sign in</h2>
-        <form asp-controller="Account" asp-action="AnonymousSignIn" method="POST">
-            @Html.EditorFor(m => m.Owner)
-            @Html.EditorFor(m => m.Repository)
-            <button type="submit">Post</button>
-        </form>
+        <a asp-controller="Github" asp-action="SignIn">Sing in via GitHub</a>
     </div>
 </div>
 

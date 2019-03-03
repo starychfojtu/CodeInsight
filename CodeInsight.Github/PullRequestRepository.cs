@@ -23,11 +23,11 @@ namespace CodeInsight.Github
         }
 
         public Task<IEnumerable<PullRequest>> GetAll() =>
-            Get(client.Repository).Execute(client.Client);
+            Get(client.RepositoryId).Execute(client.Api);
 
-        private static Reader<IGitHubClient, Task<IEnumerable<PullRequest>>> Get(Repository repo) =>
+        private static Reader<IGitHubClient, Task<IEnumerable<PullRequest>>> Get(long repositoryId) =>
             client => client.PullRequest
-                .GetAllForRepository(repo.Owner.Login, repo.Name, new PullRequestRequest {State = ItemStateFilter.All})
+                .GetAllForRepository(repositoryId, new PullRequestRequest {State = ItemStateFilter.All})
                 .Map(prs => prs.Select(ToDomain));
     
         private static PullRequest ToDomain(Octokit.PullRequest pr) =>

@@ -9,19 +9,23 @@ namespace CodeInsight.Web.Controllers
 {
     public class GithubController : Controller
     {
+        private static readonly string OAuthTokenSessionKey = "GithubOAuthToken";
+        private static readonly string CsrfSessionKey = "GithubCsrf";
+        private static readonly string CurrentRepositoryKey = "GithubCurrentRepository";
+        
         private readonly ApplicationConfiguration configuration;
+        private readonly GitHubClient client;
 
         public GithubController(ApplicationConfiguration configuration)
         {
             this.configuration = configuration;
+            this.client = new GitHubClient(new ProductHeaderValue(configuration.ApplicationName));
         }
 
-        public IActionResult GithubSignIn()
+        public IActionResult SignIn()
         {
-            var client = new GitHubClient(new ProductHeaderValue(configuration.ApplicationName));
-            
             var csrf = Guid.NewGuid().ToString();
-            HttpContext.Session.SetString("GituhCSRF:State", csrf);
+            HttpContext.Session.SetString(CsrfSessionKey, csrf);
 
             var request = new OauthLoginRequest(configuration.ClientId)
             {
@@ -32,29 +36,32 @@ namespace CodeInsight.Web.Controllers
             return Redirect(oauthLoginUrl.ToString());
         }
         
-        public async Task<IActionResult> GithubAuthorizeRedirect(string code, string state)
+        public async Task<IActionResult> Authorize(string code, string state)
         {
-            var client = new GitHubClient(new ProductHeaderValue(configuration.ApplicationName));
-            
             if (string.IsNullOrEmpty(code))
             {
                 return RedirectToAction("Index", "Home");
             }
 
-            var expectedState = HttpContext.Session.GetString("CSRF:State");
+            var expectedState = HttpContext.Session.GetString(CsrfSessionKey);
             if (state != expectedState)
             {
                 return RedirectToAction("Index", "Home");
             }
             
-            HttpContext.Session.SetString("CSRF:State", null);
+            HttpContext.Session.SetString(CsrfSessionKey, null);
 
             var request = new OauthTokenRequest(configuration.ClientId, configuration.ClientSecret, code);
             var token = await client.Oauth.CreateAccessToken(request);
             
-            HttpContext.Session.SetString("GithubOAuthToken", token.AccessToken);
+            HttpContext.Session.SetString(OAuthTokenSessionKey, token.AccessToken);
 
             return RedirectToAction("Index", "PullRequest");
+        }
+        
+        public Task<IActionResult> ChooseRepository()
+        {
+            throw new NotImplementedException();
         }
     }
 }

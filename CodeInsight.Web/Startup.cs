@@ -33,16 +33,11 @@ namespace CodeInsight.Web
             });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            
-
-            if (Env.IsDevelopment())
-            {
-                services.AddSingleton<IClientAuthenticator, FakeClientAuthenticator>();
-            }
-            else
-            {
-                services.AddSingleton<IClientAuthenticator, GithubClientAuthenticator>();
-            }
+            services.AddSingleton(new ApplicationConfiguration(
+                applicationName: NonEmptyString.Create("CodeInsight").Get(),
+                clientId: NonEmptyString.Create("09fca52ee4d2ef797c08").Get(),
+                clientSecret: NonEmptyString.Create("be9d8939033915282c82c4895acbbcb549bd042c").Get()
+            ));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
