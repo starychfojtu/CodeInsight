@@ -4,19 +4,22 @@ using System.Threading.Tasks;
 using CodeInsight.Github;
 using CodeInsight.Library;
 using CodeInsight.Web.Common;
+using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models.Github;
 using FuncSharp;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
+using Client = CodeInsight.Github.Client;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
+using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.Web.Controllers
 {
     public class GithubController : Controller
     {
         private static readonly string CsrfSessionKey = "GithubCsrf";
-        
+
         private readonly ApplicationConfiguration configuration;
         private readonly GitHubClient client;
 
@@ -25,84 +28,78 @@ namespace CodeInsight.Web.Controllers
             this.configuration = configuration;
             this.client = new GitHubClient(new ProductHeaderValue(configuration.ApplicationName));
         }
-        
+
         public IActionResult SignIn()
         {
-            var csrf = Guid.NewGuid().ToString();
-            HttpContext.Session.Set(CsrfSessionKey, csrf);
-
             var request = new OauthLoginRequest(configuration.ClientId)
             {
-                State = csrf
+                State = Guid.NewGuid().ToString()
             };
+            
+            HttpContext.Session.Set(CsrfSessionKey, request.State);
+            
             var oauthLoginUrl = client.Oauth.GetGitHubLoginUrl(request);
-
             return Redirect(oauthLoginUrl.ToString());
         }
-        
-        public async Task<IActionResult> Authorize(string code, string state)
+
+        public Task<IActionResult> Authorize(string code, string state)
         {
-            if (string.IsNullOrEmpty(code))
-            {
-                return RedirectToAction("Index", "Home");
-            }
-
-            var expectedState = HttpContext.Session.Get<string>(CsrfSessionKey).GetOrElse("");
-            if (state != expectedState)
-            {
-                return RedirectToAction("Index", "Home");
-            }
-            
-            HttpContext.Session.Remove(CsrfSessionKey);
-
-            var request = new OauthTokenRequest(configuration.ClientId, configuration.ClientSecret, code);
-            var token = await client.Oauth.CreateAccessToken(request);
-
-            var tokenKey = Common.Security.ClientAuthenticator.GithubTokenSessionKey;
-            HttpContext.Session.Set(tokenKey, token.AccessToken);
-
-            return RedirectToAction("ChooseRepository");
-        }
-        
-        [HttpGet]
-        public Task<IActionResult> ChooseRepository()
-        {
-            var tokenKey = Common.Security.ClientAuthenticator.GithubTokenSessionKey;
-            var token = HttpContext.Session.Get<string>(tokenKey);
-            return token.Match(
-                t =>
+            var session = HttpContext.Session;
+            var verifiedCode = GetVerifiedCode(code, state, session);
+            return verifiedCode.Match<Task<IActionResult>>(
+                async vc =>
                 {
-                    var apiClient = Client.Create(t, configuration.ApplicationName);
-                    return apiClient.Repository
-                        .GetAllForCurrent()
-                        .Map(rs => rs.Select(r => new RepositoryItem(r.Id, r.FullName)))
-                        .Map(items => new ChooseRepositoryViewModel(items))
-                        .Map(vm => (IActionResult) View(vm));
+                    session.Remove(CsrfSessionKey);
+                    var token = await GetOAuthAccessToken(vc);
+                    session.Set(ClientAuthenticator.GithubTokenSessionKey, token);
+                    return RedirectToAction("ChooseRepository");
                 },
-                _ => NotFound().Async<NotFoundResult, IActionResult>()
+                _ => RedirectToAction("Index", "Home").Async<RedirectToActionResult, IActionResult>()
             );
         }
         
-        [HttpPost]
-        public Task<IActionResult> ChooseRepository(long id)
+        private static IOption<NonEmptyString> GetVerifiedCode(string code, string state, ISession session)
         {
-            var tokenKey = Common.Security.ClientAuthenticator.GithubTokenSessionKey;
-            var token = HttpContext.Session.Get<string>(tokenKey);
+            var expectedState = session.Get<string>(CsrfSessionKey).GetOrElse("");
+            return NonEmptyString.Create(code).Where(_ => state == expectedState);
+        }
+        
+        private Task<string> GetOAuthAccessToken(NonEmptyString code)
+        {
+            var request = new OauthTokenRequest(configuration.ClientId, configuration.ClientSecret, code);
+            return client.Oauth.CreateAccessToken(request).Map(t => t.AccessToken);
+        }
+
+        [HttpGet]
+        public Task<IActionResult> ChooseRepository() => UserClientAction(userClient =>
+        {
+            return userClient.Repository
+                .GetAllForCurrent()
+                .Map(rs => rs.Select(r => new RepositoryItem(r.Id, r.FullName)))
+                .Map(items => new ChooseRepositoryViewModel(items))
+                .Map(vm => (IActionResult) View(vm));
+        });
+
+        [HttpPost]
+        public Task<IActionResult> ChooseRepository(long id) => UserClientAction(async userClient =>
+        {
+            try
+            {
+                var repository = await userClient.Repository.Get(id);
+                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryIdSessionKey, repository.Id);
+                return RedirectToAction("Index", "PullRequest");
+            }
+            catch (NotFoundException)
+            {
+                return BadRequest();
+            }
+        });
+
+        private Task<IActionResult> UserClientAction(Func<IGitHubClient, Task<IActionResult>> action)
+        {
+            var token = HttpContext.Session.Get<string>(ClientAuthenticator.GithubTokenSessionKey);
             return token.Match(
-                t =>
-                {
-                    var apiClient = Client.Create(t, configuration.ApplicationName);
-                    var repository = apiClient.Repository.Get(id);
-                    return repository.SafeMap(r => r.Match<IActionResult>(
-                        s =>
-                        {
-                            var repoKey = Common.Security.ClientAuthenticator.GithubRepositoryIdSessionKey;
-                            HttpContext.Session.Set(repoKey, s.Id);
-                            return RedirectToAction("Index", "PullRequest");
-                        },
-                        e => BadRequest()
-                    ));
-                },
+                t => action(Client.Create(t, configuration.ApplicationName)),
                 _ => NotFound().Async<NotFoundResult, IActionResult>()
             );
         }
