@@ -4,21 +4,22 @@ using CodeInsight.Github;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
+using Controller = Microsoft.AspNetCore.Mvc.Controller;
 
 namespace CodeInsight.Web.Controllers
 {
     public class GithubController : Controller
     {
-        private static readonly string OAuthTokenSessionKey = "GithubOAuthToken";
         private static readonly string CsrfSessionKey = "GithubCsrf";
-        private static readonly string CurrentRepositoryKey = "GithubCurrentRepository";
         
         private readonly ApplicationConfiguration configuration;
+        private readonly ClientAuthenticator authenticator;
         private readonly GitHubClient client;
 
-        public GithubController(ApplicationConfiguration configuration)
+        public GithubController(ApplicationConfiguration configuration, ClientAuthenticator authenticator)
         {
             this.configuration = configuration;
+            this.authenticator = authenticator;
             this.client = new GitHubClient(new ProductHeaderValue(configuration.ApplicationName));
         }
 
@@ -53,14 +54,16 @@ namespace CodeInsight.Web.Controllers
 
             var request = new OauthTokenRequest(configuration.ClientId, configuration.ClientSecret, code);
             var token = await client.Oauth.CreateAccessToken(request);
-            
-            HttpContext.Session.SetString(OAuthTokenSessionKey, token.AccessToken);
+
+            var tokenKey = Common.Security.ClientAuthenticator.GithubTokenSessionKey;
+            HttpContext.Session.SetString(tokenKey, token.AccessToken);
 
             return RedirectToAction("Index", "PullRequest");
         }
         
         public Task<IActionResult> ChooseRepository()
         {
+            var tokenKey = Common.Security.ClientAuthenticator.GithubTokenSessionKey;
             throw new NotImplementedException();
         }
     }

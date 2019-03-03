@@ -24,14 +24,14 @@ namespace CodeInsight.Library
             yield return obj;
         }
         
-        public static async Task<B> Map<A, B>(this Task<A> task, Func<A, B> mapper)
+        public static Task<B> Map<A, B>(this Task<A> task, Func<A, B> mapper)
         {
-            return mapper(await task);
+            return task.ContinueWith(r => mapper(r.Result));
         }
         
-        public static async Task<B> Bind<A, B>(this Task<A> task, Func<A, Task<B>> binder)
+        public static Task<B> Bind<A, B>(this Task<A> task, Func<A, Task<B>> binder)
         {
-            return await binder(await task);
+            return task.ContinueWith(t => binder(t.Result)).Unwrap();
         }
         
         public static async Task<ITry<B>> BindTry<A, B>(this Task<ITry<A>> task, Func<A, Task<ITry<B>>> binder)

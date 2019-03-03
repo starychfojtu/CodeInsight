@@ -7,62 +7,63 @@ using ChartJSCore.Models;
 using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
+using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models;
 using FuncSharp;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
 using Chart = CodeInsight.Web.Common.Charts.Chart;
-using static CodeInsight.Web.Common.Security.Security;
 
 namespace CodeInsight.Web.Controllers
 {
-    public class PullRequestController : Controller
+    public class PullRequestController : AuthorizedController
     {
-        public Task<IActionResult> Index() => 
-            PullRequestAction(HttpContext, repository =>
-            {
-                var zone = DateTimeZone.Utc;
-                var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
-                var interval = new DateInterval(
-                    today.Minus(Period.FromMonths(1)),
-                    today
-                );
-                var zonedDateInterval = new ZonedDateInterval(interval, zone);
-                
-                return repository.GetAll()
-                    .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
-                    .Map(statistics => CreateDataSets(
-                        statistics,
-                        ("Average", s => s.AverageLifeTime.TotalHours),
-                        ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable())
-                    ))
-                    .Map(dataSets => Chart.FromInterval("Average pull request lifetime", zonedDateInterval.DateInterval, dataSets))
-                    .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
-                    .Map(vm => (IActionResult)View(vm));
-            });
+        public PullRequestController(ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
+        {
+        }
+        
+        public Task<IActionResult> Index() => PullRequestAction(repository =>
+        {
+            var zone = DateTimeZone.Utc;
+            var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
+            var interval = new DateInterval(
+                today.Minus(Period.FromMonths(1)),
+                today
+            );
+            var zonedDateInterval = new ZonedDateInterval(interval, zone);
+            
+            return repository.GetAll()
+                .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
+                .Map(statistics => CreateDataSets(
+                    statistics,
+                    ("Average", s => s.AverageLifeTime.TotalHours),
+                    ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable())
+                ))
+                .Map(dataSets => Chart.FromInterval("Average pull request lifetime", zonedDateInterval.DateInterval, dataSets))
+                .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
+                .Map(vm => (IActionResult)View(vm));
+        });
 
-        public Task<IActionResult> PerAuthors() => 
-            PullRequestAction(HttpContext, repository =>
-            {
-                var zone = DateTimeZone.Utc;
-                var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
-                var interval = new DateInterval(
-                    today.Minus(Period.FromMonths(1)),
-                    today
-                );
-                var zonedInterval = new ZonedDateInterval(interval, zone);
-                
-                return repository.GetAll()
-                    .Map(prs => prs
-                        .GroupBy(pr => pr.AuthorId)
-                        .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, zonedInterval))
-                    )
-                    .Map(statistics => CreatePerAuthorCharts(zonedInterval.DateInterval, statistics))
-                    .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
-                    .Map(vm => (IActionResult)View(vm));
-            });
+        public Task<IActionResult> PerAuthors() => PullRequestAction(repository =>
+        {
+            var zone = DateTimeZone.Utc;
+            var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
+            var interval = new DateInterval(
+                today.Minus(Period.FromMonths(1)),
+                today
+            );
+            var zonedInterval = new ZonedDateInterval(interval, zone);
+            
+            return repository.GetAll()
+                .Map(prs => prs
+                    .GroupBy(pr => pr.AuthorId)
+                    .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, zonedInterval))
+                )
+                .Map(statistics => CreatePerAuthorCharts(zonedInterval.DateInterval, statistics))
+                .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
+                .Map(vm => (IActionResult)View(vm));
+        });
         
         private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, RepositoryDayStatistics> statistics)
         {
@@ -108,14 +109,13 @@ namespace CodeInsight.Web.Controllers
             return dataSets.ToImmutableArray();
         }
 
-        private Task<IActionResult> PullRequestAction(HttpContext httpContext, Func<IPullRequestRepository, Task<IActionResult>> f) =>
-            AuthorizedAction(httpContext, c =>
-            {
-                var repository = c.Match<IPullRequestRepository>(
-                    gitHubClient => new Github.PullRequestRepository(gitHubClient),
-                    none => new SampleRepository()
-                );
-                return f(repository);
-            });
+        private Task<IActionResult> PullRequestAction(Func<IPullRequestRepository, Task<IActionResult>> f) => Action(c =>
+        {
+            var repository = c.Match<IPullRequestRepository>(
+                gitHubClient => new Github.PullRequestRepository(gitHubClient),
+                none => new SampleRepository()
+            );
+            return f(repository);
+        });
     }
 }
