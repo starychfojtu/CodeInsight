@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Github;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
 using Octokit.GraphQL;
-using Client = CodeInsight.Github.Client;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
 using static CodeInsight.Library.Prelude;
 using Connection = Octokit.GraphQL.Connection;
@@ -59,22 +59,22 @@ namespace CodeInsight.Web.Controllers
         }
 
         [HttpGet]
-        public Task<IActionResult> ChooseRepository() => UserClientAction(userClient =>
+        public Task<IActionResult> ChooseRepository() => ConnectionAction(conn =>
         {
-            return userClient.Repository
-                .GetAllForCurrent()
-                .Map(rs => rs.Select(r => new RepositoryInputDto(r.Id, r.FullName)))
+            return conn
+                .Run(GetAllRepositoriesQuery())
                 .Map(items => new ChooseRepositoryViewModel(items))
                 .Map(vm => (IActionResult) View(vm));
         });
 
         [HttpPost]
-        public Task<IActionResult> ChooseRepository(long id) => UserClientAction(async userClient =>
+        public Task<IActionResult> ChooseRepository(string name) => ConnectionAction(async conn =>
         {
             try
             {
-                var repository = await userClient.Repository.Get(id);
-                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryIdSessionKey, repository.Id);
+                var query = new Query().Viewer.Repository(name).Select(r => r.Name).Compile();
+                var repositoryName = await conn.Run(query);
+                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryNameSessionKey, repositoryName);
                 return RedirectToAction("Index", "PullRequest");
             }
             catch (NotFoundException)
@@ -103,13 +103,21 @@ namespace CodeInsight.Web.Controllers
             return client.Oauth.CreateAccessToken(request).Map(t => t.AccessToken);
         }
 
-        private Task<IActionResult> UserClientAction(Func<IGitHubClient, Task<IActionResult>> action)
+        private Task<IActionResult> ConnectionAction(Func<Connection, Task<IActionResult>> action)
         {
             var token = HttpContext.Session.Get<string>(ClientAuthenticator.GithubTokenSessionKey);
             return token.Match(
-                t => action(Client.Create(t, configuration.ApplicationName)),
+                t => action(new Connection(new Octokit.GraphQL.ProductHeaderValue(configuration.ApplicationName), t)),
                 _ => NotFound().Async<NotFoundResult, IActionResult>()
             );
         }
+        
+        private static ICompiledQuery<IEnumerable<RepositoryInputDto>> GetAllRepositoriesQuery() =>
+            new Query()
+                .Viewer
+                .Repositories()
+                .Nodes
+                .Select(r => new RepositoryInputDto(r.Name))
+                .Compile();
     }
 }

@@ -15,7 +15,8 @@ namespace CodeInsight.PullRequests
             uint additions,
             Instant createdAt,
             IOption<Instant> mergedAt,
-            IOption<Instant> closedAt)
+            IOption<Instant> closedAt, 
+            uint commentCount)
         {
             Id = id;
             AuthorId = authorId;
@@ -24,6 +25,7 @@ namespace CodeInsight.PullRequests
             CreatedAt = createdAt;
             MergedAt = mergedAt;
             ClosedAt = closedAt;
+            CommentCount = commentCount;
         }
 
         public NonEmptyString Id { get; }
@@ -39,6 +41,8 @@ namespace CodeInsight.PullRequests
         public IOption<Instant> MergedAt { get; }
         
         public IOption<Instant> ClosedAt { get; }
+        
+        public uint CommentCount { get; }
 
         public IOption<Instant> End =>
             MergedAt.Match(

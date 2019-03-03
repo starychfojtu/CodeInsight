@@ -19,7 +19,8 @@ namespace CodeInsight.PullRequests
                 additions: 20,
                 createdAt: createdAt,
                 mergedAt: Some(createdAt.Plus(Duration.FromDays(5))),
-                closedAt: None<Instant>()
+                closedAt: None<Instant>(),
+                commentCount: 20
             );
             var pr2 = new PullRequest(
                 NonEmptyString.Create("2").Get(),
@@ -28,7 +29,8 @@ namespace CodeInsight.PullRequests
                 additions: 140,
                 createdAt: createdAt,
                 mergedAt: Some(createdAt.Plus(Duration.FromDays(9))),
-                closedAt: None<Instant>()
+                closedAt: None<Instant>(),
+                commentCount: 10
             );
             var pr3 = new PullRequest(
                 NonEmptyString.Create("3").Get(),
@@ -37,7 +39,8 @@ namespace CodeInsight.PullRequests
                 additions: 260,
                 createdAt: createdAt,
                 mergedAt: None<Instant>(),
-                closedAt: None<Instant>()
+                closedAt: None<Instant>(),
+                commentCount: 6
             );
             return ((IEnumerable<PullRequest>)new [] { pr1, pr2, pr3 }).Async();
         }

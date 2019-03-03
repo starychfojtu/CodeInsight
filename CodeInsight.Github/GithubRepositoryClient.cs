@@ -1,17 +1,17 @@
-using Octokit;
+using Octokit.GraphQL;
 
 namespace CodeInsight.Github
 {
     public class GithubRepositoryClient
     {
-        public GithubRepositoryClient(IGitHubClient api, long repositoryId)
+        public GithubRepositoryClient(Connection connection, string repositoryName)
         {
-            Api = api;
-            RepositoryId = repositoryId;
+            Connection = connection;
+            RepositoryName = repositoryName;
         }
 
-        public IGitHubClient Api { get; }
+        public Connection Connection { get; }
         
-        public long RepositoryId { get; }
+        public string RepositoryName { get; }
     }
 }

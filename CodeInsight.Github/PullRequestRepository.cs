@@ -1,15 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using FuncSharp;
-using Monad;
 using NodaTime;
-using Octokit;
+using Octokit.GraphQL;
 using PullRequest = CodeInsight.PullRequests.PullRequest;
-using Repository = Octokit.Repository;
 
 namespace CodeInsight.Github
 {
@@ -23,22 +22,51 @@ namespace CodeInsight.Github
         }
 
         public Task<IEnumerable<PullRequest>> GetAll() =>
-            Get(client.RepositoryId).Execute(client.Api);
+            client.Connection
+                .Run(GetPullRequestQuery(client.RepositoryName))
+                .Map(prs => prs.Select(Map));
 
-        private static Reader<IGitHubClient, Task<IEnumerable<PullRequest>>> Get(long repositoryId) =>
-            client => client.PullRequest
-                .GetAllForRepository(repositoryId, new PullRequestRequest {State = ItemStateFilter.All})
-                .Map(prs => prs.Select(ToDomain));
+        private static ICompiledQuery<IEnumerable<PullRequestDto>> GetPullRequestQuery(string repositoryName) =>
+            new Query()
+                .Viewer
+                .Repository(repositoryName)
+                .PullRequests()
+                .Nodes
+                .Select(pr => new PullRequestDto
+                {
+                    Number = pr.Number,
+                    AuthorLogin = pr.Author.Login,
+                    Deletions = pr.Deletions,
+                    Additions = pr.Additions,
+                    CreatedAt = pr.CreatedAt,
+                    MergedAt = pr.MergedAt,
+                    ClosedAt = pr.ClosedAt,
+                    CommentCount = pr.Comments(null, null, null, null).TotalCount
+                })
+                .Compile();
     
-        private static PullRequest ToDomain(Octokit.PullRequest pr) =>
+        private static PullRequest Map(PullRequestDto pr) =>
             new PullRequest(
                 NonEmptyString.Create(pr.Number.ToString()).Get(),
-                new AccountId(pr.User.Id.ToString()),
+                new AccountId(pr.AuthorLogin),
                 (uint) pr.Deletions,
                 (uint) pr.Additions,
                 Instant.FromDateTimeOffset(pr.CreatedAt),
                 pr.MergedAt.ToOption().Map(Instant.FromDateTimeOffset),
-                pr.ClosedAt.ToOption().Map(Instant.FromDateTimeOffset)
+                pr.ClosedAt.ToOption().Map(Instant.FromDateTimeOffset),
+                (uint) pr.CommentCount
             );
+
+        private sealed class PullRequestDto
+        {
+            public int Number { get; set; }
+            public string AuthorLogin { get; set; }
+            public int Deletions { get; set; }
+            public int Additions { get; set; }
+            public DateTimeOffset CreatedAt { get; set; }
+            public DateTimeOffset? MergedAt { get; set; }
+            public DateTimeOffset? ClosedAt { get; set; }
+            public int CommentCount { get; set; }
+        }
     }
 }
