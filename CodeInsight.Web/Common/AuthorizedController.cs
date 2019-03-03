@@ -18,10 +18,10 @@ namespace CodeInsight.Web.Common
         
         protected Task<IActionResult> Action(Func<Client, Task<IActionResult>> f)
         {
-            return clientAuthenticator.Authenticate(HttpContext).Bind(c => c.Match(
+            return clientAuthenticator.Authenticate(HttpContext).Match(
                 client=> f(client),
                 _ => Task.FromResult((IActionResult) new NotFoundResult())
-            ));
+            );
         }
     }
 }

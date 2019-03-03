@@ -1,6 +1,4 @@
-using System.Threading.Tasks;
 using CodeInsight.Github;
-using CodeInsight.Library;
 using FuncSharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -12,19 +10,19 @@ namespace CodeInsight.Web.Common.Security
     {
         public static readonly string GithubTokenSessionKey = "GithubToken";
         public static readonly string GithubRepositoryIdSessionKey = "GithubRepositoryId";
-        
-        private readonly Github.ClientAuthenticator githubAuthenticator;
+
+        private readonly ApplicationConfiguration applicationConfiguration;
         private readonly IHostingEnvironment environment;
 
-        public ClientAuthenticator(Github.ClientAuthenticator githubAuthenticator, IHostingEnvironment environment)
+        public ClientAuthenticator(ApplicationConfiguration applicationConfiguration, IHostingEnvironment environment)
         {
-            this.githubAuthenticator = githubAuthenticator;
+            this.applicationConfiguration = applicationConfiguration;
             this.environment = environment;
         }
 
-        public async Task<IOption<Client>> Authenticate(HttpContext context)
+        public IOption<Client> Authenticate(HttpContext context)
         {
-            var githubClient = await AuthenticateGithubClient(context);
+            var githubClient = AuthenticateGithubClient(context, applicationConfiguration.ApplicationName);
             if (githubClient.NonEmpty)
             {
                 return githubClient;
@@ -38,16 +36,10 @@ namespace CodeInsight.Web.Common.Security
             return None<Client>();
         }
 
-        private Task<IOption<Client>> AuthenticateGithubClient(HttpContext context)
-        {
-            var githubClientTask =
-                from token in context.Session.Get<string>(GithubTokenSessionKey)
-                from repositoryId in context.Session.Get<long>(GithubRepositoryIdSessionKey)
-                select githubAuthenticator.Authenticate(token, repositoryId);
-
-            return githubClientTask
-                .GetOrElse(Task.FromResult(None<GithubRepositoryClient>()))
-                .Map(cTask => cTask.Map(c => Client.Github(c)));
-        }
+        private static IOption<Client> AuthenticateGithubClient(HttpContext context, string applicationName) =>
+            from token in context.Session.Get<string>(GithubTokenSessionKey)
+            from repositoryId in context.Session.Get<long>(GithubRepositoryIdSessionKey)
+            let client = Github.Client.Create(token, applicationName)
+            select Client.Github(new GithubRepositoryClient(client, repositoryId));
     }
 }

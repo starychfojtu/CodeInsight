@@ -29,6 +29,11 @@ namespace CodeInsight.Library
             return task.ContinueWith(r => mapper(r.Result));
         }
         
+        public static Task<B> SafeMap<A, B>(this Task<A> task, Func<ITry<A>, B> mapper)
+        {
+            return task.ContinueWith(r => mapper(r.IsFaulted ? Try.Error<A>(r.Exception) : Try.Success(r.Result)));
+        }
+        
         public static Task<B> Bind<A, B>(this Task<A> task, Func<A, Task<B>> binder)
         {
             return task.ContinueWith(t => binder(t.Result)).Unwrap();

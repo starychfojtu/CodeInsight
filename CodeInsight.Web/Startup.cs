@@ -1,10 +1,9 @@
 ﻿using System;
-using CodeInsight.Github;
 using CodeInsight.Library;
 using CodeInsight.Web.Common.Security;
+using FuncSharp;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,11 +32,8 @@ namespace CodeInsight.Web
             });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            services.AddSingleton(new ApplicationConfiguration(
-                applicationName: NonEmptyString.Create("CodeInsight").Get(),
-                clientId: NonEmptyString.Create("09fca52ee4d2ef797c08").Get(),
-                clientSecret: NonEmptyString.Create("be9d8939033915282c82c4895acbbcb549bd042c").Get()
-            ));
+            services.AddTransient<ClientAuthenticator>();
+            services.AddSingleton(GetGithubAppConfig().Get(_ => new InvalidOperationException("Invalid app config.")));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -63,5 +59,11 @@ namespace CodeInsight.Web
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
         }
+
+        private IOption<Github.ApplicationConfiguration> GetGithubAppConfig() =>
+            from name in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_APP_NAME"))
+            from clientId in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_CLIENT_ID"))
+            from clientSecret in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_CLIENT_SECRET"))
+            select new Github.ApplicationConfiguration(name, clientId, clientSecret);
     }
 }

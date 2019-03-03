@@ -1,0 +1,18 @@
+﻿@model CodeInsight.Web.Models.Github.ChooseRepositoryViewModel
+
+<div class="container">
+    <div class="row">
+        <h2>Choose a repository</h2>
+        <form asp-controller="Github" asp-action="ChooseRepository" method="post">
+            @{
+                foreach (var repository in Model.Repositories)
+                {
+                    <input type="radio" name="Id" value="@repository.Id">
+                    @repository.Name<br>
+                }
+            }
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</div>
+

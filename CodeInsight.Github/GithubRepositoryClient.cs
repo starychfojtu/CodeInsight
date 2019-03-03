@@ -1,4 +1,3 @@
-using CodeInsight.Library;
 using Octokit;
 
 namespace CodeInsight.Github
