@@ -1,0 +1,7 @@
+language: csharp
+solution: ./CodeInsight.sln
+dotnet: 2.1.401
+script:
+  - ./build.sh
+  - dotnet test "./CodeInsight.Tests/CodeInsight.Tests.csproj" --no-build
+
