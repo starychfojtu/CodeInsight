@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 namespace CodeInsight.Web.Models.Github
 {
-    public sealed class RepositoryItem
+    public sealed class RepositoryInputDto
     {
-        public RepositoryItem(long id, string name)
+        public RepositoryInputDto(long id, string name)
         {
             Id = id;
             Name = name;
@@ -16,11 +16,11 @@ namespace CodeInsight.Web.Models.Github
     
     public sealed class ChooseRepositoryViewModel
     {
-        public ChooseRepositoryViewModel(IEnumerable<RepositoryItem> repositories)
+        public ChooseRepositoryViewModel(IEnumerable<RepositoryInputDto> repositories)
         {
             Repositories = repositories;
         }
 
-        public IEnumerable<RepositoryItem> Repositories { get; }
+        public IEnumerable<RepositoryInputDto> Repositories { get; }
     }
 }

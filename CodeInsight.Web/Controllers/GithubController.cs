@@ -10,9 +10,12 @@ using FuncSharp;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
+using Octokit.GraphQL;
 using Client = CodeInsight.Github.Client;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
 using static CodeInsight.Library.Prelude;
+using Connection = Octokit.GraphQL.Connection;
+using ProductHeaderValue = Octokit.ProductHeaderValue;
 
 namespace CodeInsight.Web.Controllers
 {
@@ -31,14 +34,11 @@ namespace CodeInsight.Web.Controllers
 
         public IActionResult SignIn()
         {
-            var request = new OauthLoginRequest(configuration.ClientId)
-            {
-                State = Guid.NewGuid().ToString()
-            };
+            var csrfToken = Guid.NewGuid().ToString();
+            var oauthLoginUrl = GetOAuthLoginUrl(csrfToken);
             
-            HttpContext.Session.Set(CsrfSessionKey, request.State);
-            
-            var oauthLoginUrl = client.Oauth.GetGitHubLoginUrl(request);
+            HttpContext.Session.Set(CsrfSessionKey, csrfToken);
+
             return Redirect(oauthLoginUrl.ToString());
         }
 
@@ -46,28 +46,16 @@ namespace CodeInsight.Web.Controllers
         {
             var session = HttpContext.Session;
             var verifiedCode = GetVerifiedCode(code, state, session);
-            return verifiedCode.Match<Task<IActionResult>>(
-                async vc =>
+            var oAuthToken = verifiedCode.Map(vc => GetOAuthAccessToken(vc));
+            return oAuthToken.Match(
+                tokenTask => tokenTask.Map(token =>
                 {
                     session.Remove(CsrfSessionKey);
-                    var token = await GetOAuthAccessToken(vc);
                     session.Set(ClientAuthenticator.GithubTokenSessionKey, token);
-                    return RedirectToAction("ChooseRepository");
-                },
+                    return (IActionResult)RedirectToAction("ChooseRepository");
+                }),
                 _ => RedirectToAction("Index", "Home").Async<RedirectToActionResult, IActionResult>()
             );
-        }
-        
-        private static IOption<NonEmptyString> GetVerifiedCode(string code, string state, ISession session)
-        {
-            var expectedState = session.Get<string>(CsrfSessionKey).GetOrElse("");
-            return NonEmptyString.Create(code).Where(_ => state == expectedState);
-        }
-        
-        private Task<string> GetOAuthAccessToken(NonEmptyString code)
-        {
-            var request = new OauthTokenRequest(configuration.ClientId, configuration.ClientSecret, code);
-            return client.Oauth.CreateAccessToken(request).Map(t => t.AccessToken);
         }
 
         [HttpGet]
@@ -75,7 +63,7 @@ namespace CodeInsight.Web.Controllers
         {
             return userClient.Repository
                 .GetAllForCurrent()
-                .Map(rs => rs.Select(r => new RepositoryItem(r.Id, r.FullName)))
+                .Map(rs => rs.Select(r => new RepositoryInputDto(r.Id, r.FullName)))
                 .Map(items => new ChooseRepositoryViewModel(items))
                 .Map(vm => (IActionResult) View(vm));
         });
@@ -94,6 +82,26 @@ namespace CodeInsight.Web.Controllers
                 return BadRequest();
             }
         });
+        
+        private static IOption<NonEmptyString> GetVerifiedCode(string code, string state, ISession session)
+        {
+            var expectedState = session.Get<string>(CsrfSessionKey).GetOrElse("");
+            return NonEmptyString.Create(code).Where(_ => state == expectedState);
+        }
+
+        private Uri GetOAuthLoginUrl(string csrf)
+        {
+            return client.Oauth.GetGitHubLoginUrl(new OauthLoginRequest(configuration.ClientId)
+            {
+                State = csrf
+            });
+        }
+        
+        private Task<string> GetOAuthAccessToken(NonEmptyString code)
+        {
+            var request = new OauthTokenRequest(configuration.ClientId, configuration.ClientSecret, code);
+            return client.Oauth.CreateAccessToken(request).Map(t => t.AccessToken);
+        }
 
         private Task<IActionResult> UserClientAction(Func<IGitHubClient, Task<IActionResult>> action)
         {
