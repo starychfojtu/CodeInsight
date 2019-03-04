@@ -10,6 +10,7 @@ using CodeInsight.Web.Models.Github;
 using FuncSharp;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Monad;
 using Octokit;
 using Octokit.GraphQL;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
@@ -111,12 +112,12 @@ namespace CodeInsight.Web.Controllers
                 _ => NotFound().Async<NotFoundResult, IActionResult>()
             );
         }
-        
+
         private static ICompiledQuery<IEnumerable<RepositoryInputDto>> GetAllRepositoriesQuery() =>
             new Query()
                 .Viewer
                 .Repositories()
-                .Nodes
+                .AllPages()
                 .Select(r => new RepositoryInputDto(r.Name))
                 .Compile();
     }

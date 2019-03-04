@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
 using CodeInsight.Library;
@@ -9,7 +10,7 @@ namespace CodeInsight.PullRequests
 {
     public sealed class SampleRepository : IPullRequestRepository
     {
-        public Task<IEnumerable<PullRequest>> GetAll()
+        public Task<IEnumerable<PullRequest>> GetAll(Instant minCreatedAt)
         {
             var createdAt = SystemClock.Instance.GetCurrentInstant().Minus(Duration.FromDays(10));
             var pr1 = new PullRequest(
@@ -42,7 +43,7 @@ namespace CodeInsight.PullRequests
                 closedAt: None<Instant>(),
                 commentCount: 6
             );
-            return ((IEnumerable<PullRequest>)new [] { pr1, pr2, pr3 }).Async();
+            return (new [] { pr1, pr2, pr3 }).Where(pr => pr.CreatedAt >= minCreatedAt).Async();
         }
     }
 }

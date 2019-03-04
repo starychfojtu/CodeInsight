@@ -32,8 +32,9 @@ namespace CodeInsight.Web.Controllers
                 today
             );
             var zonedDateInterval = new ZonedDateInterval(interval, zone);
+            var minCreatedAt = interval.Start.At(LocalTime.Midnight).InUtc().ToInstant();
             
-            return repository.GetAll()
+            return repository.GetAll(minCreatedAt)
                 .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
                 .Map(statistics => CreateDataSets(
                     statistics,
@@ -54,8 +55,9 @@ namespace CodeInsight.Web.Controllers
                 today
             );
             var zonedInterval = new ZonedDateInterval(interval, zone);
+            var minCreatedAt = interval.Start.At(LocalTime.Midnight).InUtc().ToInstant();
             
-            return repository.GetAll()
+            return repository.GetAll(minCreatedAt)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
                     .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, zonedInterval))
