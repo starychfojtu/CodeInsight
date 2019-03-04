@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using ChartJSCore.Models;
@@ -8,6 +9,7 @@ using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using CodeInsight.Web.Common;
+using CodeInsight.Web.Common.Charts;
 using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models;
 using FuncSharp;
@@ -38,11 +40,7 @@ namespace CodeInsight.Web.Controllers
             
             return repository.GetAll(minCreatedAt)
                 .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, configuration))
-                .Map(statistics => CreateDataSets(
-                    statistics,
-                    ("Average", s => s.AverageLifeTime.TotalHours),
-                    ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable())
-                ))
+                .Map(statistics => CreateAverageDataSets(statistics))
                 .Map(dataSets => Chart.FromInterval("Average pull request lifetime", zonedInterval.DateInterval, dataSets))
                 .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
                 .Map(vm => (IActionResult)View(vm));
@@ -71,32 +69,71 @@ namespace CodeInsight.Web.Controllers
                 .Map(vm => (IActionResult)View(vm));
         });
         
+        private static IReadOnlyList<Dataset> CreateAverageDataSets(RepositoryDayStatistics statistics)
+        {
+            return CreateDataSets(
+                statistics,
+                new LineDataSetConfiguration(
+                    "Average",
+                    s => s.AverageLifeTime.TotalHours,
+                    Color.LawnGreen
+                ),
+                new LineDataSetConfiguration(
+                    "Weighted average by changes",
+                    s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable(),
+                    Color.ForestGreen
+                )
+            );
+        }
+        
         private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, RepositoryDayStatistics> statistics)
         {
+            var colors = statistics.Keys.ToDictionary(id => id, _ => ColorExtensions.CreateRandom());
+            
             yield return Chart.FromInterval(
                 "Pull request average lifetimes per author",
                 interval,
-                statistics.SelectMany(kvp => CreateDataSets(kvp.Value, (kvp.Key, s => s.AverageLifeTime.TotalHours))).ToList()
+                statistics.SelectMany(kvp => CreateDataSets(
+                    kvp.Value,
+                    new LineDataSetConfiguration(
+                        kvp.Key, 
+                        s => s.AverageLifeTime.TotalHours,
+                        colors[kvp.Key]
+                    )
+                )).ToList()
             );
             
             yield return Chart.FromInterval(
                 "Pull request changes weight average lifetimes per author",
                 interval,
                 statistics.SelectMany(kvp => CreateDataSets(
-                    kvp.Value, 
-                    (kvp.Key, s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable())
+                    kvp.Value,
+                    new LineDataSetConfiguration(
+                        kvp.Key,
+                        s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable(),
+                        colors[kvp.Key]
+                    )
                 )).ToList()
             );
         }
 
-        private static ImmutableArray<Dataset> CreateDataSets(
-            RepositoryDayStatistics statistics,
-            params (string label, Func<RepositoryStatistics, double?> getValue)[] dataSetParameters)
+        private static IReadOnlyList<Dataset> CreateDataSets(RepositoryDayStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)
         {
-            var dataSets = dataSetParameters.Select(p => new Dataset
+            var dataSets = lineDataSetConfigurations.Select(c =>
             {
-                Label = p.label,
-                Data = new List<double>()
+                var color = c.Color.ToArgbString();
+                var colorList = new List<string> { color };
+                return new LineDataset
+                {
+                    Label = c.Label,
+                    Data = new List<double>(),
+                    BorderColor = color,
+                    BackgroundColor = color,
+                    PointBorderColor = colorList,
+                    PointHoverBorderColor = colorList,
+                    PointBackgroundColor = colorList,
+                    PointHoverBackgroundColor = colorList
+                };
             }).ToArray();
             
             var dates = statistics.Interval.DateInterval;
@@ -106,13 +143,13 @@ namespace CodeInsight.Web.Controllers
                 for (var i = 0; i < dataSets.Length; i++)
                 {
                     var newValue = statisticsForDate
-                        .Map(dataSetParameters[i].getValue)
+                        .Map(lineDataSetConfigurations[i].ValueGetter)
                         .GetOrElse(double.NaN);
                     dataSets[i].Data.Add(newValue);
                 }
             }
 
-            return dataSets.ToImmutableArray();
+            return dataSets;
         }
 
         private Task<IActionResult> PullRequestAction(Func<IPullRequestRepository, Task<IActionResult>> f) => Action(c =>
