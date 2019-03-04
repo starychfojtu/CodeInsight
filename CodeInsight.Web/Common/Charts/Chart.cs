@@ -34,12 +34,12 @@ namespace CodeInsight.Web.Common.Charts
         
         public ChartJSCore.Models.Chart JsChart { get; }
         
-        public static Chart FromInterval(string title, DateInterval interval, IList<Dataset> dataSets)
+        public static Chart FromInterval(string title, DateInterval interval, IReadOnlyList<Dataset> dataSets)
         {
             return new Chart(title, ChartType.Line, new Data
             {
                 Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
-                Datasets = dataSets
+                Datasets = dataSets.ToList()
             });
         }
     }
