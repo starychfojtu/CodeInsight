@@ -132,7 +132,8 @@ namespace CodeInsight.Web.Controllers
                     PointBorderColor = colorList,
                     PointHoverBorderColor = colorList,
                     PointBackgroundColor = colorList,
-                    PointHoverBackgroundColor = colorList
+                    PointHoverBackgroundColor = colorList,
+                    Fill = "false"
                 };
             }).ToArray();
             
