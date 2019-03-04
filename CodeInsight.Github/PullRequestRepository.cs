@@ -41,7 +41,7 @@ namespace CodeInsight.Github
             {
                 { "repositoryName", client.RepositoryName },
                 { "after", null },
-                { "first", 100 }
+                { "first", 20 }
             };
             
             do
