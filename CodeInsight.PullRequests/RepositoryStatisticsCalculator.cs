@@ -10,9 +10,9 @@ namespace CodeInsight.PullRequests
 {
     public static class RepositoryStatisticsCalculator
     {
-        public static RepositoryDayStatistics Calculate(IEnumerable<PullRequest> pullRequests, ZonedDateInterval interval)
+        public static RepositoryDayStatistics Calculate(IEnumerable<PullRequest> pullRequests, RepositoryDayStatisticsConfiguration configuration)
         {
-            var endDate = interval.End;
+            var endDate = configuration.Interval.End;
             var statistics = new DataCube1<LocalDate, IImmutableSet<PullRequest>>();
             foreach (var pullRequest in pullRequests)
             {
@@ -23,7 +23,7 @@ namespace CodeInsight.PullRequests
                 }
             }
 
-            return new RepositoryDayStatistics(statistics, interval);
+            return new RepositoryDayStatistics(statistics, configuration);
         }
 
         private static DateInterval GetInfluencingDates(PullRequest pullRequest, ZonedDateTime maxEnd) =>

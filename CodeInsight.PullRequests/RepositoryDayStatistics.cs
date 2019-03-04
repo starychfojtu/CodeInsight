@@ -11,20 +11,21 @@ namespace CodeInsight.PullRequests
     {
         private readonly DataCube1<LocalDate, IImmutableSet<PullRequest>> data;
 
-        public RepositoryDayStatistics(DataCube1<LocalDate, IImmutableSet<PullRequest>> data, ZonedDateInterval interval)
+        public RepositoryDayStatistics(DataCube1<LocalDate, IImmutableSet<PullRequest>> data, RepositoryDayStatisticsConfiguration configuration)
         {
             this.data = data;
-            Interval = interval;
+            Configuration = configuration;
         }
         
-        public ZonedDateInterval Interval { get; }
+        public RepositoryDayStatisticsConfiguration Configuration { get; }
+        public ZonedDateInterval Interval => Configuration.Interval;
         
         public IOption<RepositoryStatistics> Get(LocalDate date) =>
             data.Get(date).Map(ToStatistics);
 
         private RepositoryStatistics ToStatistics(IEnumerable<PullRequest> pullRequests) =>
             pullRequests
-                .Select(p => RepositoryStatistics.FromPullRequest(Interval.End.ToInstant(), p))
+                .Select(p => RepositoryStatistics.FromPullRequest(Configuration.CalculateAt, p))
                 .Aggregate(RepositoryStatistics.Append);
         
         // TODO: To be used.
