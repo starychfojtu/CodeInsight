@@ -6,14 +6,24 @@ using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using FuncSharp;
+using Newtonsoft.Json;
 using NodaTime;
 using Octokit.GraphQL;
+using Octokit.GraphQL.Model;
 using PullRequest = CodeInsight.PullRequests.PullRequest;
+using static Octokit.GraphQL.Variable;
 
 namespace CodeInsight.Github
 {
     public sealed class PullRequestRepository: IPullRequestRepository
     {
+        private static ICompiledQuery<ResponsePage<PullRequestDto>> GetAllQuery { get; }
+
+        static PullRequestRepository()
+        {
+            GetAllQuery = CreateGetAllQuery();
+        }
+        
         private readonly GithubRepositoryClient client;
 
         public PullRequestRepository(GithubRepositoryClient client)
@@ -21,28 +31,61 @@ namespace CodeInsight.Github
             this.client = client;
         }
 
-        public Task<IEnumerable<PullRequest>> GetAll() =>
-            client.Connection
-                .Run(GetPullRequestQuery(client.RepositoryName))
-                .Map(prs => prs.Select(Map));
+        public async Task<IEnumerable<PullRequest>> GetAll(Instant minCreatedAt)
+        {
+            var connection = client.Connection;
+            var query = GetAllQuery;
+            var items = new List<PullRequest>();
+            var fetchNextPage = true;
+            var vars = new Dictionary<string, object>
+            {
+                { "repositoryName", client.RepositoryName },
+                { "after", null },
+                { "first", 100 }
+            };
+            
+            do
+            {
+                var page = await connection.Run(query, vars);
+                var prs = page.Items.Select(Map);
+                items.AddRange(prs);
 
-        private static ICompiledQuery<IEnumerable<PullRequestDto>> GetPullRequestQuery(string repositoryName) =>
+                var prWithMinCreatedAt = page.Items.LastOption();
+                var prsMinCreatedAt = prWithMinCreatedAt.Map(pr => Instant.FromDateTimeOffset(pr.CreatedAt));
+                fetchNextPage = prsMinCreatedAt.Map(createdAt => createdAt >= minCreatedAt).GetOrElse(false);
+                
+                vars["after"] = page.HasNextPage ? page.EndCursor : null;
+            }
+            while (vars["after"] != null && fetchNextPage);
+
+            return items;
+        }
+
+        private static ICompiledQuery<ResponsePage<PullRequestDto>> CreateGetAllQuery() =>
             new Query()
                 .Viewer
-                .Repository(repositoryName)
-                .PullRequests()
-                .Nodes
-                .Select(pr => new PullRequestDto
+                .Repository(Var("repositoryName"))
+                .PullRequests(first: Var("first"), after: Var("after"), orderBy: new IssueOrder
                 {
-                    Number = pr.Number,
-                    AuthorLogin = pr.Author.Login,
-                    Deletions = pr.Deletions,
-                    Additions = pr.Additions,
-                    CreatedAt = pr.CreatedAt,
-                    MergedAt = pr.MergedAt,
-                    ClosedAt = pr.ClosedAt,
-                    CommentCount = pr.Comments(null, null, null, null).TotalCount
+                    Field = IssueOrderField.CreatedAt,
+                    Direction = OrderDirection.Desc
                 })
+                .Select(prs => new ResponsePage<PullRequestDto>(
+                    prs.PageInfo.HasNextPage,
+                    prs.PageInfo.EndCursor,
+                    prs.Nodes.Select(pr => new PullRequestDto
+                    {
+                        Number = pr.Number,
+                        AuthorLogin = pr.Author.Login,
+                        Deletions = pr.Deletions,
+                        Additions = pr.Additions,
+                        CreatedAt = pr.CreatedAt,
+                        MergedAt = pr.MergedAt,
+                        ClosedAt = pr.ClosedAt,
+                        CommentCount = pr.Comments(null, null, null, null).TotalCount
+                    })
+                    .ToList()
+                ))
                 .Compile();
     
         private static PullRequest Map(PullRequestDto pr) =>

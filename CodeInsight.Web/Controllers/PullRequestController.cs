@@ -26,21 +26,24 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> Index() => PullRequestAction(repository =>
         {
             var zone = DateTimeZone.Utc;
-            var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var tomorrow = now.InZone(zone).Date.PlusDays(1);
             var interval = new DateInterval(
-                today.Minus(Period.FromMonths(1)),
-                today
+                tomorrow.Minus(Period.FromMonths(1)),
+                tomorrow
             );
-            var zonedDateInterval = new ZonedDateInterval(interval, zone);
+            var zonedInterval = new ZonedDateInterval(interval, zone);
+            var minCreatedAt = interval.Start.At(LocalTime.Midnight).InUtc().ToInstant();
+            var configuration = new RepositoryDayStatisticsConfiguration(zonedInterval, now);
             
-            return repository.GetAll()
-                .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, zonedDateInterval))
+            return repository.GetAll(minCreatedAt)
+                .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, configuration))
                 .Map(statistics => CreateDataSets(
                     statistics,
                     ("Average", s => s.AverageLifeTime.TotalHours),
                     ("Weighted average by changes", s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable())
                 ))
-                .Map(dataSets => Chart.FromInterval("Average pull request lifetime", zonedDateInterval.DateInterval, dataSets))
+                .Map(dataSets => Chart.FromInterval("Average pull request lifetime", zonedInterval.DateInterval, dataSets))
                 .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
                 .Map(vm => (IActionResult)View(vm));
         });
@@ -48,17 +51,20 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> PerAuthors() => PullRequestAction(repository =>
         {
             var zone = DateTimeZone.Utc;
-            var today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var tomorrow = now.InZone(zone).Date.PlusDays(1);
             var interval = new DateInterval(
-                today.Minus(Period.FromMonths(1)),
-                today
+                tomorrow.Minus(Period.FromMonths(1)),
+                tomorrow
             );
             var zonedInterval = new ZonedDateInterval(interval, zone);
+            var minCreatedAt = interval.Start.At(LocalTime.Midnight).InUtc().ToInstant();
+            var configuration = new RepositoryDayStatisticsConfiguration(zonedInterval, now);
             
-            return repository.GetAll()
+            return repository.GetAll(minCreatedAt)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
-                    .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, zonedInterval))
+                    .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, configuration))
                 )
                 .Map(statistics => CreatePerAuthorCharts(zonedInterval.DateInterval, statistics))
                 .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
