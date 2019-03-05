@@ -40,7 +40,8 @@ namespace CodeInsight.Web.Common.Security
         private static IOption<Client> AuthenticateGithubClient(HttpContext context, string applicationName) =>
             from token in context.Session.Get<string>(GithubTokenSessionKey)
             from repositoryName in context.Session.Get<string>(GithubRepositoryNameSessionKey)
+            let repositoryParts = repositoryName.Split(':')
             let conn = new Connection(new ProductHeaderValue(applicationName), token)
-            select Client.Github(new GithubRepositoryClient(conn, repositoryName));
+            select Client.Github(new GithubRepositoryClient(conn, repositoryParts[0], repositoryParts[1]));
     }
 }

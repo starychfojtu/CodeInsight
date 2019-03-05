@@ -40,6 +40,7 @@ namespace CodeInsight.Github
             var vars = new Dictionary<string, object>
             {
                 { "repositoryName", client.RepositoryName },
+                { "repositoryOwner", client.RepositoryOwner },
                 { "after", null },
                 { "first", 20 }
             };
@@ -63,8 +64,7 @@ namespace CodeInsight.Github
 
         private static ICompiledQuery<ResponsePage<PullRequestDto>> CreateGetAllQuery() =>
             new Query()
-                .Viewer
-                .Repository(Var("repositoryName"))
+                .Repository(Var("repositoryName"), Var("repositoryOwner"))
                 .PullRequests(first: Var("first"), after: Var("after"), orderBy: new IssueOrder
                 {
                     Field = IssueOrderField.CreatedAt,

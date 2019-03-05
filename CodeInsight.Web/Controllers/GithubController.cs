@@ -69,13 +69,15 @@ namespace CodeInsight.Web.Controllers
         });
 
         [HttpPost]
-        public Task<IActionResult> ChooseRepository(string name) => ConnectionAction(async conn =>
+        // TODO: Refactor to proper variables.
+        public Task<IActionResult> ChooseRepository(string nameWithOwner) => ConnectionAction(async conn =>
         {
             try
             {
-                var query = new Query().Viewer.Repository(name).Select(r => r.Name).Compile();
-                var repositoryName = await conn.Run(query);
-                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryNameSessionKey, repositoryName);
+            // TODO: Turn on.
+//                var query = new Query().Viewer.Repository(name).Select(r => r.Name).Compile();
+//                var repositoryName = await conn.Run(query);
+                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryNameSessionKey, nameWithOwner);
                 return RedirectToAction("Index", "PullRequest");
             }
             catch (NotFoundException)
@@ -122,7 +124,7 @@ namespace CodeInsight.Web.Controllers
                 .Select(n => n
                     .Repositories(null, null, null, null, null, null, null, null, null, null)
                     .AllPages()
-                    .Select(r => new RepositoryInputDto(r.Name))
+                    .Select(r => new RepositoryInputDto(r.Name, r.Owner.Login))
                     .ToList()
                 )
                 .Compile();
