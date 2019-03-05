@@ -42,7 +42,7 @@ namespace CodeInsight.Github
                 { "repositoryName", client.RepositoryName },
                 { "repositoryOwner", client.RepositoryOwner },
                 { "after", null },
-                { "first", 20 }
+                { "first", 50 }
             };
             
             do

@@ -23,6 +23,8 @@ namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : AuthorizedController
     {
+        private static readonly Duration EstimatedAveragePullRequestMaxLifetime = Duration.FromDays(30);
+        
         public PullRequestController(ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
         {
         }
@@ -34,7 +36,7 @@ namespace CodeInsight.Web.Controllers
             var from = fromIsValid ? Some(fromDateTimeOffset) : None<DateTimeOffset>();
             var configuration = CreateConfiguration(from);
             var start = configuration.Interval.Start;
-            var minCreatedAt = start.ToInstant();
+            var minCreatedAt = start.ToInstant().Minus(EstimatedAveragePullRequestMaxLifetime);
 
             return repository.GetAll(minCreatedAt)
                 .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, configuration))
@@ -46,23 +48,16 @@ namespace CodeInsight.Web.Controllers
 
         public Task<IActionResult> PerAuthors() => PullRequestAction(repository =>
         {
-            var zone = DateTimeZone.Utc;
-            var now = SystemClock.Instance.GetCurrentInstant();
-            var tomorrow = now.InZone(zone).Date.PlusDays(1);
-            var interval = new DateInterval(
-                tomorrow.Minus(Period.FromMonths(1)),
-                tomorrow
-            );
-            var zonedInterval = new ZonedDateInterval(interval, zone);
-            var minCreatedAt = interval.Start.At(LocalTime.Midnight).InUtc().ToInstant();
-            var configuration = new RepositoryDayStatisticsConfiguration(zonedInterval, now);
+            var configuration = CreateConfiguration(None<DateTimeOffset>());
+            var start = configuration.Interval.Start;
+            var minCreatedAt = start.ToInstant().Minus(EstimatedAveragePullRequestMaxLifetime);
             
             return repository.GetAll(minCreatedAt)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
                     .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, configuration))
                 )
-                .Map(statistics => CreatePerAuthorCharts(zonedInterval.DateInterval, statistics))
+                .Map(statistics => CreatePerAuthorCharts(configuration.Interval.DateInterval, statistics))
                 .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
                 .Map(vm => (IActionResult)View(vm));
         });
