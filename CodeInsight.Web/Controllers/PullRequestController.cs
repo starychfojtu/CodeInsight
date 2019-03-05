@@ -23,7 +23,7 @@ namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : AuthorizedController
     {
-        private static readonly Duration EstimatedAveragePullRequestMaxLifetime = Duration.FromDays(90);
+        private static readonly Duration EstimatedAveragePullRequestMaxLifetime = Duration.FromDays(30);
         
         public PullRequestController(ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
         {
