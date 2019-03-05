@@ -12,10 +12,12 @@ using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Charts;
 using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models;
+using CodeInsight.Web.Models.PullRequest;
 using FuncSharp;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
 using Chart = CodeInsight.Web.Common.Charts.Chart;
+using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.Web.Controllers
 {
@@ -25,24 +27,20 @@ namespace CodeInsight.Web.Controllers
         {
         }
         
-        public Task<IActionResult> Index() => PullRequestAction(repository =>
+        public Task<IActionResult> Index(string fromIso8601) => PullRequestAction(repository =>
         {
-            var zone = DateTimeZone.Utc;
-            var now = SystemClock.Instance.GetCurrentInstant();
-            var tomorrow = now.InZone(zone).Date.PlusDays(1);
-            var interval = new DateInterval(
-                tomorrow.Minus(Period.FromMonths(1)),
-                tomorrow
-            );
-            var zonedInterval = new ZonedDateInterval(interval, zone);
-            var minCreatedAt = interval.Start.At(LocalTime.Midnight).InUtc().ToInstant();
-            var configuration = new RepositoryDayStatisticsConfiguration(zonedInterval, now);
-            
+            // TODO: Return error in view when invalid.
+            var fromIsValid = DateTimeOffset.TryParse(fromIso8601, out var fromDateTimeOffset);
+            var from = fromIsValid ? Some(fromDateTimeOffset) : None<DateTimeOffset>();
+            var configuration = CreateConfiguration(from);
+            var start = configuration.Interval.Start;
+            var minCreatedAt = start.ToInstant();
+
             return repository.GetAll(minCreatedAt)
                 .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, configuration))
                 .Map(statistics => CreateAverageDataSets(statistics))
-                .Map(dataSets => Chart.FromInterval("Average pull request lifetime", zonedInterval.DateInterval, dataSets))
-                .Map(charts => new ChartsViewModel(ImmutableList.Create(charts)))
+                .Map(dataSets => Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets))
+                .Map(charts => new PullRequestIndexViewModel(start.ToDateTimeOffset(), ImmutableList.Create(charts)))
                 .Map(vm => (IActionResult)View(vm));
         });
 
@@ -68,6 +66,21 @@ namespace CodeInsight.Web.Controllers
                 .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
                 .Map(vm => (IActionResult)View(vm));
         });
+        
+        private static RepositoryDayStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
+        {
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var fromZoned = from.Match(
+                f =>  ZonedDateTime.FromDateTimeOffset(f),
+                _ => now.InUtc().Minus(Duration.FromDays(30))
+            );
+            var zone = fromZoned.Zone;
+            var today = now.InZone(zone).Date;
+            var interval = new DateInterval(fromZoned.Date, today);
+            var zonedInterval = new ZonedDateInterval(interval, zone);
+            
+            return new RepositoryDayStatisticsConfiguration(zonedInterval, now);
+        }
         
         private static IReadOnlyList<Dataset> CreateAverageDataSets(RepositoryDayStatistics statistics)
         {

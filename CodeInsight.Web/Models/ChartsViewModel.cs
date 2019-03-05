@@ -1,15 +1,15 @@
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using CodeInsight.Web.Common.Charts;
 
 namespace CodeInsight.Web.Models
 {
     public class ChartsViewModel
     {
-        public ChartsViewModel(IImmutableList<Chart> charts)
+        public ChartsViewModel(IReadOnlyList<Chart> charts)
         {
             Charts = charts;
         }
 
-        public IImmutableList<Chart> Charts { get; }
+        public IReadOnlyList<Chart> Charts { get; }
     }
 }
