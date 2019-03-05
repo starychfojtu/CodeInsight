@@ -17,11 +17,13 @@ namespace CodeInsight.Github
 {
     public sealed class PullRequestRepository: IPullRequestRepository
     {
-        private static ICompiledQuery<ResponsePage<PullRequestDto>> GetAllQuery { get; }
+        private static ICompiledQuery<ResponsePage<PullRequestDto>> GetAllClosedAfterQuery { get; }
+        private static ICompiledQuery<IEnumerable<PullRequestDto>> GetAllOpenQuery { get; }
 
         static PullRequestRepository()
         {
-            GetAllQuery = CreateGetAllQuery();
+            GetAllClosedAfterQuery = CreateGetAllClosedAfterQuery();
+            GetAllOpenQuery = CreateGetAllOpenQuery();
         }
         
         private readonly GithubRepositoryClient client;
@@ -30,11 +32,24 @@ namespace CodeInsight.Github
         {
             this.client = client;
         }
-
-        public async Task<IEnumerable<PullRequest>> GetAll(Instant minCreatedAt)
+        
+        public Task<IEnumerable<PullRequest>> GetAllOpenOrClosedAfter(Instant minClosedAt)
         {
-            var connection = client.Connection;
-            var query = GetAllQuery;
+            var closedPrs = GetAllClosedAfter(minClosedAt);
+            var openPrs = client
+                .Connection
+                .Run(GetAllOpenQuery, new Dictionary<string, object>
+                {
+                    { "repositoryName", client.RepositoryName },
+                    { "repositoryOwner", client.RepositoryOwner }
+                })
+                .Map(prs => prs.Select(Map));
+
+            return Task.WhenAll(openPrs, closedPrs).Map(prs => prs.SelectMany(i => i));
+        }
+
+        private async Task<IEnumerable<PullRequest>> GetAllClosedAfter(Instant minClosedAt)
+        {
             var items = new List<PullRequest>();
             var fetchNextPage = true;
             var vars = new Dictionary<string, object>
@@ -47,13 +62,13 @@ namespace CodeInsight.Github
             
             do
             {
-                var page = await connection.Run(query, vars);
+                var page = await client.Connection.Run(GetAllClosedAfterQuery, vars);
                 var prs = page.Items.Select(Map);
                 items.AddRange(prs);
 
-                var prWithMinCreatedAt = page.Items.LastOption();
-                var prsMinCreatedAt = prWithMinCreatedAt.Map(pr => Instant.FromDateTimeOffset(pr.CreatedAt));
-                fetchNextPage = prsMinCreatedAt.Map(createdAt => createdAt >= minCreatedAt).GetOrElse(false);
+                var prWithMinUpdatedAt = page.Items.LastOption();
+                var prsMinUpdatedAt = prWithMinUpdatedAt.Map(pr => Instant.FromDateTimeOffset(pr.UpdatedAt));
+                fetchNextPage = prsMinUpdatedAt.Map(updatedAt => updatedAt >= minClosedAt).GetOrElse(false);
                 
                 vars["after"] = page.HasNextPage ? page.EndCursor : null;
             }
@@ -62,14 +77,19 @@ namespace CodeInsight.Github
             return items;
         }
 
-        private static ICompiledQuery<ResponsePage<PullRequestDto>> CreateGetAllQuery() =>
+        private static ICompiledQuery<ResponsePage<PullRequestDto>> CreateGetAllClosedAfterQuery() =>
             new Query()
                 .Repository(Var("repositoryName"), Var("repositoryOwner"))
-                .PullRequests(first: Var("first"), after: Var("after"), orderBy: new IssueOrder
-                {
-                    Field = IssueOrderField.CreatedAt,
-                    Direction = OrderDirection.Desc
-                })
+                .PullRequests(
+                    first: Var("first"),
+                    after: Var("after"),
+                    orderBy: new IssueOrder
+                    {
+                        Field = IssueOrderField.UpdatedAt,
+                        Direction = OrderDirection.Desc
+                    },
+                    states: new [] { PullRequestState.Merged, PullRequestState.Closed }
+                )
                 .Select(prs => new ResponsePage<PullRequestDto>(
                     prs.PageInfo.HasNextPage,
                     prs.PageInfo.EndCursor,
@@ -87,17 +107,37 @@ namespace CodeInsight.Github
                     .ToList()
                 ))
                 .Compile();
+        
+        private static ICompiledQuery<IEnumerable<PullRequestDto>> CreateGetAllOpenQuery() =>
+            new Query()
+                .Repository(Var("repositoryName"), Var("repositoryOwner"))
+                .PullRequests(states: new [] { PullRequestState.Open })
+                .AllPages()
+                .Select(pr => new PullRequestDto
+                {
+                    Number = pr.Number,
+                    AuthorLogin = pr.Author.Login,
+                    Deletions = pr.Deletions,
+                    Additions = pr.Additions,
+                    CreatedAt = pr.CreatedAt,
+                    UpdatedAt = pr.UpdatedAt,
+                    MergedAt = pr.MergedAt,
+                    ClosedAt = pr.ClosedAt,
+                    CommentCount = pr.Comments(null, null, null, null).TotalCount
+                })
+                .Compile();
     
         private static PullRequest Map(PullRequestDto pr) =>
             new PullRequest(
-                NonEmptyString.Create(pr.Number.ToString()).Get(),
-                new AccountId(pr.AuthorLogin),
-                (uint) pr.Deletions,
-                (uint) pr.Additions,
-                Instant.FromDateTimeOffset(pr.CreatedAt),
-                pr.MergedAt.ToOption().Map(Instant.FromDateTimeOffset),
-                pr.ClosedAt.ToOption().Map(Instant.FromDateTimeOffset),
-                (uint) pr.CommentCount
+                id: NonEmptyString.Create(pr.Number.ToString()).Get(),
+                authorId: new AccountId(pr.AuthorLogin),
+                deletions: (uint) pr.Deletions,
+                additions: (uint) pr.Additions,
+                createdAt: Instant.FromDateTimeOffset(pr.CreatedAt),
+                updatedAt: Instant.FromDateTimeOffset(pr.UpdatedAt),
+                mergedAt: pr.MergedAt.ToOption().Map(Instant.FromDateTimeOffset),
+                closedAt: pr.ClosedAt.ToOption().Map(Instant.FromDateTimeOffset),
+                commentCount: (uint) pr.CommentCount
             );
 
         private sealed class PullRequestDto
@@ -107,6 +147,7 @@ namespace CodeInsight.Github
             public int Deletions { get; set; }
             public int Additions { get; set; }
             public DateTimeOffset CreatedAt { get; set; }
+            public DateTimeOffset UpdatedAt { get; set; }
             public DateTimeOffset? MergedAt { get; set; }
             public DateTimeOffset? ClosedAt { get; set; }
             public int CommentCount { get; set; }

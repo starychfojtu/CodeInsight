@@ -38,7 +38,7 @@ namespace CodeInsight.Web.Controllers
             var start = configuration.Interval.Start;
             var minCreatedAt = start.ToInstant().Minus(EstimatedAveragePullRequestMaxLifetime);
 
-            return repository.GetAll(minCreatedAt)
+            return repository.GetAllOpenOrClosedAfter(minCreatedAt)
                 .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, configuration))
                 .Map(statistics => CreateAverageDataSets(statistics))
                 .Map(dataSets => Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets))
@@ -52,7 +52,7 @@ namespace CodeInsight.Web.Controllers
             var start = configuration.Interval.Start;
             var minCreatedAt = start.ToInstant().Minus(EstimatedAveragePullRequestMaxLifetime);
             
-            return repository.GetAll(minCreatedAt)
+            return repository.GetAllOpenOrClosedAfter(minCreatedAt)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
                     .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, configuration))

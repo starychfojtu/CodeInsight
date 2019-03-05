@@ -10,7 +10,7 @@ namespace CodeInsight.PullRequests
 {
     public sealed class SampleRepository : IPullRequestRepository
     {
-        public Task<IEnumerable<PullRequest>> GetAll(Instant minCreatedAt)
+        public Task<IEnumerable<PullRequest>> GetAllOpenOrClosedAfter(Instant minCreatedAt)
         {
             var createdAt = SystemClock.Instance.GetCurrentInstant().Minus(Duration.FromDays(10));
             var pr1 = new PullRequest(
@@ -19,6 +19,7 @@ namespace CodeInsight.PullRequests
                 deletions: 10,
                 additions: 20,
                 createdAt: createdAt,
+                updatedAt: createdAt,
                 mergedAt: Some(createdAt.Plus(Duration.FromDays(5))),
                 closedAt: None<Instant>(),
                 commentCount: 20
@@ -29,6 +30,7 @@ namespace CodeInsight.PullRequests
                 deletions: 420,
                 additions: 140,
                 createdAt: createdAt,
+                updatedAt: createdAt,
                 mergedAt: Some(createdAt.Plus(Duration.FromDays(9))),
                 closedAt: None<Instant>(),
                 commentCount: 10
@@ -39,11 +41,12 @@ namespace CodeInsight.PullRequests
                 deletions: 530,
                 additions: 260,
                 createdAt: createdAt,
+                updatedAt: createdAt,
                 mergedAt: None<Instant>(),
                 closedAt: None<Instant>(),
                 commentCount: 6
             );
-            return (new [] { pr1, pr2, pr3 }).Where(pr => pr.CreatedAt >= minCreatedAt).Async();
+            return (new [] { pr1, pr2, pr3 }).Async<PullRequest[], IEnumerable<PullRequest>>();
         }
     }
 }

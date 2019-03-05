@@ -14,6 +14,7 @@ namespace CodeInsight.PullRequests
             uint deletions,
             uint additions,
             Instant createdAt,
+            Instant updatedAt,
             IOption<Instant> mergedAt,
             IOption<Instant> closedAt, 
             uint commentCount)
@@ -23,6 +24,7 @@ namespace CodeInsight.PullRequests
             Deletions = deletions;
             Additions = additions;
             CreatedAt = createdAt;
+            UpdatedAt = updatedAt;
             MergedAt = mergedAt;
             ClosedAt = closedAt;
             CommentCount = commentCount;
@@ -38,6 +40,8 @@ namespace CodeInsight.PullRequests
         
         public Instant CreatedAt { get; }
         
+        public Instant UpdatedAt { get; }
+
         public IOption<Instant> MergedAt { get; }
         
         public IOption<Instant> ClosedAt { get; }

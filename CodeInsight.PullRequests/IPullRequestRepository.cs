@@ -6,6 +6,6 @@ namespace CodeInsight.PullRequests
 {
     public interface IPullRequestRepository
     {
-        Task<IEnumerable<PullRequest>> GetAll(Instant minCreatedAt);
+        Task<IEnumerable<PullRequest>> GetAllOpenOrClosedAfter(Instant minClosedAt);
     }
 }
