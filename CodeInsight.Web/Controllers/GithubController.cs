@@ -64,7 +64,7 @@ namespace CodeInsight.Web.Controllers
         {
             return conn
                 .Run(GetAllRepositoriesQuery())
-                .Map(items => new ChooseRepositoryViewModel(items))
+                .Map(items => new ChooseRepositoryViewModel(items.SelectMany(i => i)))
                 .Map(vm => (IActionResult) View(vm));
         });
 
@@ -94,6 +94,7 @@ namespace CodeInsight.Web.Controllers
         {
             return client.Oauth.GetGitHubLoginUrl(new OauthLoginRequest(configuration.ClientId)
             {
+                Scopes = { "read:org", "repo" },
                 State = csrf
             });
         }
@@ -113,12 +114,18 @@ namespace CodeInsight.Web.Controllers
             );
         }
 
-        private static ICompiledQuery<IEnumerable<RepositoryInputDto>> GetAllRepositoriesQuery() =>
+        private static ICompiledQuery<IEnumerable<List<RepositoryInputDto>>> GetAllRepositoriesQuery() =>
             new Query()
                 .Viewer
-                .Repositories()
+                .Organizations()
                 .AllPages()
-                .Select(r => new RepositoryInputDto(r.Name))
+                .Select(n => n
+                    .Repositories(null, null, null, null, null, null, null, null, null, null)
+                    .AllPages()
+                    .Select(r => new RepositoryInputDto(r.Name))
+                    .ToList()
+                )
                 .Compile();
+
     }
 }

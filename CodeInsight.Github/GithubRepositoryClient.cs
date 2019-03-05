@@ -1,3 +1,4 @@
+using FuncSharp;
 using Octokit.GraphQL;
 
 namespace CodeInsight.Github
