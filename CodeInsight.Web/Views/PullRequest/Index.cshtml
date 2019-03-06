@@ -27,7 +27,10 @@
             <thead>
             <th>Title</th>
             <th>CreatedAt</th>
+            <th>UpdatedAt</th>
             <th>LifeTime (hours)</th>
+            <th>Additions</th>
+            <th>Deletions</th>
             <th>Author</th>
             </thead>
             <tbody>
@@ -36,7 +39,10 @@
                     <tr>
                         <td>@pr.Title</td>
                         <td>@pr.CreatedAt.ToString()</td>
+                        <td>@pr.UpdatedAt.ToString()</td>
                         <td>@pr.Lifetime.Map(t => t.TotalHours.ToString("N2")).GetOrElse("Open")</td>
+                        <td>@pr.Additions</td>
+                        <td>@pr.Deletions</td>
                         <td>@pr.AuthorId.ToString()</td>
                     </tr>
                 }

@@ -23,8 +23,6 @@ namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : AuthorizedController
     {
-        private static readonly Duration EstimatedAveragePullRequestMaxLifetime = Duration.FromDays(30);
-        
         public PullRequestController(ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
         {
         }
@@ -36,9 +34,9 @@ namespace CodeInsight.Web.Controllers
             var from = fromIsValid ? Some(fromDateTimeOffset) : None<DateTimeOffset>();
             var configuration = CreateConfiguration(from);
             var start = configuration.Interval.Start;
-            var minCreatedAt = start.ToInstant().Minus(EstimatedAveragePullRequestMaxLifetime);
+            var minClosedAt = start.ToInstant();
 
-            var prs = await repository.GetAllOpenOrClosedAfter(minCreatedAt);
+            var prs = await repository.GetAllOpenOrClosedAfter(minClosedAt);
             var pullRequests = prs.ToImmutableList();
             var statistics = RepositoryStatisticsCalculator.Calculate(pullRequests, configuration);
             var dataSets = CreateAverageDataSets(statistics);
@@ -51,9 +49,9 @@ namespace CodeInsight.Web.Controllers
         {
             var configuration = CreateConfiguration(None<DateTimeOffset>());
             var start = configuration.Interval.Start;
-            var minCreatedAt = start.ToInstant().Minus(EstimatedAveragePullRequestMaxLifetime);
+            var minClosedAt = start.ToInstant();
             
-            return repository.GetAllOpenOrClosedAfter(minCreatedAt)
+            return repository.GetAllOpenOrClosedAfter(minClosedAt)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
                     .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, configuration))
