@@ -100,6 +100,7 @@ namespace CodeInsight.Github
                         AuthorLogin = pr.Author.Login,
                         Deletions = pr.Deletions,
                         Additions = pr.Additions,
+                        UpdatedAt = pr.UpdatedAt,
                         CreatedAt = pr.CreatedAt,
                         MergedAt = pr.MergedAt,
                         ClosedAt = pr.ClosedAt,
