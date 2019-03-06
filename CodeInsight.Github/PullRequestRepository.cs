@@ -117,6 +117,7 @@ namespace CodeInsight.Github
                 .Select(pr => new PullRequestDto
                 {
                     Number = pr.Number,
+                    Title = pr.Title,
                     AuthorLogin = pr.Author.Login,
                     Deletions = pr.Deletions,
                     Additions = pr.Additions,
@@ -131,7 +132,7 @@ namespace CodeInsight.Github
         private static PullRequest Map(PullRequestDto pr) =>
             new PullRequest(
                 id: NonEmptyString.Create(pr.Number.ToString()).Get(),
-                title: NonEmptyString.Create(pr.Title).GetOrElse(NonEmptyString.Create("Title unspecified").Get()),
+                title: NonEmptyString.Create(pr.Title).Get(),
                 authorId: new AccountId(pr.AuthorLogin),
                 deletions: (uint) pr.Deletions,
                 additions: (uint) pr.Additions,
