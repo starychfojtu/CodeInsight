@@ -96,6 +96,7 @@ namespace CodeInsight.Github
                     prs.Nodes.Select(pr => new PullRequestDto
                     {
                         Number = pr.Number,
+                        Title = pr.Title,
                         AuthorLogin = pr.Author.Login,
                         Deletions = pr.Deletions,
                         Additions = pr.Additions,
@@ -130,6 +131,7 @@ namespace CodeInsight.Github
         private static PullRequest Map(PullRequestDto pr) =>
             new PullRequest(
                 id: NonEmptyString.Create(pr.Number.ToString()).Get(),
+                title: NonEmptyString.Create(pr.Title).Get(),
                 authorId: new AccountId(pr.AuthorLogin),
                 deletions: (uint) pr.Deletions,
                 additions: (uint) pr.Additions,
@@ -143,6 +145,7 @@ namespace CodeInsight.Github
         private sealed class PullRequestDto
         {
             public int Number { get; set; }
+            public string Title { get; set; }
             public string AuthorLogin { get; set; }
             public int Deletions { get; set; }
             public int Additions { get; set; }

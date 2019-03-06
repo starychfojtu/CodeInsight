@@ -29,7 +29,7 @@ namespace CodeInsight.Web.Controllers
         {
         }
         
-        public Task<IActionResult> Index(string fromIso8601) => PullRequestAction(repository =>
+        public Task<IActionResult> Index(string fromIso8601) => PullRequestAction(async repository =>
         {
             // TODO: Return error in view when invalid.
             var fromIsValid = DateTimeOffset.TryParse(fromIso8601, out var fromDateTimeOffset);
@@ -38,12 +38,13 @@ namespace CodeInsight.Web.Controllers
             var start = configuration.Interval.Start;
             var minCreatedAt = start.ToInstant().Minus(EstimatedAveragePullRequestMaxLifetime);
 
-            return repository.GetAllOpenOrClosedAfter(minCreatedAt)
-                .Map(prs => RepositoryStatisticsCalculator.Calculate(prs, configuration))
-                .Map(statistics => CreateAverageDataSets(statistics))
-                .Map(dataSets => Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets))
-                .Map(charts => new PullRequestIndexViewModel(start.ToDateTimeOffset(), ImmutableList.Create(charts)))
-                .Map(vm => (IActionResult)View(vm));
+            var prs = await repository.GetAllOpenOrClosedAfter(minCreatedAt);
+            var pullRequests = prs.ToImmutableList();
+            var statistics = RepositoryStatisticsCalculator.Calculate(pullRequests, configuration);
+            var dataSets = CreateAverageDataSets(statistics);
+            var chart = Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets);
+            var vm = new PullRequestIndexViewModel(start.ToDateTimeOffset(), pullRequests, ImmutableList.Create(chart));
+            return (IActionResult)View(vm);
         });
 
         public Task<IActionResult> PerAuthors() => PullRequestAction(repository =>

@@ -10,6 +10,7 @@ namespace CodeInsight.PullRequests
     {
         public PullRequest(
             NonEmptyString id,
+            NonEmptyString title,
             AccountId authorId,
             uint deletions,
             uint additions,
@@ -20,6 +21,7 @@ namespace CodeInsight.PullRequests
             uint commentCount)
         {
             Id = id;
+            Title = title;
             AuthorId = authorId;
             Deletions = deletions;
             Additions = additions;
@@ -31,6 +33,8 @@ namespace CodeInsight.PullRequests
         }
 
         public NonEmptyString Id { get; }
+        
+        public NonEmptyString Title { get; }
         
         public AccountId AuthorId { get; }
 
