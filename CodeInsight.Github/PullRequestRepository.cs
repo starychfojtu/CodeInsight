@@ -131,7 +131,7 @@ namespace CodeInsight.Github
         private static PullRequest Map(PullRequestDto pr) =>
             new PullRequest(
                 id: NonEmptyString.Create(pr.Number.ToString()).Get(),
-                title: NonEmptyString.Create(pr.Title).Get(),
+                title: NonEmptyString.Create(pr.Title).GetOrElse(NonEmptyString.Create("Title unspecified").Get()),
                 authorId: new AccountId(pr.AuthorLogin),
                 deletions: (uint) pr.Deletions,
                 additions: (uint) pr.Additions,
