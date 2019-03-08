@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\CodeInsight.Data\CodeInsight.Data.csproj" />
       <ProjectReference Include="..\CodeInsight.Domain\CodeInsight.Domain.csproj" />
       <ProjectReference Include="..\CodeInsight.Library\CodeInsight.Library.csproj" />
       <ProjectReference Include="..\CodeInsight.PullRequests\CodeInsight.PullRequests.csproj" />
