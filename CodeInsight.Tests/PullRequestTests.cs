@@ -18,9 +18,9 @@ namespace CodeInsight.Tests
             var createdAt = start.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant();
             var aId = new AccountId("A");
             var bId = new AccountId("B");
-            var pr1 = new PullRequest(NonEmptyString.Create("1").Get(), NonEmptyString.Create("1").Get(), aId, 10, 20, createdAt, createdAt, Some(createdAt.Plus(Duration.FromDays(5))), None<Instant>(), 0);
-            var pr2 = new PullRequest(NonEmptyString.Create("2").Get(), NonEmptyString.Create("2").Get(), bId, 20, 40, createdAt, createdAt, Some(createdAt.Plus(Duration.FromDays(9))), None<Instant>(), 0);
-            var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), NonEmptyString.Create("3").Get(), aId, 100, 60, createdAt,createdAt,  None<Instant>(), None<Instant>(), 0);
+            var pr1 = new PullRequest(NonEmptyString.Create("1").Get(), NonEmptyString.Create("1").Get(), NonEmptyString.Create("1").Get(), aId, 10, 20, createdAt, createdAt, Some(createdAt.Plus(Duration.FromDays(5))), None<Instant>(), 0);
+            var pr2 = new PullRequest(NonEmptyString.Create("2").Get(), NonEmptyString.Create("2").Get(), NonEmptyString.Create("1").Get(), bId, 20, 40, createdAt, createdAt, Some(createdAt.Plus(Duration.FromDays(9))), None<Instant>(), 0);
+            var pr3 = new PullRequest(NonEmptyString.Create("3").Get(), NonEmptyString.Create("3").Get(), NonEmptyString.Create("1").Get(), aId, 100, 60, createdAt,createdAt,  None<Instant>(), None<Instant>(), 0);
             var prs = new [] { pr1, pr2, pr3 };
 
             var interval = new ZonedDateInterval(

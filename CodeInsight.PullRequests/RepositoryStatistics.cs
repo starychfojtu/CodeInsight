@@ -1,3 +1,4 @@
+using CodeInsight.Domain;
 using FuncSharp;
 using NodaTime;
 using static CodeInsight.Library.Prelude;

@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 using NodaTime;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
-using PullRequest = CodeInsight.PullRequests.PullRequest;
+using PullRequest = CodeInsight.Domain.PullRequest;
 using static Octokit.GraphQL.Variable;
 
 namespace CodeInsight.Github
@@ -95,6 +95,7 @@ namespace CodeInsight.Github
                     prs.PageInfo.EndCursor,
                     prs.Nodes.Select(pr => new PullRequestDto
                     {
+                        RepositoryId = pr.Repository.Id.Value,
                         Number = pr.Number,
                         Title = pr.Title,
                         AuthorLogin = pr.Author.Login,
@@ -117,6 +118,7 @@ namespace CodeInsight.Github
                 .AllPages()
                 .Select(pr => new PullRequestDto
                 {
+                    RepositoryId = pr.Repository.Id.Value,
                     Number = pr.Number,
                     Title = pr.Title,
                     AuthorLogin = pr.Author.Login,
@@ -133,6 +135,7 @@ namespace CodeInsight.Github
         private static PullRequest Map(PullRequestDto pr) =>
             new PullRequest(
                 id: NonEmptyString.Create(pr.Number.ToString()).Get(),
+                repositoryId: NonEmptyString.Create(pr.RepositoryId).Get(),
                 title: NonEmptyString.Create(pr.Title).Get(),
                 authorId: new AccountId(pr.AuthorLogin),
                 deletions: (uint) pr.Deletions,
@@ -146,6 +149,7 @@ namespace CodeInsight.Github
 
         private sealed class PullRequestDto
         {
+            public string RepositoryId { get; set; }
             public int Number { get; set; }
             public string Title { get; set; }
             public string AuthorLogin { get; set; }

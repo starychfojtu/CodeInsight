@@ -16,6 +16,7 @@ namespace CodeInsight.PullRequests
             var pr1 = new PullRequest(
                 NonEmptyString.Create("1").Get(),
                 NonEmptyString.Create("1").Get(),
+                NonEmptyString.Create("1").Get(),
                 new AccountId("A"),
                 deletions: 10,
                 additions: 20,
@@ -28,6 +29,7 @@ namespace CodeInsight.PullRequests
             var pr2 = new PullRequest(
                 NonEmptyString.Create("2").Get(),
                 NonEmptyString.Create("2").Get(),
+                NonEmptyString.Create("2").Get(),
                 new AccountId("A"),
                 deletions: 420,
                 additions: 140,
@@ -38,6 +40,7 @@ namespace CodeInsight.PullRequests
                 commentCount: 10
             );
             var pr3 = new PullRequest(
+                NonEmptyString.Create("3").Get(),
                 NonEmptyString.Create("3").Get(),
                 NonEmptyString.Create("3").Get(),
                 new AccountId("B"),

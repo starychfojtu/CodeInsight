@@ -4,14 +4,17 @@ namespace CodeInsight.Domain
 {
     public class Repository
     {
-        public Repository(NonEmptyString name, NonEmptyString ownerName)
+        public Repository(NonEmptyString id, NonEmptyString name, NonEmptyString owner)
         {
+            Id = id;
             Name = name;
-            OwnerName = ownerName;
+            Owner = owner;
         }
 
+        public NonEmptyString Id { get; }
+        
         public NonEmptyString Name { get; }
         
-        public NonEmptyString OwnerName { get; }
+        public NonEmptyString Owner { get; }
     }
 }

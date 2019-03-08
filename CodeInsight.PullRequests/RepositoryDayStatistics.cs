@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using CodeInsight.Domain;
 using CodeInsight.Library;
 using FuncSharp;
 using NodaTime;

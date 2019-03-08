@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using CodeInsight.Domain;
 using CodeInsight.Library;
 using FuncSharp;
 using NodaTime;

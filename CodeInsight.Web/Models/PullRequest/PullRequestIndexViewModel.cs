@@ -6,7 +6,7 @@ namespace CodeInsight.Web.Models.PullRequest
 {
     public sealed class PullRequestIndexViewModel : ChartsViewModel
     {        
-        public PullRequestIndexViewModel(DateTimeOffset from, IReadOnlyList<PullRequests.PullRequest> pullRequests, IReadOnlyList<Chart> charts) : base(charts)
+        public PullRequestIndexViewModel(DateTimeOffset from, IReadOnlyList<Domain.PullRequest> pullRequests, IReadOnlyList<Chart> charts) : base(charts)
         {
             From = from;
             PullRequests = pullRequests;
@@ -14,6 +14,6 @@ namespace CodeInsight.Web.Models.PullRequest
         
         public DateTimeOffset From { get; }
         
-        public IReadOnlyList<PullRequests.PullRequest> PullRequests { get; }
+        public IReadOnlyList<Domain.PullRequest> PullRequests { get; }
     }
 }

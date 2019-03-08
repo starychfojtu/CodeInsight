@@ -1,15 +1,14 @@
-using CodeInsight.Domain;
 using CodeInsight.Library;
 using FuncSharp;
 using NodaTime;
-using static CodeInsight.Library.Prelude;
 
-namespace CodeInsight.PullRequests
+namespace CodeInsight.Domain
 {
     public sealed class PullRequest
     {
         public PullRequest(
             NonEmptyString id,
+            NonEmptyString repositoryId,
             NonEmptyString title,
             AccountId authorId,
             uint deletions,
@@ -21,6 +20,7 @@ namespace CodeInsight.PullRequests
             uint commentCount)
         {
             Id = id;
+            RepositoryId = repositoryId;
             Title = title;
             AuthorId = authorId;
             Deletions = deletions;
@@ -34,6 +34,8 @@ namespace CodeInsight.PullRequests
 
         public NonEmptyString Id { get; }
         
+        public NonEmptyString RepositoryId { get; }
+
         public NonEmptyString Title { get; }
         
         public AccountId AuthorId { get; }
@@ -60,7 +62,7 @@ namespace CodeInsight.PullRequests
 
         public IOption<Duration> Lifetime =>
             MergedAt.Match(
-                m => Some(m - CreatedAt),
+                m => Prelude.Some(m - CreatedAt),
                 _ => ClosedAt.Map(c => c - CreatedAt)
             );
 
