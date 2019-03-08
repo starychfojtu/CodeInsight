@@ -6,13 +6,10 @@ namespace CodeInsight.Web.Models.Github
     {
         public RepositoryInputDto(string name, string owner)
         {
-            Name = name;
-            Owner = owner;
+            NameWithOwner = $"{owner}/{name}";
         }
 
-        public string Name { get; }
-        
-        public string Owner { get; }
+        public string NameWithOwner { get; }
     }
     
     public sealed class ChooseRepositoryViewModel

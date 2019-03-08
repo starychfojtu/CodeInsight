@@ -11,8 +11,7 @@
             @{
                 foreach (var repository in Model.Repositories)
                 {
-                    var repoValue = $"{repository.Name}:{repository.Owner}";
-                    <input type="radio" name="nameWithOwner" value="@repoValue">@repository.Name<br>
+                    <input type="radio" name="nameWithOwner" value="@repository.NameWithOwner">@repository.NameWithOwner<br>
                 }
             }
             <button type="submit">Submit</button>

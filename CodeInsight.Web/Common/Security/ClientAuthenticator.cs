@@ -11,6 +11,7 @@ namespace CodeInsight.Web.Common.Security
     {
         public static readonly string GithubTokenSessionKey = "GithubToken";
         public static readonly string GithubRepositoryNameSessionKey = "GithubRepositoryName";
+        public static readonly string GithubRepositoryOwnerSessionKey = "GithubRepositoryOwner";
 
         private readonly ApplicationConfiguration applicationConfiguration;
         private readonly IHostingEnvironment environment;
@@ -40,8 +41,8 @@ namespace CodeInsight.Web.Common.Security
         private static IOption<Client> AuthenticateGithubClient(HttpContext context, string applicationName) =>
             from token in context.Session.Get<string>(GithubTokenSessionKey)
             from repositoryName in context.Session.Get<string>(GithubRepositoryNameSessionKey)
-            let repositoryParts = repositoryName.Split(':')
+            from repositoryOwner in context.Session.Get<string>(GithubRepositoryOwnerSessionKey)
             let conn = new Connection(new ProductHeaderValue(applicationName), token)
-            select Client.Github(new GithubRepositoryClient(conn, repositoryParts[0], repositoryParts[1]));
+            select Client.Github(new GithubRepositoryClient(conn, repositoryName, repositoryOwner));
     }
 }
