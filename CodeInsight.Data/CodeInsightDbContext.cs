@@ -4,6 +4,10 @@ namespace CodeInsight.Data
 {
     public sealed class CodeInsightDbContext : DbContext
     {
+        public CodeInsightDbContext(DbContextOptions options) : base(options)
+        {
+        }
+
         public DbSet<Repository.Repository> Repositories { get; private set; }
         
         public DbSet<PullRequest.PullRequest> PullRequests { get; private set; }

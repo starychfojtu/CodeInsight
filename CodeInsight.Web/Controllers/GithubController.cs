@@ -115,7 +115,7 @@ namespace CodeInsight.Web.Controllers
                     NonEmptyString.Create(repository.Name).Get()
                 );
                 
-                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryIdSessionKey, importedRepository.Id);
+                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryIdSessionKey, importedRepository.Id.Value.Value);
                 
                 return RedirectToAction("Index", "PullRequest");
             }
