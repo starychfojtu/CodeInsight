@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CodeInsight.Domain;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using Microsoft.EntityFrameworkCore;
@@ -16,19 +17,18 @@ namespace CodeInsight.Data.PullRequest
         {
             this.dbContext = dbContext;
         }
-        
-        public Task<IEnumerable<Domain.PullRequest>> GetAllOpenOrClosedAfter(Instant minClosedAt)
+
+        public Task<IEnumerable<Domain.PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
         {
-            var minClosed = minClosedAt.ToDateTimeOffset();
-            return dbContext.PullRequests.Where(pr =>
-                    pr.MergedAt == null ||
-                    pr.ClosedAt == null ||
-                    pr.MergedAt.Value >= minClosed ||
-                    pr.ClosedAt.Value >= minClosed
+            var start = interval.Start.ToDateTimeOffset();
+            var end = interval.End.ToDateTimeOffset();
+            return dbContext.PullRequests
+                .Where(pr =>
+                    pr.CreatedAt <= end &&
+                    (pr.MergedAt.Value >= start || pr.ClosedAt.Value >= start)
                 )
                 .ToListAsync()
                 .Map(prs => prs.Select(pr => PullRequest.ToDomain(pr)));
-
         }
     }
 }

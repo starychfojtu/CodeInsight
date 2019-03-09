@@ -1,3 +1,4 @@
+using CodeInsight.Domain;
 using CodeInsight.Library;
 
 namespace CodeInsight.Data.Repository
@@ -20,7 +21,7 @@ namespace CodeInsight.Data.Repository
         public static Repository FromDomain(Domain.Repository repository)
         {
             return new Repository(
-                repository.Id,
+                repository.Id.Value,
                 repository.Name,
                 repository.Owner
             );
@@ -29,7 +30,7 @@ namespace CodeInsight.Data.Repository
         public static Domain.Repository ToDomain(Repository repository)
         {
             return new Domain.Repository(
-                NonEmptyString.Create(repository.Id).Get(),
+                new RepositoryId(NonEmptyString.Create(repository.Id).Get()),
                 NonEmptyString.Create(repository.Name).Get(),
                 NonEmptyString.Create(repository.Owner).Get()
             );

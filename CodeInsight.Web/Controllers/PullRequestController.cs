@@ -27,31 +27,35 @@ namespace CodeInsight.Web.Controllers
         {
         }
         
-        public Task<IActionResult> Index(string fromIso8601) => PullRequestAction(async repository =>
+        public Task<IActionResult> Index(string fromIso8601, string toIso8601) => PullRequestAction(async (prRepository, repositoryId) =>
         {
             // TODO: Return error in view when invalid.
             var fromIsValid = DateTimeOffset.TryParse(fromIso8601, out var fromDateTimeOffset);
             var from = fromIsValid ? Some(fromDateTimeOffset) : None<DateTimeOffset>();
             var configuration = CreateConfiguration(from);
-            var start = configuration.Interval.Start;
-            var minClosedAt = start.ToInstant();
+            var interval = new FiniteInterval(
+                configuration.Interval.Start.ToInstant(),
+                configuration.Interval.End.ToInstant()
+            );
 
-            var prs = await repository.GetAllOpenOrClosedAfter(minClosedAt);
+            var prs = await prRepository.GetAllIntersecting(repositoryId, interval);
             var pullRequests = prs.ToImmutableList();
             var statistics = RepositoryStatisticsCalculator.Calculate(pullRequests, configuration);
             var dataSets = CreateAverageDataSets(statistics);
             var chart = Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets);
-            var vm = new PullRequestIndexViewModel(start.ToDateTimeOffset(), pullRequests, ImmutableList.Create(chart));
+            var vm = new PullRequestIndexViewModel(interval, pullRequests, ImmutableList.Create(chart));
             return (IActionResult)View(vm);
         });
 
-        public Task<IActionResult> PerAuthors() => PullRequestAction(repository =>
+        public Task<IActionResult> PerAuthors() => PullRequestAction((prRepository, repositoryId) =>
         {
             var configuration = CreateConfiguration(None<DateTimeOffset>());
-            var start = configuration.Interval.Start;
-            var minClosedAt = start.ToInstant();
+            var interval = new FiniteInterval(
+                configuration.Interval.Start.ToInstant(),
+                configuration.Interval.End.ToInstant()
+            );
             
-            return repository.GetAllOpenOrClosedAfter(minClosedAt)
+            return prRepository.GetAllIntersecting(repositoryId, interval)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
                     .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, configuration))
@@ -160,13 +164,14 @@ namespace CodeInsight.Web.Controllers
             return dataSets;
         }
 
-        private Task<IActionResult> PullRequestAction(Func<IPullRequestRepository, Task<IActionResult>> f) => Action(c =>
+        private Task<IActionResult> PullRequestAction(Func<IPullRequestRepository, RepositoryId, Task<IActionResult>> f) => Action(c =>
         {
-            var repository = c.Match<IPullRequestRepository>(
+            var prRepository = c.Match<IPullRequestRepository>(
                 gitHubClient => new Github.PullRequestRepository(gitHubClient),
                 none => new SampleRepository()
             );
-            return f(repository);
+            // TODO: get real repository.
+            return f(prRepository, new RepositoryId(null));
         });
     }
 }

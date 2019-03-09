@@ -7,7 +7,6 @@ namespace CodeInsight.PullRequests
 {
     public interface IPullRequestRepository
     {
-        // TODO: Make this accept repository.
-        Task<IEnumerable<PullRequest>> GetAllOpenOrClosedAfter(Instant minClosedAt);
+        Task<IEnumerable<PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval);
     }
 }

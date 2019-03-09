@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
@@ -10,7 +11,7 @@ namespace CodeInsight.PullRequests
 {
     public sealed class SampleRepository : IPullRequestRepository
     {
-        public Task<IEnumerable<PullRequest>> GetAllOpenOrClosedAfter(Instant minCreatedAt)
+        public Task<IEnumerable<PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
         {
             var createdAt = SystemClock.Instance.GetCurrentInstant().Minus(Duration.FromDays(10));
             var pr1 = new PullRequest(
@@ -52,7 +53,9 @@ namespace CodeInsight.PullRequests
                 closedAt: None<Instant>(),
                 commentCount: 6
             );
-            return (new [] { pr1, pr2, pr3 }).Async<PullRequest[], IEnumerable<PullRequest>>();
+            return ImmutableArray.Create(pr1, pr2, pr3)
+                .Where(pr => pr.Interval.Intersects(interval))
+                .Async();
         }
     }
 }

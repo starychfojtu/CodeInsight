@@ -2,15 +2,15 @@ namespace CodeInsight.Library
 {
     public abstract class NewType<A>
     {
-        private readonly A value;
-
         protected NewType(A value)
         {
-            this.value = value;
+            Value = value;
         }
+        
+        public A Value { get; }
 
         protected bool Equals(NewType<A> other) =>
-            value.Equals(other.value);
+            Value.Equals(other.Value);
 
         public override bool Equals(object obj)
         {
@@ -21,12 +21,12 @@ namespace CodeInsight.Library
         }
 
         public override int GetHashCode() =>
-            value.GetHashCode();
+            Value.GetHashCode();
 
         public static implicit operator A(NewType<A> n) =>
-            n.value;
+            n.Value;
 
         public override string ToString() =>
-            value.ToString();
+            Value.ToString();
     }
 }

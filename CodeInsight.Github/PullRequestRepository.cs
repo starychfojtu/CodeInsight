@@ -33,6 +33,11 @@ namespace CodeInsight.Github
             this.client = client;
         }
         
+        public Task<IEnumerable<PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
+        {
+            throw new NotImplementedException();
+        }
+        
         public Task<IEnumerable<PullRequest>> GetAllOpenOrClosedAfter(Instant minClosedAt)
         {
             var closedPrs = GetAllClosedAfter(minClosedAt);
