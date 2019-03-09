@@ -1,10 +1,18 @@
 ﻿using System;
+using CodeInsight.Data;
+using CodeInsight.Data.PullRequest;
+using CodeInsight.Data.Repository;
+using CodeInsight.Domain.PullRequest;
+using CodeInsight.Domain.Repository;
+using CodeInsight.Github.Import;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using CodeInsight.Web.Common.Security;
 using FuncSharp;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -33,7 +41,13 @@ namespace CodeInsight.Web
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddTransient<ClientAuthenticator>();
+            services.AddTransient<Importer>();
+            services.AddTransient<IPullRequestRepository, PullRequestRepository>();
+            services.AddTransient<IPullRequestStorage, PullRequestStorage>();
+            services.AddTransient<IRepositoryRepository, RepositoryRepository>();
+            services.AddTransient<IRepositoryStorage, RepositoryStorage>();
             services.AddSingleton(GetGithubAppConfig().Get(_ => new InvalidOperationException("Invalid app config.")));
+            services.AddDbContext<CodeInsightDbContext>(o => o.UseInMemoryDatabase("CodeInsight"));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

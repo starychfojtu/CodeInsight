@@ -15,7 +15,7 @@ namespace CodeInsight.Web.Common.Charts
     
     public class Chart
     {
-        public Chart(string title, ChartType type, Data data)
+        public Chart(string title, ChartType type, ChartJSCore.Models.Data data)
         {
             Id = "Chart" + Guid.NewGuid().ToString().Replace("-", "");
             Title = title;
@@ -36,7 +36,7 @@ namespace CodeInsight.Web.Common.Charts
         
         public static Chart FromInterval(string title, DateInterval interval, IReadOnlyList<Dataset> dataSets)
         {
-            return new Chart(title, ChartType.Line, new Data
+            return new Chart(title, ChartType.Line, new ChartJSCore.Models.Data
             {
                 Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
                 Datasets = dataSets.ToList()

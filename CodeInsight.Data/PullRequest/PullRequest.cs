@@ -1,6 +1,7 @@
 using System;
 using CodeInsight.Domain;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using FuncSharp;
 using NodaTime.Extensions;
 
@@ -56,7 +57,7 @@ namespace CodeInsight.Data.PullRequest
         
         public int CommentCount { get; private set; }
 
-        public static PullRequest FromDomain(Domain.PullRequest pullRequest)
+        public static PullRequest FromDomain(Domain.PullRequest.PullRequest pullRequest)
         {
             return new PullRequest(
                 pullRequest.Id,    
@@ -73,9 +74,9 @@ namespace CodeInsight.Data.PullRequest
             );
         }
         
-        public static Domain.PullRequest ToDomain(PullRequest pullRequest)
+        public static Domain.PullRequest.PullRequest ToDomain(PullRequest pullRequest)
         {
-            return new Domain.PullRequest(
+            return new Domain.PullRequest.PullRequest(
                 NonEmptyString.Create(pullRequest.Id).Get(),
                 NonEmptyString.Create(pullRequest.RepositoryId).Get(),
                 NonEmptyString.Create(pullRequest.Title).Get(),

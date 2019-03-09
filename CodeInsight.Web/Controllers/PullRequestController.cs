@@ -6,7 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using ChartJSCore.Models;
 using CodeInsight.Domain;
+using CodeInsight.Domain.PullRequest;
+using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
+using CodeInsight.Library.Extensions;
+using CodeInsight.Library.Types;
 using CodeInsight.PullRequests;
 using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Charts;
@@ -23,45 +27,52 @@ namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : AuthorizedController
     {
-        public PullRequestController(ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
+        private readonly IPullRequestRepository pullRequestRepository;
+
+        public PullRequestController(IPullRequestRepository pullRequestRepository, ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
         {
+            this.pullRequestRepository = pullRequestRepository;
         }
         
-        public Task<IActionResult> Index(string fromIso8601) => PullRequestAction(async repository =>
+        public Task<IActionResult> Index(string fromIso8601, string toIso8601) => Action(async client =>
         {
             // TODO: Return error in view when invalid.
             var fromIsValid = DateTimeOffset.TryParse(fromIso8601, out var fromDateTimeOffset);
             var from = fromIsValid ? Some(fromDateTimeOffset) : None<DateTimeOffset>();
             var configuration = CreateConfiguration(from);
-            var start = configuration.Interval.Start;
-            var minClosedAt = start.ToInstant();
+            var interval = new FiniteInterval(
+                configuration.Interval.Start.ToInstant(),
+                configuration.Interval.End.ToInstant()
+            );
 
-            var prs = await repository.GetAllOpenOrClosedAfter(minClosedAt);
+            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, interval);
             var pullRequests = prs.ToImmutableList();
-            var statistics = RepositoryStatisticsCalculator.Calculate(pullRequests, configuration);
+            var statistics = StatisticsCalculator.Calculate(pullRequests, configuration);
             var dataSets = CreateAverageDataSets(statistics);
             var chart = Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets);
-            var vm = new PullRequestIndexViewModel(start.ToDateTimeOffset(), pullRequests, ImmutableList.Create(chart));
+            var vm = new PullRequestIndexViewModel(interval, pullRequests, ImmutableList.Create(chart));
             return (IActionResult)View(vm);
         });
 
-        public Task<IActionResult> PerAuthors() => PullRequestAction(repository =>
+        public Task<IActionResult> PerAuthors() => Action(client =>
         {
             var configuration = CreateConfiguration(None<DateTimeOffset>());
-            var start = configuration.Interval.Start;
-            var minClosedAt = start.ToInstant();
+            var interval = new FiniteInterval(
+                configuration.Interval.Start.ToInstant(),
+                configuration.Interval.End.ToInstant()
+            );
             
-            return repository.GetAllOpenOrClosedAfter(minClosedAt)
+            return pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, interval)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
-                    .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, configuration))
+                    .ToDictionary(g => g.Key, g => StatisticsCalculator.Calculate(g, configuration))
                 )
                 .Map(statistics => CreatePerAuthorCharts(configuration.Interval.DateInterval, statistics))
                 .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
                 .Map(vm => (IActionResult)View(vm));
         });
         
-        private static RepositoryDayStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
+        private static IntervalStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             var fromZoned = from.Match(
@@ -73,10 +84,10 @@ namespace CodeInsight.Web.Controllers
             var interval = new DateInterval(fromZoned.Date, today);
             var zonedInterval = new ZonedDateInterval(interval, zone);
             
-            return new RepositoryDayStatisticsConfiguration(zonedInterval, now);
+            return new IntervalStatisticsConfiguration(zonedInterval, now);
         }
         
-        private static IReadOnlyList<Dataset> CreateAverageDataSets(RepositoryDayStatistics statistics)
+        private static IReadOnlyList<Dataset> CreateAverageDataSets(IntervalStatistics statistics)
         {
             return CreateDataSets(
                 statistics,
@@ -93,7 +104,7 @@ namespace CodeInsight.Web.Controllers
             );
         }
         
-        private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, RepositoryDayStatistics> statistics)
+        private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, IntervalStatistics> statistics)
         {
             var colors = statistics.Keys.ToDictionary(id => id, _ => ColorExtensions.CreateRandom());
             
@@ -124,7 +135,7 @@ namespace CodeInsight.Web.Controllers
             );
         }
 
-        private static IReadOnlyList<Dataset> CreateDataSets(RepositoryDayStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)
+        private static IReadOnlyList<Dataset> CreateDataSets(IntervalStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)
         {
             var dataSets = lineDataSetConfigurations.Select(c =>
             {
@@ -159,14 +170,5 @@ namespace CodeInsight.Web.Controllers
 
             return dataSets;
         }
-
-        private Task<IActionResult> PullRequestAction(Func<IPullRequestRepository, Task<IActionResult>> f) => Action(c =>
-        {
-            var repository = c.Match<IPullRequestRepository>(
-                gitHubClient => new Github.PullRequestRepository(gitHubClient),
-                none => new SampleRepository()
-            );
-            return f(repository);
-        });
     }
 }

@@ -1,17 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using CodeInsight.Domain;
-using CodeInsight.Library;
+using CodeInsight.Domain.PullRequest;
+using CodeInsight.Library.Extensions;
 using FuncSharp;
 using NodaTime;
 
 namespace CodeInsight.PullRequests
 {
-    public static class RepositoryStatisticsCalculator
+    public static class StatisticsCalculator
     {
-        public static RepositoryDayStatistics Calculate(IEnumerable<PullRequest> pullRequests, RepositoryDayStatisticsConfiguration configuration)
+        public static IntervalStatistics Calculate(IEnumerable<PullRequest> pullRequests, IntervalStatisticsConfiguration configuration)
         {
             var endDate = configuration.Interval.End;
             var statistics = new DataCube1<LocalDate, IImmutableSet<PullRequest>>();
@@ -24,7 +22,7 @@ namespace CodeInsight.PullRequests
                 }
             }
 
-            return new RepositoryDayStatistics(statistics, configuration);
+            return new IntervalStatistics(statistics, configuration);
         }
 
         private static DateInterval GetInfluencingDates(PullRequest pullRequest, ZonedDateTime maxEnd) =>

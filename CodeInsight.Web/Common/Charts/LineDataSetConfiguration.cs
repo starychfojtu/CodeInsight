@@ -6,7 +6,7 @@ namespace CodeInsight.Web.Common.Charts
 {
     public class LineDataSetConfiguration
     {
-        public LineDataSetConfiguration(string label, Func<RepositoryStatistics, double?> valueGetter, Color color)
+        public LineDataSetConfiguration(string label, Func<Statistics, double?> valueGetter, Color color)
         {
             Label = label;
             ValueGetter = valueGetter;
@@ -15,7 +15,7 @@ namespace CodeInsight.Web.Common.Charts
 
         public string Label { get; }
         
-        public Func<RepositoryStatistics, double?> ValueGetter { get; }
+        public Func<Statistics, double?> ValueGetter { get; }
         
         public Color Color { get; }
     }

@@ -1,4 +1,6 @@
+using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 
 namespace CodeInsight.Data.Repository
 {
@@ -17,19 +19,19 @@ namespace CodeInsight.Data.Repository
         
         public string Owner { get; private set; }
         
-        public static Repository FromDomain(Domain.Repository repository)
+        public static Repository FromDomain(Domain.Repository.Repository repository)
         {
             return new Repository(
-                repository.Id,
+                repository.Id.Value,
                 repository.Name,
                 repository.Owner
             );
         }
         
-        public static Domain.Repository ToDomain(Repository repository)
+        public static Domain.Repository.Repository ToDomain(Repository repository)
         {
-            return new Domain.Repository(
-                NonEmptyString.Create(repository.Id).Get(),
+            return new Domain.Repository.Repository(
+                new RepositoryId(NonEmptyString.Create(repository.Id).Get()),
                 NonEmptyString.Create(repository.Name).Get(),
                 NonEmptyString.Create(repository.Owner).Get()
             );

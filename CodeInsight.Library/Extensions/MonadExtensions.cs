@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using FuncSharp;
 using Monad;
 using Try = FuncSharp.Try;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Extensions
 {
-    public static class Reader
+    public static class MonadExtension
     {
         public static Task<T> Async<T>(this T obj) =>
             Task.FromResult(obj);

@@ -1,6 +1,6 @@
 using System;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Extensions
 {
     public static class ObjectExtensions
     {

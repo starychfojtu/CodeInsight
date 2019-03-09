@@ -1,8 +1,9 @@
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using FuncSharp;
 using NodaTime;
 
-namespace CodeInsight.Domain
+namespace CodeInsight.Domain.PullRequest
 {
     public sealed class PullRequest
     {
@@ -59,12 +60,12 @@ namespace CodeInsight.Domain
                 m => MergedAt,
                 _ => ClosedAt
             );
+        
+        public Interval Interval => 
+            new Interval(CreatedAt, End.ToNullable());
 
         public IOption<Duration> Lifetime =>
-            MergedAt.Match(
-                m => Prelude.Some(m - CreatedAt),
-                _ => ClosedAt.Map(c => c - CreatedAt)
-            );
+            Interval.HasEnd ? Prelude.Some(Interval.Duration) : Prelude.None<Duration>();
 
         private bool Equals(PullRequest other) =>
             string.Equals(Id, other.Id);

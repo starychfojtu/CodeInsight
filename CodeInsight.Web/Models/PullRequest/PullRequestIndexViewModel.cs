@@ -1,19 +1,21 @@
-using System;
 using System.Collections.Generic;
+using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using CodeInsight.Web.Common.Charts;
+using NodaTime;
 
 namespace CodeInsight.Web.Models.PullRequest
 {
     public sealed class PullRequestIndexViewModel : ChartsViewModel
     {        
-        public PullRequestIndexViewModel(DateTimeOffset from, IReadOnlyList<Domain.PullRequest> pullRequests, IReadOnlyList<Chart> charts) : base(charts)
+        public PullRequestIndexViewModel(FiniteInterval interval, IReadOnlyList<Domain.PullRequest.PullRequest> pullRequests, IReadOnlyList<Chart> charts) : base(charts)
         {
-            From = from;
+            Interval = interval;
             PullRequests = pullRequests;
         }
         
-        public DateTimeOffset From { get; }
+        public FiniteInterval Interval { get; }
         
-        public IReadOnlyList<Domain.PullRequest> PullRequests { get; }
+        public IReadOnlyList<Domain.PullRequest.PullRequest> PullRequests { get; }
     }
 }

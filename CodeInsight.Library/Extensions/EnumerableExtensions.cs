@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Extensions
 {
     public static class EnumerableExtensions
     {
