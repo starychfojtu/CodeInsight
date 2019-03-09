@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using CodeInsight.PullRequests;
 using FuncSharp;
 using NodaTime;

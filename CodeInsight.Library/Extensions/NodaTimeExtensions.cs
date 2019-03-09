@@ -1,8 +1,7 @@
 using FuncSharp;
 using NodaTime;
-using static CodeInsight.Library.Prelude;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Extensions
 {
     public static class NodaTimeExtensions
     {
@@ -16,9 +15,9 @@ namespace CodeInsight.Library
         }
 
         public static IOption<Instant> SafeEnd(this Interval interval) =>
-            interval.HasEnd ? Some(interval.End) : None<Instant>();
+            interval.HasEnd ? Prelude.Some(interval.End) : Prelude.None<Instant>();
         
         public static IOption<Instant> SafeStart(this Interval interval) =>
-            interval.HasEnd ? Some(interval.End) : None<Instant>();
+            interval.HasEnd ? Prelude.Some(interval.End) : Prelude.None<Instant>();
     }
 }

@@ -1,7 +1,7 @@
 using FuncSharp;
 using NodaTime;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Types
 {
     public class ZonedDateInterval : Product2<DateInterval, DateTimeZone>
     {

@@ -1,7 +1,7 @@
 using FuncSharp;
 using NodaTime;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Types
 {
     public sealed class LocalMonth : Product2<int, int>
     {

@@ -1,4 +1,5 @@
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 
 namespace CodeInsight.Github
 {

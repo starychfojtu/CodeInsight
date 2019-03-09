@@ -1,6 +1,6 @@
 using NodaTime;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Types
 {
     public sealed class FiniteInterval : NewType<Interval>
     {

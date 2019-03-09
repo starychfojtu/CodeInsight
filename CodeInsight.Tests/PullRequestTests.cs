@@ -1,6 +1,7 @@
 using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using CodeInsight.PullRequests;
 using NodaTime;
 using Xunit;

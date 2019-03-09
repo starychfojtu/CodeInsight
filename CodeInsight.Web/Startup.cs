@@ -1,5 +1,6 @@
 ﻿using System;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using CodeInsight.Web.Common.Security;
 using FuncSharp;
 using Microsoft.AspNetCore.Builder;

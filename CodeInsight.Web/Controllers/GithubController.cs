@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Github;
 using CodeInsight.Library;
+using CodeInsight.Library.Extensions;
+using CodeInsight.Library.Types;
 using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models.Github;

@@ -9,6 +9,8 @@ using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
+using CodeInsight.Library.Extensions;
+using CodeInsight.Library.Types;
 using CodeInsight.PullRequests;
 using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Charts;

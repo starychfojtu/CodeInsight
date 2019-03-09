@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using CodeInsight.Web.Common.Charts;
 using NodaTime;
 

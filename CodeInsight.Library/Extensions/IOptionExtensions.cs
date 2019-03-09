@@ -1,7 +1,7 @@
 using System;
 using FuncSharp;
 
-namespace CodeInsight.Library
+namespace CodeInsight.Library.Extensions
 {
     public static class IOptionExtensions
     {

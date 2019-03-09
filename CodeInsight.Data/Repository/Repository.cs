@@ -1,5 +1,6 @@
 using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 
 namespace CodeInsight.Data.Repository
 {

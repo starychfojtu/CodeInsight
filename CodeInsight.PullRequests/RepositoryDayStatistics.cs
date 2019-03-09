@@ -4,6 +4,7 @@ using System.Linq;
 using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Library;
+using CodeInsight.Library.Types;
 using FuncSharp;
 using NodaTime;
 
