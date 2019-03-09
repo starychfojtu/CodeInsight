@@ -1,4 +1,3 @@
-using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
 using FuncSharp;
 using NodaTime;
@@ -6,9 +5,9 @@ using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.PullRequests
 {
-    public class RepositoryStatistics
+    public class Statistics
     {
-        public RepositoryStatistics(
+        public Statistics(
             uint deletions,
             uint additions,
             Duration lifeTime,
@@ -39,14 +38,14 @@ namespace CodeInsight.PullRequests
         public IOption<Duration> ChangesWeightedAverageLifeTime => 
             Changes == 0 ? None<Duration>() : Some(ChangesWeightedLifetime / Changes);
 
-        public static RepositoryStatistics FromPullRequest(Instant nowUtc, PullRequest pr)
+        public static Statistics FromPullRequest(Instant nowUtc, PullRequest pr)
         {
             var lifeTime = pr.Lifetime.GetOrElse(nowUtc - pr.CreatedAt);
-            return new RepositoryStatistics(pr.Deletions, pr.Additions, lifeTime, 1, lifeTime * (pr.Additions + pr.Deletions));
+            return new Statistics(pr.Deletions, pr.Additions, lifeTime, 1, lifeTime * (pr.Additions + pr.Deletions));
         }
             
-        public static RepositoryStatistics Append(RepositoryStatistics a, RepositoryStatistics b) =>
-            new RepositoryStatistics(
+        public static Statistics Append(Statistics a, Statistics b) =>
+            new Statistics(
                 a.Deletions + b.Deletions,
                 a.Additions + b.Additions,
                 a.Lifetime + b.Lifetime,

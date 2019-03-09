@@ -44,7 +44,7 @@ namespace CodeInsight.Web.Controllers
 
             var prs = await prRepository.GetAllIntersecting(repositoryId, interval);
             var pullRequests = prs.ToImmutableList();
-            var statistics = RepositoryStatisticsCalculator.Calculate(pullRequests, configuration);
+            var statistics = StatisticsCalculator.Calculate(pullRequests, configuration);
             var dataSets = CreateAverageDataSets(statistics);
             var chart = Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets);
             var vm = new PullRequestIndexViewModel(interval, pullRequests, ImmutableList.Create(chart));
@@ -62,14 +62,14 @@ namespace CodeInsight.Web.Controllers
             return prRepository.GetAllIntersecting(repositoryId, interval)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
-                    .ToDictionary(g => g.Key, g => RepositoryStatisticsCalculator.Calculate(g, configuration))
+                    .ToDictionary(g => g.Key, g => StatisticsCalculator.Calculate(g, configuration))
                 )
                 .Map(statistics => CreatePerAuthorCharts(configuration.Interval.DateInterval, statistics))
                 .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
                 .Map(vm => (IActionResult)View(vm));
         });
         
-        private static RepositoryDayStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
+        private static IntervalStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             var fromZoned = from.Match(
@@ -81,10 +81,10 @@ namespace CodeInsight.Web.Controllers
             var interval = new DateInterval(fromZoned.Date, today);
             var zonedInterval = new ZonedDateInterval(interval, zone);
             
-            return new RepositoryDayStatisticsConfiguration(zonedInterval, now);
+            return new IntervalStatisticsConfiguration(zonedInterval, now);
         }
         
-        private static IReadOnlyList<Dataset> CreateAverageDataSets(RepositoryDayStatistics statistics)
+        private static IReadOnlyList<Dataset> CreateAverageDataSets(IntervalStatistics statistics)
         {
             return CreateDataSets(
                 statistics,
@@ -101,7 +101,7 @@ namespace CodeInsight.Web.Controllers
             );
         }
         
-        private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, RepositoryDayStatistics> statistics)
+        private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, IntervalStatistics> statistics)
         {
             var colors = statistics.Keys.ToDictionary(id => id, _ => ColorExtensions.CreateRandom());
             
@@ -132,7 +132,7 @@ namespace CodeInsight.Web.Controllers
             );
         }
 
-        private static IReadOnlyList<Dataset> CreateDataSets(RepositoryDayStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)
+        private static IReadOnlyList<Dataset> CreateDataSets(IntervalStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)
         {
             var dataSets = lineDataSetConfigurations.Select(c =>
             {

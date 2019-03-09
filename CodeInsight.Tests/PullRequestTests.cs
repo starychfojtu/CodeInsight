@@ -30,8 +30,8 @@ namespace CodeInsight.Tests
                 DateTimeZone.Utc
             );
 
-            var configuration = new RepositoryDayStatisticsConfiguration(interval, interval.End.ToInstant());
-            var statistics = RepositoryStatisticsCalculator.Calculate(prs, configuration);
+            var configuration = new IntervalStatisticsConfiguration(interval, interval.End.ToInstant());
+            var statistics = StatisticsCalculator.Calculate(prs, configuration);
             
             var startStats = statistics.Get(start).Get();
             var dayBeforeEndStats = statistics.Get(dayBeforeEnd).Get();
