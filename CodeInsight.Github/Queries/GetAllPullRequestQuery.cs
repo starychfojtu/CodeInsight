@@ -9,16 +9,16 @@ using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github
 {
-    internal static class Queries
+    internal static class GetAllPullRequestQuery
     {
-        private static ICompiledQuery<ResponsePage<PullRequestDto>> GetAllPullRequestsQuery { get; }
+        private static ICompiledQuery<ResponsePage<PullRequestDto>> Query { get; }
         
-        static Queries()
+        static GetAllPullRequestQuery()
         {
-            GetAllPullRequestsQuery = CreateGetAllPullRequestsQuery();
+            Query = CreateQuery();
         }
 
-        internal static Reader<IConnection, Task<ResponsePage<PullRequestDto>>> GetAllPullRequests(Repository repository, int take, string cursor = null)
+        internal static Reader<IConnection, Task<ResponsePage<PullRequestDto>>> Get(Repository repository, int take, string cursor = null)
         {
             return conn =>
             {
@@ -30,11 +30,11 @@ namespace CodeInsight.Github
                     {"first", take}
                 };
 
-                return conn.Run(GetAllPullRequestsQuery, vars);
+                return conn.Run(Query, vars);
             };
         }
         
-        private static ICompiledQuery<ResponsePage<PullRequestDto>> CreateGetAllPullRequestsQuery() =>
+        private static ICompiledQuery<ResponsePage<PullRequestDto>> CreateQuery() =>
             new Query()
                 .Repository(Var("repositoryName"), Var("repositoryOwner"))
                 .PullRequests(

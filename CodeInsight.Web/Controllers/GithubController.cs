@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Github;
+using CodeInsight.Github.Import;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using CodeInsight.Web.Common;
@@ -25,11 +26,13 @@ namespace CodeInsight.Web.Controllers
         private static readonly string CsrfSessionKey = "GithubCsrf";
 
         private readonly ApplicationConfiguration configuration;
+        private readonly Importer importer;
         private readonly GitHubClient client;
 
-        public GithubController(ApplicationConfiguration configuration)
+        public GithubController(ApplicationConfiguration configuration, Importer importer)
         {
             this.configuration = configuration;
+            this.importer = importer;
             this.client = new GitHubClient(new ProductHeaderValue(configuration.ApplicationName));
         }
 
@@ -88,10 +91,6 @@ namespace CodeInsight.Web.Controllers
 
         #region ChooseRepository
 
-        
-
-        
-
         [HttpGet]
         public Task<IActionResult> ChooseRepository() => ConnectionAction(connection =>
             connection
@@ -109,9 +108,14 @@ namespace CodeInsight.Web.Controllers
                 var name = parts[1];
                 var query = new Query().Repository(name, owner).Select(r => new { Name = r.Name, Owner = r.Owner.Login }).Compile();
                 var repository = await conn.Run(query);
+
+                var importedRepository = await importer.ImportRepository(
+                    conn,
+                    NonEmptyString.Create(repository.Owner).Get(),
+                    NonEmptyString.Create(repository.Name).Get()
+                );
                 
-                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryNameSessionKey, repository.Name);
-                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryOwnerSessionKey, repository.Owner);
+                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryIdSessionKey, importedRepository.Id);
                 
                 return RedirectToAction("Index", "PullRequest");
             }

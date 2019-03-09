@@ -1,21 +1,18 @@
-using FuncSharp;
+using CodeInsight.Domain.Repository;
 using Octokit.GraphQL;
 
 namespace CodeInsight.Github
 {
     public class GithubRepositoryClient
     {
-        public GithubRepositoryClient(Connection connection, string repositoryName, string repositoryOwner)
+        public GithubRepositoryClient(Connection connection, RepositoryId repositoryId)
         {
             Connection = connection;
-            RepositoryName = repositoryName;
-            RepositoryOwner = repositoryOwner;
+            RepositoryId = repositoryId;
         }
 
         public Connection Connection { get; }
         
-        public string RepositoryName { get; }
-        
-        public string RepositoryOwner { get; }
+        public RepositoryId RepositoryId { get; }
     }
 }

@@ -1,4 +1,6 @@
+using CodeInsight.Domain.Repository;
 using CodeInsight.Github;
+using CodeInsight.Library.Types;
 using FuncSharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -10,8 +12,7 @@ namespace CodeInsight.Web.Common.Security
     public sealed class ClientAuthenticator
     {
         public static readonly string GithubTokenSessionKey = "GithubToken";
-        public static readonly string GithubRepositoryNameSessionKey = "GithubRepositoryName";
-        public static readonly string GithubRepositoryOwnerSessionKey = "GithubRepositoryOwner";
+        public static readonly string GithubRepositoryIdSessionKey = "GithubRepositoryId";
 
         private readonly ApplicationConfiguration applicationConfiguration;
         private readonly IHostingEnvironment environment;
@@ -40,9 +41,9 @@ namespace CodeInsight.Web.Common.Security
 
         private static IOption<Client> AuthenticateGithubClient(HttpContext context, string applicationName) =>
             from token in context.Session.Get<string>(GithubTokenSessionKey)
-            from repositoryName in context.Session.Get<string>(GithubRepositoryNameSessionKey)
-            from repositoryOwner in context.Session.Get<string>(GithubRepositoryOwnerSessionKey)
+            from repositoryId in context.Session.Get<string>(GithubRepositoryIdSessionKey)
             let conn = new Connection(new ProductHeaderValue(applicationName), token)
-            select Client.Github(new GithubRepositoryClient(conn, repositoryName, repositoryOwner));
+            let repoId = new RepositoryId(NonEmptyString.Create(repositoryId).Get())
+            select Client.Github(new GithubRepositoryClient(conn, repoId));
     }
 }

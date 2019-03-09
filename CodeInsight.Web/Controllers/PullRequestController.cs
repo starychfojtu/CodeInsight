@@ -27,11 +27,14 @@ namespace CodeInsight.Web.Controllers
 {
     public class PullRequestController : AuthorizedController
     {
-        public PullRequestController(ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
+        private readonly IPullRequestRepository pullRequestRepository;
+
+        public PullRequestController(IPullRequestRepository pullRequestRepository, ClientAuthenticator clientAuthenticator) : base(clientAuthenticator)
         {
+            this.pullRequestRepository = pullRequestRepository;
         }
         
-        public Task<IActionResult> Index(string fromIso8601, string toIso8601) => PullRequestAction(async (prRepository, repositoryId) =>
+        public Task<IActionResult> Index(string fromIso8601, string toIso8601) => Action(async client =>
         {
             // TODO: Return error in view when invalid.
             var fromIsValid = DateTimeOffset.TryParse(fromIso8601, out var fromDateTimeOffset);
@@ -42,7 +45,7 @@ namespace CodeInsight.Web.Controllers
                 configuration.Interval.End.ToInstant()
             );
 
-            var prs = await prRepository.GetAllIntersecting(repositoryId, interval);
+            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, interval);
             var pullRequests = prs.ToImmutableList();
             var statistics = StatisticsCalculator.Calculate(pullRequests, configuration);
             var dataSets = CreateAverageDataSets(statistics);
@@ -51,7 +54,7 @@ namespace CodeInsight.Web.Controllers
             return (IActionResult)View(vm);
         });
 
-        public Task<IActionResult> PerAuthors() => PullRequestAction((prRepository, repositoryId) =>
+        public Task<IActionResult> PerAuthors() => Action(client =>
         {
             var configuration = CreateConfiguration(None<DateTimeOffset>());
             var interval = new FiniteInterval(
@@ -59,7 +62,7 @@ namespace CodeInsight.Web.Controllers
                 configuration.Interval.End.ToInstant()
             );
             
-            return prRepository.GetAllIntersecting(repositoryId, interval)
+            return pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, interval)
                 .Map(prs => prs
                     .GroupBy(pr => pr.AuthorId)
                     .ToDictionary(g => g.Key, g => StatisticsCalculator.Calculate(g, configuration))
@@ -167,15 +170,5 @@ namespace CodeInsight.Web.Controllers
 
             return dataSets;
         }
-
-        private Task<IActionResult> PullRequestAction(Func<IPullRequestRepository, RepositoryId, Task<IActionResult>> f) => Action(c =>
-        {
-            var prRepository = c.Match<IPullRequestRepository>(
-                gitHubClient => new Github.PullRequestRepository(gitHubClient),
-                none => new SampleRepository()
-            );
-            // TODO: get real repository.
-            return f(prRepository, new RepositoryId(null));
-        });
     }
 }

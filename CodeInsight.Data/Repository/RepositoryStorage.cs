@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CodeInsight.Domain.Repository;
+using FuncSharp;
 
 namespace CodeInsight.Data.Repository
 {
@@ -12,10 +13,11 @@ namespace CodeInsight.Data.Repository
             this.dbContext = dbContext;
         }
 
-        public void Add(IEnumerable<Domain.Repository.Repository> pullRequests)
+        public Unit Add(IEnumerable<Domain.Repository.Repository> pullRequests)
         {
             dbContext.AddRange(pullRequests);
             dbContext.SaveChanges();
+            return Unit.Value;
         }
     }
 }
