@@ -1,9 +1,8 @@
 using CodeInsight.Library;
 using FuncSharp;
 using NodaTime;
-using static CodeInsight.Library.Prelude;
 
-namespace CodeInsight.Domain
+namespace CodeInsight.Domain.PullRequest
 {
     public sealed class PullRequest
     {
@@ -65,7 +64,7 @@ namespace CodeInsight.Domain
             new Interval(CreatedAt, End.ToNullable());
 
         public IOption<Duration> Lifetime =>
-            Interval.HasEnd ? Some(Interval.Duration) : None<Duration>();
+            Interval.HasEnd ? Prelude.Some(Interval.Duration) : Prelude.None<Duration>();
 
         private bool Equals(PullRequest other) =>
             string.Equals(Id, other.Id);

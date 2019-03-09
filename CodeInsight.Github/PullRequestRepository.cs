@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
+using CodeInsight.Domain.PullRequest;
+using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using FuncSharp;
@@ -10,7 +12,7 @@ using Newtonsoft.Json;
 using NodaTime;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
-using PullRequest = CodeInsight.Domain.PullRequest;
+using PullRequest = CodeInsight.Domain.PullRequest.PullRequest;
 using static Octokit.GraphQL.Variable;
 
 namespace CodeInsight.Github

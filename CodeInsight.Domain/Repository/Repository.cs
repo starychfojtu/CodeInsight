@@ -1,6 +1,6 @@
 using CodeInsight.Library;
 
-namespace CodeInsight.Domain
+namespace CodeInsight.Domain.Repository
 {
     public sealed class RepositoryId : NewType<NonEmptyString>
     {

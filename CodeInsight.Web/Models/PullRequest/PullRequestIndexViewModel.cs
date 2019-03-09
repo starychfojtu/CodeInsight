@@ -7,7 +7,7 @@ namespace CodeInsight.Web.Models.PullRequest
 {
     public sealed class PullRequestIndexViewModel : ChartsViewModel
     {        
-        public PullRequestIndexViewModel(FiniteInterval interval, IReadOnlyList<Domain.PullRequest> pullRequests, IReadOnlyList<Chart> charts) : base(charts)
+        public PullRequestIndexViewModel(FiniteInterval interval, IReadOnlyList<Domain.PullRequest.PullRequest> pullRequests, IReadOnlyList<Chart> charts) : base(charts)
         {
             Interval = interval;
             PullRequests = pullRequests;
@@ -15,6 +15,6 @@ namespace CodeInsight.Web.Models.PullRequest
         
         public FiniteInterval Interval { get; }
         
-        public IReadOnlyList<Domain.PullRequest> PullRequests { get; }
+        public IReadOnlyList<Domain.PullRequest.PullRequest> PullRequests { get; }
     }
 }

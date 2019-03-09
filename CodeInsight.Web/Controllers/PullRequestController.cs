@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ChartJSCore.Models;
 using CodeInsight.Domain;
+using CodeInsight.Domain.PullRequest;
+using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using CodeInsight.Web.Common;

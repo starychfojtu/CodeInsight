@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using CodeInsight.Domain.PullRequest;
 using CodeInsight.PullRequests;
 
 namespace CodeInsight.Data.PullRequest
@@ -13,7 +14,7 @@ namespace CodeInsight.Data.PullRequest
             this.dbContext = dbContext;
         }
 
-        public void Add(IEnumerable<Domain.PullRequest> pullRequests)
+        public void Add(IEnumerable<Domain.PullRequest.PullRequest> pullRequests)
         {
             dbContext.AddRange(pullRequests.Select(pr => PullRequest.FromDomain(pr)));
             dbContext.SaveChanges();

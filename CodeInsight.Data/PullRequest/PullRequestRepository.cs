@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
+using CodeInsight.Domain.PullRequest;
+using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
 using CodeInsight.PullRequests;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +20,7 @@ namespace CodeInsight.Data.PullRequest
             this.dbContext = dbContext;
         }
 
-        public Task<IEnumerable<Domain.PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
+        public Task<IEnumerable<Domain.PullRequest.PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
         {
             var start = interval.Start.ToDateTimeOffset();
             var end = interval.End.ToDateTimeOffset();

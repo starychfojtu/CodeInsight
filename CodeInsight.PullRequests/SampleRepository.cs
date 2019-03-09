@@ -3,6 +3,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
+using CodeInsight.Domain.PullRequest;
+using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
 using NodaTime;
 using static CodeInsight.Library.Prelude;

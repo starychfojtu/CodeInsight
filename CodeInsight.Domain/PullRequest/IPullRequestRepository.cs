@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using CodeInsight.Domain;
+using CodeInsight.Domain.Repository;
 using NodaTime;
 
-namespace CodeInsight.PullRequests
+namespace CodeInsight.Domain.PullRequest
 {
     public interface IPullRequestRepository
     {
