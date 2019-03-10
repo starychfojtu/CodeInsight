@@ -89,7 +89,7 @@ namespace CodeInsight.Github.Import
                 {
                     var minCreatedAt = pr.CreatedAt.ToDateTimeOffset();
                     return page
-                        .TakeWhile(p => p.Number.ToString() != pr.Id.Value && p.CreatedAt > minCreatedAt)
+                        .TakeWhile(p => p.Id != pr.Id.Value && p.CreatedAt > minCreatedAt)
                         .Select(p => Map(p));
                 },
                 _ => page.Select(Map)
@@ -98,7 +98,7 @@ namespace CodeInsight.Github.Import
 
         private static PullRequest Map(GetAllPullRequestQuery.PullRequestDto pr) =>
             new PullRequest(
-                id: NonEmptyString.Create(pr.Number.ToString()).Get(),
+                id: NonEmptyString.Create(pr.Id).Get(),
                 repositoryId: NonEmptyString.Create(pr.RepositoryId).Get(),
                 title: NonEmptyString.Create(pr.Title).Get(),
                 authorId: new AccountId(pr.AuthorLogin),

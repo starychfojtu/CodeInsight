@@ -38,6 +38,7 @@ namespace CodeInsight.Data.PullRequest
         public Task<IEnumerable<Domain.PullRequest.PullRequest>> GetAllOrderedByCreated(RepositoryId repositoryId, uint take)
         {
             return dbContext.PullRequests
+                .Where(pr => pr.RepositoryId == repositoryId.Value.Value)
                 .OrderByDescending(pr => pr.CreatedAt)
                 .Take((int)take)
                 .ToListAsync()

@@ -52,7 +52,7 @@ namespace CodeInsight.Github
                     prs.Nodes.Select(pr => new PullRequestDto
                         {
                             RepositoryId = pr.Repository.Id.Value,
-                            Number = pr.Number,
+                            Id = pr.Id.Value,
                             Title = pr.Title,
                             AuthorLogin = pr.Author.Login,
                             Deletions = pr.Deletions,
@@ -71,7 +71,7 @@ namespace CodeInsight.Github
         internal sealed class PullRequestDto
         {
             public string RepositoryId { get; set; }
-            public int Number { get; set; }
+            public string Id { get; set; }
             public string Title { get; set; }
             public string AuthorLogin { get; set; }
             public int Deletions { get; set; }
