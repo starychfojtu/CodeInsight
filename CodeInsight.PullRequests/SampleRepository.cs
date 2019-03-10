@@ -61,5 +61,10 @@ namespace CodeInsight.PullRequests
                 .Where(pr => pr.Interval.Intersects(interval))
                 .Async();
         }
+
+        public Task<IEnumerable<PullRequest>> GetAllOrderedByCreated(RepositoryId repositoryId, uint take)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

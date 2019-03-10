@@ -190,8 +190,8 @@ namespace CodeInsight.Web.Controllers
                 _ => now.InUtc().Minus(Duration.FromDays(30))
             );
             var zone = fromZoned.Zone;
-            var today = now.InZone(zone).Date;
-            var interval = new DateInterval(fromZoned.Date, today);
+            var tomorrow = now.InZone(zone).Date.PlusDays(1);
+            var interval = new DateInterval(fromZoned.Date, tomorrow);
             var zonedInterval = new ZonedDateInterval(interval, zone);
             
             return new IntervalStatisticsConfiguration(zonedInterval, now);

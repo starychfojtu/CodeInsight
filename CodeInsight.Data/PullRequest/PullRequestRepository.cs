@@ -34,5 +34,14 @@ namespace CodeInsight.Data.PullRequest
                 .ToListAsync()
                 .Map(prs => prs.Select(pr => PullRequest.ToDomain(pr)));
         }
+
+        public Task<IEnumerable<Domain.PullRequest.PullRequest>> GetAllOrderedByCreated(RepositoryId repositoryId, uint take)
+        {
+            return dbContext.PullRequests
+                .OrderByDescending(pr => pr.CreatedAt)
+                .Take((int)take)
+                .ToListAsync()
+                .Map(l => l.Select(PullRequest.ToDomain));
+        }
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
@@ -17,29 +19,32 @@ namespace CodeInsight.Github.Import
     public sealed class Importer
     {
         private readonly IPullRequestStorage pullRequestStorage;
+        private readonly IPullRequestRepository pullRequestRepository;
         private readonly IRepositoryStorage repositoryStorage;
         private readonly IRepositoryRepository repositoryRepository;
 
         public Importer(
             IPullRequestStorage pullRequestStorage,
             IRepositoryStorage repositoryStorage,
-            IRepositoryRepository repositoryRepository)
+            IRepositoryRepository repositoryRepository,
+            IPullRequestRepository pullRequestRepository)
         {
             this.pullRequestStorage = pullRequestStorage;
             this.repositoryStorage = repositoryStorage;
             this.repositoryRepository = repositoryRepository;
+            this.pullRequestRepository = pullRequestRepository;
         }
 
-        public Task<Repository> ImportRepository(IConnection connection, NonEmptyString owner, NonEmptyString name)
-        {
-            return repositoryRepository.Get(owner, name)
+        public Task<Repository> ImportRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) =>
+            GetOrCreateRepository(connection, owner, name)
+                .Bind(r => ImportPullRequests(connection, r));
+        
+        private Task<Repository> GetOrCreateRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => 
+            repositoryRepository.Get(owner, name)
                 .Bind(repository => repository.Match(
                     r => r.Async(),
-                    _ => CreateRepository(connection, owner, name)
-                        .Map(AddRepository)
-                        .Bind(r => ImportPullRequests(connection, r))
+                    _ => CreateRepository(connection, owner, name).Map(AddRepository)
                 ));
-        }
 
         private static async Task<Repository> CreateRepository(IConnection connection, NonEmptyString owner, NonEmptyString name)
         {
@@ -57,23 +62,40 @@ namespace CodeInsight.Github.Import
 
         private async Task<Repository> ImportPullRequests(IConnection connection, Repository repository)
         {
+            var lastPrs = await pullRequestRepository.GetAllOrderedByCreated(repository.Id, 1);
+            var lastPr = lastPrs.SingleOption();
             var cursor = (string) null;
             
             do
             {
                 var query = GetAllPullRequestQuery.Get(repository, take: 50, cursor: cursor);
                 var page = await query.Execute(connection);
-                var prs = page.Items.Select(Map);
+                var pullRequestsToAdd = GetPullRequestsToAdd(lastPr, page.Items).ToImmutableList();
                 
-                pullRequestStorage.Add(prs);
-                
-                cursor = page.HasNextPage ? page.EndCursor : null;
+                pullRequestStorage.Add(pullRequestsToAdd);
+
+                var allPrsWereAdded = pullRequestsToAdd.Count == page.Items.Count;
+                cursor = page.HasNextPage && allPrsWereAdded ? page.EndCursor : null;
             }
             while (cursor != null);
             
             return repository;
         }
-    
+
+        private static IEnumerable<PullRequest> GetPullRequestsToAdd(IOption<PullRequest> lastPr, IEnumerable<GetAllPullRequestQuery.PullRequestDto> page)
+        {
+            return lastPr.Match(
+                pr =>
+                {
+                    var minCreatedAt = pr.CreatedAt.ToDateTimeOffset();
+                    return page
+                        .TakeWhile(p => p.Number.ToString() != pr.Id.Value && p.CreatedAt > minCreatedAt)
+                        .Select(p => Map(p));
+                },
+                _ => page.Select(Map)
+            );
+        }
+
         private static PullRequest Map(GetAllPullRequestQuery.PullRequestDto pr) =>
             new PullRequest(
                 id: NonEmptyString.Create(pr.Number.ToString()).Get(),
