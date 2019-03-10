@@ -51,26 +51,37 @@ namespace CodeInsight.Web.Controllers
             var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, interval);
             var pullRequests = prs.ToImmutableList();
             var statistics = StatisticsCalculator.Calculate(pullRequests, configuration);
-            var dataSets = CreateAverageDataSets(statistics);
-            var chart = Chart.FromInterval("Average pull request lifetime", configuration.Interval.DateInterval, dataSets);
-            var vm = new PullRequestIndexViewModel(interval, pullRequests, ImmutableList.Create(chart));
+            var charts = CreateIndexCharts(statistics);
+            var vm = new PullRequestIndexViewModel(interval, pullRequests, charts.ToList());
             return (IActionResult)View(vm);
         });
         
-        private static IReadOnlyList<Dataset> CreateAverageDataSets(IntervalStatistics statistics)
+        private static IEnumerable<Chart> CreateIndexCharts(IntervalStatistics statistics)
         {
-            return CreateDataSets(
+            var dateSets = CreateDataSets(
                 statistics,
                 new LineDataSetConfiguration(
-                    "Average",
+                    "Average lifetime",
                     s => s.AverageLifeTime.TotalHours,
                     Color.LawnGreen
                 ),
                 new LineDataSetConfiguration(
-                    "Weighted average by changes",
-                    s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable(),
+                    "Efficiency",
+                    s => s.AverageEfficiency,
                     Color.ForestGreen
                 )
+            ).ToImmutableArray();
+            
+            yield return Chart.FromInterval(
+                "Average pull request lifetime",
+                statistics.Interval.DateInterval,
+                new List<Dataset> { dateSets[0] }
+            );
+            
+            yield return Chart.FromInterval(
+                "Average efficiency",
+                statistics.Interval.DateInterval,
+                new List<Dataset> { dateSets[1] }
             );
         }
         
@@ -114,13 +125,13 @@ namespace CodeInsight.Web.Controllers
             );
             
             yield return Chart.FromInterval(
-                "Pull request changes weight average lifetimes per author",
+                "Efficiency per author",
                 interval,
                 statistics.SelectMany(kvp => CreateDataSets(
                     kvp.Value,
                     new LineDataSetConfiguration(
                         kvp.Key,
-                        s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable(),
+                        s => s.AverageEfficiency.Value,
                         colors[kvp.Key]
                     )
                 )).ToList()
@@ -129,9 +140,9 @@ namespace CodeInsight.Web.Controllers
 
         #endregion
 
-        #region SizeAndLifetime
+        #region Efficiency
 
-        public Task<IActionResult> SizeAndLifetime() => Action(async client =>
+        public Task<IActionResult> Efficiency() => Action(async client =>
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             var finiteInterval = new FiniteInterval(
@@ -142,10 +153,14 @@ namespace CodeInsight.Web.Controllers
             // TODO: Change to average efficiency, not duration.
             var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, finiteInterval);
             var statistics = prs
-                .Select(pr => pr.Lifetime.Map(l => (Hours: l.TotalHours, Changes: pr.TotalChanges)))
+                .Select(pr => pr.Lifetime.Map(l => (
+                    Efficiency: Domain.Efficiency.Create(pr.TotalChanges, l),
+                    Changes: pr.TotalChanges
+                )))
                 .Flatten()
-                .Where(s => s.Hours <= 1500 && s.Changes <= 1000);
-            var data = statistics.Select(s => new LineScatterData { x = s.Changes.ToString(), y = s.Hours.ToString() }).ToList();
+                .Where(s => s.Changes <= 1000);
+            
+            var data = statistics.Select(s => new LineScatterData { x = s.Changes.ToString(), y = s.Efficiency.ToString() }).ToList();
             var chartData = new ChartJSCore.Models.Data
             {
                 Datasets = new List<Dataset>
@@ -153,14 +168,15 @@ namespace CodeInsight.Web.Controllers
                     new LineScatterDataset
                     {
                         Fill = "false",
-                        Label = "Size and lifetime",
+                        ShowLine = false,
+                        Label = "Efficiency",
                         Data = data
                     }
                 }
             };
             
-            var chart = new Chart("PR size and lifetime", ChartType.Scatter, chartData);
-            var vm = new SizeAndLifeTimeViewModel(ImmutableList.Create(chart));
+            var chart = new Chart("Efficiency per pull request size", ChartType.Scatter, chartData);
+            var vm = new EfficiencyViewModel(ImmutableList.Create(chart));
             return (IActionResult)View(vm);
         });
 

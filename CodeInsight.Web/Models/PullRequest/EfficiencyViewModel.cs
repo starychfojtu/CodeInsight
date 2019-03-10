@@ -3,9 +3,9 @@ using CodeInsight.Web.Common.Charts;
 
 namespace CodeInsight.Web.Models.PullRequest
 {
-    public class SizeAndLifeTimeViewModel : ChartsViewModel
+    public class EfficiencyViewModel : ChartsViewModel
     {
-        public SizeAndLifeTimeViewModel(IReadOnlyList<Chart> charts) : base(charts)
+        public EfficiencyViewModel(IReadOnlyList<Chart> charts) : base(charts)
         {
         }
     }
