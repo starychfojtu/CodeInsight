@@ -1,6 +1,5 @@
 using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
-using CodeInsight.Library;
 using CodeInsight.Library.Types;
 using CodeInsight.PullRequests;
 using NodaTime;
@@ -12,7 +11,7 @@ namespace CodeInsight.Tests
     public class PullRequestTests
     {
         [Fact]
-        public void RepositoryDayStatistics()
+        public void DayStatistics()
         {
             var start = new LocalDate(2018, 11, 20);
             var end = new LocalDate(2018, 11, 30);

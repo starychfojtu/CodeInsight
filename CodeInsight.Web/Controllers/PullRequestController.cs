@@ -139,6 +139,7 @@ namespace CodeInsight.Web.Controllers
                 now
             );
 
+            // TODO: Change to average efficiency, not duration.
             var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, finiteInterval);
             var statistics = prs
                 .Select(pr => pr.Lifetime.Map(l => (Hours: l.TotalHours, Changes: pr.TotalChanges)))
