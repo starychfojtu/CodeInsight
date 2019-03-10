@@ -19,6 +19,7 @@ using CodeInsight.Web.Models;
 using CodeInsight.Web.Models.PullRequest;
 using FuncSharp;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Chart = CodeInsight.Web.Common.Charts.Chart;
 using static CodeInsight.Library.Prelude;
@@ -33,7 +34,9 @@ namespace CodeInsight.Web.Controllers
         {
             this.pullRequestRepository = pullRequestRepository;
         }
-        
+
+        #region Index
+
         public Task<IActionResult> Index(string fromIso8601, string toIso8601) => Action(async client =>
         {
             // TODO: Return error in view when invalid.
@@ -53,6 +56,27 @@ namespace CodeInsight.Web.Controllers
             var vm = new PullRequestIndexViewModel(interval, pullRequests, ImmutableList.Create(chart));
             return (IActionResult)View(vm);
         });
+        
+        private static IReadOnlyList<Dataset> CreateAverageDataSets(IntervalStatistics statistics)
+        {
+            return CreateDataSets(
+                statistics,
+                new LineDataSetConfiguration(
+                    "Average",
+                    s => s.AverageLifeTime.TotalHours,
+                    Color.LawnGreen
+                ),
+                new LineDataSetConfiguration(
+                    "Weighted average by changes",
+                    s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable(),
+                    Color.ForestGreen
+                )
+            );
+        }
+        
+        #endregion
+
+        #region PerAuthors
 
         public Task<IActionResult> PerAuthors() => Action(client =>
         {
@@ -71,38 +95,6 @@ namespace CodeInsight.Web.Controllers
                 .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
                 .Map(vm => (IActionResult)View(vm));
         });
-        
-        private static IntervalStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
-        {
-            var now = SystemClock.Instance.GetCurrentInstant();
-            var fromZoned = from.Match(
-                f =>  ZonedDateTime.FromDateTimeOffset(f),
-                _ => now.InUtc().Minus(Duration.FromDays(30))
-            );
-            var zone = fromZoned.Zone;
-            var today = now.InZone(zone).Date;
-            var interval = new DateInterval(fromZoned.Date, today);
-            var zonedInterval = new ZonedDateInterval(interval, zone);
-            
-            return new IntervalStatisticsConfiguration(zonedInterval, now);
-        }
-        
-        private static IReadOnlyList<Dataset> CreateAverageDataSets(IntervalStatistics statistics)
-        {
-            return CreateDataSets(
-                statistics,
-                new LineDataSetConfiguration(
-                    "Average",
-                    s => s.AverageLifeTime.TotalHours,
-                    Color.LawnGreen
-                ),
-                new LineDataSetConfiguration(
-                    "Weighted average by changes",
-                    s => s.ChangesWeightedAverageLifeTime.Map(t => t.TotalHours).ToNullable(),
-                    Color.ForestGreen
-                )
-            );
-        }
         
         private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, IntervalStatistics> statistics)
         {
@@ -133,6 +125,55 @@ namespace CodeInsight.Web.Controllers
                     )
                 )).ToList()
             );
+        }
+
+        #endregion
+
+        #region SizeAndLifetime
+
+        public Task<IActionResult> SizeAndLifetime() => Action(async client =>
+        {
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var finiteInterval = new FiniteInterval(
+                now.Minus(Duration.FromDays(365)),
+                now
+            );
+
+            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, finiteInterval);
+            var statistics = prs.Select(pr => pr.Lifetime.Map(l => (Hours: l.TotalHours, Changes: pr.Additions + pr.Deletions))).Flatten();
+            var data = statistics.Select(s => new LineScatterData { x = s.Changes.ToString(), y = s.Hours.ToString() }).ToList();
+            var chartData = new ChartJSCore.Models.Data
+            {
+                Datasets = new List<Dataset>
+                {
+                    new LineScatterDataset
+                    {
+                        Label = "Size and lifetime",
+                        Data = data
+                    }
+                }
+            };
+            
+            var chart = new Chart("PR size and lifetime", ChartType.Scatter, chartData);
+            var vm = new SizeAndLifeTimeViewModel(ImmutableList.Create(chart));
+            return (IActionResult)View(vm);
+        });
+
+        #endregion
+        
+        private static IntervalStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
+        {
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var fromZoned = from.Match(
+                f =>  ZonedDateTime.FromDateTimeOffset(f),
+                _ => now.InUtc().Minus(Duration.FromDays(30))
+            );
+            var zone = fromZoned.Zone;
+            var today = now.InZone(zone).Date;
+            var interval = new DateInterval(fromZoned.Date, today);
+            var zonedInterval = new ZonedDateInterval(interval, zone);
+            
+            return new IntervalStatisticsConfiguration(zonedInterval, now);
         }
 
         private static IReadOnlyList<Dataset> CreateDataSets(IntervalStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)

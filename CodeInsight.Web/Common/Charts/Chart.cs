@@ -10,7 +10,8 @@ namespace CodeInsight.Web.Common.Charts
 {
     public enum ChartType
     {
-        Line
+        Line,
+        Scatter
     }
     
     public class Chart
@@ -22,7 +23,8 @@ namespace CodeInsight.Web.Common.Charts
             JsChart = new ChartJSCore.Models.Chart
             {
                 Type = type.Match(
-                    ChartType.Line, _ => "line"
+                    ChartType.Line, _ => "line",
+                    ChartType.Scatter, _ => "scatter"
                 ),
                 Data = data
             };
