@@ -8,6 +8,8 @@ namespace CodeInsight.Data
         {
         }
 
+        public DbSet<JobExecution.JobExecution> JobExecutions { get; private set; }
+        
         public DbSet<Repository.Repository> Repositories { get; private set; }
         
         public DbSet<PullRequest.PullRequest> PullRequests { get; private set; }

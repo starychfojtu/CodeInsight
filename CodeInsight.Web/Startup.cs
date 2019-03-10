@@ -1,14 +1,19 @@
 ﻿using System;
 using CodeInsight.Data;
+using CodeInsight.Data.JobExecution;
 using CodeInsight.Data.PullRequest;
 using CodeInsight.Data.Repository;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Domain.Repository;
 using CodeInsight.Github.Import;
+using CodeInsight.Jobs;
+using CodeInsight.Jobs.Instances;
 using CodeInsight.Library;
 using CodeInsight.Library.Types;
 using CodeInsight.Web.Common.Security;
 using FuncSharp;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -39,18 +44,25 @@ namespace CodeInsight.Web
                 options.Cookie.HttpOnly = false;
             });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddHangfire(config =>
+            {
+                config.UseMemoryStorage();
+            });
 
             services.AddTransient<ClientAuthenticator>();
             services.AddTransient<Importer>();
+            services.AddTransient<ImporterJob>();
             services.AddTransient<IPullRequestRepository, PullRequestRepository>();
             services.AddTransient<IPullRequestStorage, PullRequestStorage>();
             services.AddTransient<IRepositoryRepository, RepositoryRepository>();
             services.AddTransient<IRepositoryStorage, RepositoryStorage>();
+            services.AddTransient<IJobExecutionRepository, JobExecutionRepository>();
+            services.AddTransient<IJobExecutionStorage, JobExecutionStorage>();
             services.AddSingleton(GetGithubAppConfig().Get(_ => new InvalidOperationException("Invalid app config.")));
             services.AddDbContext<CodeInsightDbContext>(o => o.UseInMemoryDatabase("CodeInsight"));
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
@@ -63,6 +75,9 @@ namespace CodeInsight.Web
                 app.UseHsts();
             }
 
+            GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(serviceProvider));
+            app.UseHangfireDashboard();
+            app.UseHangfireServer();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseSession();
