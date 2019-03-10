@@ -44,6 +44,8 @@ namespace CodeInsight.Domain.PullRequest
         public uint Deletions { get; }
         
         public uint Additions { get; }
+
+        public uint TotalChanges => Deletions + Additions;
         
         public Instant CreatedAt { get; }
         

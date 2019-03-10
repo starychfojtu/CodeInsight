@@ -140,7 +140,10 @@ namespace CodeInsight.Web.Controllers
             );
 
             var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, finiteInterval);
-            var statistics = prs.Select(pr => pr.Lifetime.Map(l => (Hours: l.TotalHours, Changes: pr.Additions + pr.Deletions))).Flatten();
+            var statistics = prs
+                .Where(pr => pr.TotalChanges <= 2000)
+                .Select(pr => pr.Lifetime.Map(l => (Hours: l.TotalHours, Changes: pr.TotalChanges)))
+                .Flatten();
             var data = statistics.Select(s => new LineScatterData { x = s.Changes.ToString(), y = s.Hours.ToString() }).ToList();
             var chartData = new ChartJSCore.Models.Data
             {
