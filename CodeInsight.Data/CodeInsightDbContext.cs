@@ -16,6 +16,7 @@ namespace CodeInsight.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<JobExecution.JobExecution>().HasKey(r => r.Id);
             modelBuilder.Entity<Repository.Repository>().HasKey(r => r.Id);
             
             modelBuilder.Entity<PullRequest.PullRequest>().HasKey(r => r.Id);

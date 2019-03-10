@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Common;
 using CodeInsight.Data;
 using CodeInsight.Data.JobExecution;
 using CodeInsight.Data.PullRequest;
@@ -18,6 +19,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -59,7 +62,15 @@ namespace CodeInsight.Web
             services.AddTransient<IJobExecutionRepository, JobExecutionRepository>();
             services.AddTransient<IJobExecutionStorage, JobExecutionStorage>();
             services.AddSingleton(GetGithubAppConfig().Get(_ => new InvalidOperationException("Invalid app config.")));
-            services.AddDbContext<CodeInsightDbContext>(o => o.UseInMemoryDatabase("CodeInsight"));
+
+            var mysqlConnString = GetMysqlConnectionString();
+            services.AddDbContext<CodeInsightDbContext>(o =>
+            {
+                mysqlConnString.Match(
+                    conn => o.UseMySql(conn),
+                    _ => o.UseInMemoryDatabase("CodeInsight")
+                );
+            });
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
@@ -78,6 +89,7 @@ namespace CodeInsight.Web
             GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(serviceProvider));
             app.UseHangfireDashboard();
             app.UseHangfireServer();
+            
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseSession();
@@ -90,6 +102,9 @@ namespace CodeInsight.Web
             });
         }
 
+        private IOption<string> GetMysqlConnectionString() =>
+            Environment.GetEnvironmentVariable("JAWSDB_MARIA_URL").ToOption();
+        
         private IOption<Github.ApplicationConfiguration> GetGithubAppConfig() =>
             from name in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_APP_NAME"))
             from clientId in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_CLIENT_ID"))
