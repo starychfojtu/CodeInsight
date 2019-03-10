@@ -141,9 +141,9 @@ namespace CodeInsight.Web.Controllers
 
             var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, finiteInterval);
             var statistics = prs
-                .Where(pr => pr.TotalChanges <= 2000)
                 .Select(pr => pr.Lifetime.Map(l => (Hours: l.TotalHours, Changes: pr.TotalChanges)))
-                .Flatten();
+                .Flatten()
+                .Where(s => s.Hours <= 1500 && s.Changes <= 1000);
             var data = statistics.Select(s => new LineScatterData { x = s.Changes.ToString(), y = s.Hours.ToString() }).ToList();
             var chartData = new ChartJSCore.Models.Data
             {
@@ -151,6 +151,7 @@ namespace CodeInsight.Web.Controllers
                 {
                     new LineScatterDataset
                     {
+                        Fill = "false",
                         Label = "Size and lifetime",
                         Data = data
                     }
