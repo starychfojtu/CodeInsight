@@ -28,7 +28,8 @@ namespace CodeInsight.Data.PullRequest
             return dbContext.PullRequests
                 .Where(pr =>
                     pr.CreatedAt <= end &&
-                    (pr.MergedAt.Value >= start || pr.ClosedAt.Value >= start)
+                    (pr.MergedAt == null || pr.MergedAt >= start) &&
+                    (pr.ClosedAt == null || pr.ClosedAt >= start)
                 )
                 .ToListAsync()
                 .Map(prs => prs.Select(pr => PullRequest.ToDomain(pr)));
