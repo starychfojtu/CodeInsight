@@ -4,12 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Github;
 using CodeInsight.Github.Import;
+using CodeInsight.Jobs;
+using CodeInsight.Jobs.Instances;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models.Github;
 using FuncSharp;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Octokit;
@@ -17,6 +20,7 @@ using Octokit.GraphQL;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
 using static CodeInsight.Library.Prelude;
 using Connection = Octokit.GraphQL.Connection;
+using IConnection = Octokit.GraphQL.IConnection;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 
 namespace CodeInsight.Web.Controllers
@@ -26,13 +30,15 @@ namespace CodeInsight.Web.Controllers
         private static readonly string CsrfSessionKey = "GithubCsrf";
 
         private readonly ApplicationConfiguration configuration;
-        private readonly Importer importer;
+        private readonly ImporterJob importerJob;
+        private readonly IJobExecutionRepository jobExecutionRepository;
         private readonly GitHubClient client;
 
-        public GithubController(ApplicationConfiguration configuration, Importer importer)
+        public GithubController(ApplicationConfiguration configuration, ImporterJob importerJob, IJobExecutionRepository jobExecutionRepository)
         {
             this.configuration = configuration;
-            this.importer = importer;
+            this.importerJob = importerJob;
+            this.jobExecutionRepository = jobExecutionRepository;
             this.client = new GitHubClient(new ProductHeaderValue(configuration.ApplicationName));
         }
 
@@ -108,23 +114,17 @@ namespace CodeInsight.Web.Controllers
                 var name = parts[1];
                 var query = new Query().Repository(name, owner).Select(r => new { Name = r.Name, Owner = r.Owner.Login }).Compile();
                 var repository = await conn.Run(query);
+                var token = HttpContext.Session.Get<string>(ClientAuthenticator.GithubTokenSessionKey).Get();
 
-                var importedRepository = await importer.ImportRepository(
-                    conn,
-                    NonEmptyString.Create(repository.Owner).Get(),
-                    NonEmptyString.Create(repository.Name).Get()
-                );
+                var execution = importerJob.StartNew(token, configuration.ApplicationName, repository.Name, repository.Owner);
                 
-                HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryIdSessionKey, importedRepository.Id.Value.Value);
-                
-                return RedirectToAction("Index", "PullRequest");
+                return RedirectToAction("ImportStatus", "Github", new { JobId = execution.Id });
             }
             catch (NotFoundException)
             {
                 return BadRequest();
             }
         });
-        
         private static ICompiledQuery<IEnumerable<List<RepositoryInputDto>>> GetAllRepositoriesQuery() =>
             new Query()
                 .Viewer
@@ -138,6 +138,28 @@ namespace CodeInsight.Web.Controllers
                 )
                 .Compile();
         
+        #endregion
+
+        #region ImportStatus
+
+        [HttpGet]
+        public IActionResult ImportStatus(Guid jobId) =>
+            jobExecutionRepository
+                .Get<string>(jobId)
+                .Match(
+                    job => job.IsFinished 
+                        ? ProcessFinished(job) 
+                        : View(new ImportStatusViewModel(job.Progress)),
+                    _ => NotFound()
+                );
+
+        private IActionResult ProcessFinished(JobExecution<string> execution)
+        {
+            var repositoryId = execution.Result.Get();
+            HttpContext.Session.Set(ClientAuthenticator.GithubRepositoryIdSessionKey, repositoryId);
+            return RedirectToAction("Index", "PullRequest");
+        }
+
         #endregion
         
         private Task<IActionResult> ConnectionAction(Func<Connection, Task<IActionResult>> action)

@@ -7,7 +7,13 @@
     <ItemGroup>
         <PackageReference Include="ChartJSCore" Version="1.3.2" />
         <PackageReference Include="FuncSharp">
-          <Version>1.2.4</Version>
+          <Version>1.5.5</Version>
+        </PackageReference>
+        <PackageReference Include="Hangfire.AspNetCore">
+          <Version>1.6.22</Version>
+        </PackageReference>
+        <PackageReference Include="Hangfire.MemoryStorage">
+          <Version>1.6.0</Version>
         </PackageReference>
         <PackageReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Octokit">
@@ -19,8 +25,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\CodeInsight.Data\CodeInsight.Data.csproj" />
       <ProjectReference Include="..\CodeInsight.Domain\CodeInsight.Domain.csproj" />
       <ProjectReference Include="..\CodeInsight.Github\CodeInsight.Github.csproj" />
+      <ProjectReference Include="..\CodeInsight.Jobs\CodeInsight.Jobs.csproj" />
       <ProjectReference Include="..\CodeInsight.Library\CodeInsight.Library.csproj" />
       <ProjectReference Include="..\CodeInsight.PullRequests\CodeInsight.PullRequests.csproj" />
     </ItemGroup>

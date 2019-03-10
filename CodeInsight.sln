@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeInsight.Domain", "CodeI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeInsight.Data", "CodeInsight.Data\CodeInsight.Data.csproj", "{AD3150F5-3FC0-495C-92FF-89CDD0A1B13F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeInsight.Jobs", "CodeInsight.Jobs\CodeInsight.Jobs.csproj", "{54A42AA2-0E40-4CB0-87D7-269E2B35FD25}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{AD3150F5-3FC0-495C-92FF-89CDD0A1B13F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD3150F5-3FC0-495C-92FF-89CDD0A1B13F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD3150F5-3FC0-495C-92FF-89CDD0A1B13F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54A42AA2-0E40-4CB0-87D7-269E2B35FD25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54A42AA2-0E40-4CB0-87D7-269E2B35FD25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54A42AA2-0E40-4CB0-87D7-269E2B35FD25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54A42AA2-0E40-4CB0-87D7-269E2B35FD25}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
