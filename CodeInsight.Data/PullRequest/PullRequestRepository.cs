@@ -35,6 +35,7 @@ namespace CodeInsight.Data.PullRequest
             var end = interval.End.ToDateTimeOffset();
             return dbContext.PullRequests
                 .Where(pr =>
+                    pr.RepositoryId == repositoryId.Value.Value &&
                     pr.CreatedAt <= end &&
                     (pr.MergedAt == null || pr.MergedAt >= start) &&
                     (pr.ClosedAt == null || pr.ClosedAt >= start)
