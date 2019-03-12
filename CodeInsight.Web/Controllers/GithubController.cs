@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Github;
-using CodeInsight.Github.Import;
 using CodeInsight.Github.Queries;
 using CodeInsight.Jobs;
 using CodeInsight.Jobs.Instances;
@@ -13,19 +11,14 @@ using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models.Github;
 using FuncSharp;
-using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Monad;
-using Monad.Parsec;
 using Octokit;
-using Octokit.GraphQL;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
 using static CodeInsight.Library.Prelude;
 using Connection = Octokit.GraphQL.Connection;
 using IConnection = Octokit.GraphQL.IConnection;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
-using Try = FuncSharp.Try;
 
 namespace CodeInsight.Web.Controllers
 {
@@ -116,7 +109,7 @@ namespace CodeInsight.Web.Controllers
         }
         
         [HttpPost]
-        public Task<IActionResult> ChooseRepository2(string nameWithOwner) => ConnectionAction(async (connection, token) =>
+        public Task<IActionResult> ChooseRepository(string nameWithOwner) => ConnectionAction(async (connection, token) =>
         {
             var result = await ParseInput(nameWithOwner)
                 .Bind(i => FindRepository(i.owner, i.name))
@@ -126,35 +119,32 @@ namespace CodeInsight.Web.Controllers
             return result.Match(
                 execution => RedirectToAction("ImportStatus", "Github", new { JobId = execution.Id }),
                 error => error.Match(
-                    ChooseRepositoryError.InvalidNameWithOwner, _ => RedirectToAction("ChooseRepository", "Github"),
-                    ChooseRepositoryError.RepositoryNotFound, _ => RedirectToAction("ChooseRepository", "Github")
+                    ChooseRepositoryError.InvalidNameWithOwner, _ => RedirectToAction("ChooseRepository"),
+                    ChooseRepositoryError.RepositoryNotFound, _ => RedirectToAction("ChooseRepository")
                 )
             );
         });
         
-        private static Reader<IConnection, Task<ITry<(NonEmptyString owner, NonEmptyString name), ChooseRepositoryError>>> ParseInput(string nameWithOwner) =>
+        private static Monad.Reader<IConnection, Task<ITry<(NonEmptyString owner, NonEmptyString name), ChooseRepositoryError>>> ParseInput(string nameWithOwner) =>
             _ => ParseNameWithOwner(nameWithOwner)
                 .ToTry(_1 => ChooseRepositoryError.InvalidNameWithOwner)
                 .Async();
         
-        private static Reader<IConnection, Task<ITry<RepositoryDto, ChooseRepositoryError>>> FindRepository(NonEmptyString owner, NonEmptyString name) =>
+        private static Monad.Reader<IConnection, Task<ITry<RepositoryDto, ChooseRepositoryError>>> FindRepository(NonEmptyString owner, NonEmptyString name) =>
             GetRepositoryQuery
                 .Get(owner, name)
                 .Map(r => r.ToTry(_ => ChooseRepositoryError.RepositoryNotFound));
         
-        private static Reader<IConnection, Task<ITry<JobExecution<string>, ChooseRepositoryError>>> StartImportJob(ImporterJob job, RepositoryDto repository, string token, string applicationName) =>
+        private static Monad.Reader<IConnection, Task<ITry<JobExecution<string>, ChooseRepositoryError>>> StartImportJob(ImporterJob job, RepositoryDto repository, string token, string applicationName) =>
             _ => job.StartNew(token, applicationName, repository.Name, repository.Owner)
                 .ToSuccess<JobExecution<string>, ChooseRepositoryError>()
                 .Async();
 
-        private static IOption<(NonEmptyString owner, NonEmptyString name)> ParseNameWithOwner(string nameWithOwner)
-        {
-            var parts = nameWithOwner.Split('/');
-            return
-                from owner in parts.Get(0).FlatMap(NonEmptyString.Create)
-                from name in parts.Get(1).FlatMap(NonEmptyString.Create)
-                select (owner, name);
-        }
+        private static IOption<(NonEmptyString owner, NonEmptyString name)> ParseNameWithOwner(string nameWithOwner) =>
+            from parts in nameWithOwner.ToOption().Map(n => n.Split('/'))
+            from owner in parts.Get(0).FlatMap(NonEmptyString.Create)
+            from name in parts.Get(1).FlatMap(NonEmptyString.Create)
+            select (owner, name);
         
         #endregion
 
