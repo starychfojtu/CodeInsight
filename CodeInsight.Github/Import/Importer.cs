@@ -49,7 +49,7 @@ namespace CodeInsight.Github.Import
         private static async Task<Repository> CreateRepository(IConnection connection, NonEmptyString owner, NonEmptyString name)
         {
             // TODO: Handle case if repository not found.
-            var repositoryDto = await GetRepositoryQuery.Get(owner, name).Execute(connection);
+            var repositoryDto = (await GetRepositoryQuery.Get(owner, name).Execute(connection)).Get();
             return new Repository(
                 id: new RepositoryId(NonEmptyString.Create(repositoryDto.Id).Get()),
                 name: NonEmptyString.Create(repositoryDto.Name).Get(),

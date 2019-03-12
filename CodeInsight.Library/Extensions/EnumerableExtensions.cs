@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FuncSharp;
+using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.Library.Extensions
 {
@@ -35,5 +36,8 @@ namespace CodeInsight.Library.Extensions
 
             return (passing, violating);
         }
+
+        public static IOption<A> Get<A>(this A[] array, int index) =>
+            array.Length > index ? Some(array[index]) : None<A>();
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FuncSharp;
 using Monad;
@@ -21,6 +22,14 @@ namespace CodeInsight.Library.Extensions
         public static IEnumerable<T> ToEnumerable<T>(this T obj)
         {
             yield return obj;
+        }
+        
+        public static B MatchSingle<A, B>(this ITry<A> iTry, Func<A, B> ifSuccess, Func<Exception, B> ifError)
+        {
+            return iTry.Match(
+                ifSuccess,
+                e => ifError(e.Single())
+            );
         }
         
         public static Task<B> Map<A, B>(this Task<A> task, Func<A, B> mapper)
@@ -70,6 +79,12 @@ namespace CodeInsight.Library.Extensions
         {
             return reader(env);
         }
+        
+        public static Reader<E, A> ToReader<E, A>(this A obj) =>
+            _ => obj;
+        
+        public static ITry<A, E> ToSuccess<A, E>(this A obj) =>
+            Try.Success<A, E>(obj);
         
         public static Reader<E, B> Bind<E, A, B>(this Reader<E, A> reader, Func<A, Reader<E, B>> binder)
         {

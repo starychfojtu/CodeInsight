@@ -1,13 +1,17 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
+using FuncSharp;
 using Monad;
+using Octokit;
 using Octokit.GraphQL;
+using static CodeInsight.Library.Prelude;
+using IConnection = Octokit.GraphQL.IConnection;
 
 namespace CodeInsight.Github.Queries
 {
-    internal static class GetRepositoryQuery
+    public static class GetRepositoryQuery
     {
         private static ICompiledQuery<RepositoryDto> Query { get; }
         
@@ -16,7 +20,7 @@ namespace CodeInsight.Github.Queries
             Query = CreateQuery();
         }
 
-        internal static Reader<IConnection, Task<RepositoryDto>> Get(NonEmptyString owner, NonEmptyString name)
+        public static Reader<IConnection, Task<IOption<RepositoryDto>>> Get(NonEmptyString owner, NonEmptyString name)
         {
             return conn =>
             {
@@ -25,28 +29,18 @@ namespace CodeInsight.Github.Queries
                     {"repositoryName", name.Value},
                     {"repositoryOwner", owner.Value}
                 };
-
-                return conn.Run(Query, vars);
+                
+                return conn.Run(Query, vars).SafeMap(r => r.MatchSingle(
+                    repository => Some(repository),
+                    e => e is NotFoundException ? None<RepositoryDto>() : throw e
+                ));
             };
         }
         
         private static ICompiledQuery<RepositoryDto> CreateQuery() =>
             new Query()
                 .Repository(Variable.Var("repositoryName"), Variable.Var("repositoryOwner"))
-                .Select(repository => new RepositoryDto
-                {
-                    Id = repository.Id.Value,
-                    Name = repository.Name,
-                    Owner = repository.Owner.Login
-                })
+                .Select(r => new RepositoryDto(r.Id.Value, r.Name, r.Owner.Login))
                 .Compile();
-        
-        
-        internal sealed class RepositoryDto
-        {
-            public string Id { get; set; }
-            public string Name { get; set; }
-            public string Owner { get; set; }
-        }
     }
 }

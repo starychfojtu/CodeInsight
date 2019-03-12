@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Github;
 using CodeInsight.Github.Import;
+using CodeInsight.Github.Queries;
 using CodeInsight.Jobs;
 using CodeInsight.Jobs.Instances;
 using CodeInsight.Library.Extensions;
@@ -15,6 +16,8 @@ using FuncSharp;
 using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Monad;
+using Monad.Parsec;
 using Octokit;
 using Octokit.GraphQL;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
@@ -22,6 +25,7 @@ using static CodeInsight.Library.Prelude;
 using Connection = Octokit.GraphQL.Connection;
 using IConnection = Octokit.GraphQL.IConnection;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
+using Try = FuncSharp.Try;
 
 namespace CodeInsight.Web.Controllers
 {
@@ -68,17 +72,17 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> Authorize(string code, string state)
         {
             var session = HttpContext.Session;
-            var verifiedCode = GetVerifiedCode(code, state, session);
-            var oAuthToken = verifiedCode.Map(vc => GetOAuthAccessToken(vc));
-            return oAuthToken.Match(
-                tokenTask => tokenTask.Map(token =>
-                {
-                    session.Remove(CsrfSessionKey);
-                    session.Set(ClientAuthenticator.GithubTokenSessionKey, token);
-                    return (IActionResult)RedirectToAction("ChooseRepository");
-                }),
-                _ => RedirectToAction("Index", "Home").Async<RedirectToActionResult, IActionResult>()
-            );
+            return GetVerifiedCode(code, state, session)
+                .Map(GetOAuthAccessToken)
+                .Match(
+                    tokenTask => tokenTask.Map(token =>
+                    {
+                        session.Remove(CsrfSessionKey);
+                        session.Set(ClientAuthenticator.GithubTokenSessionKey, token);
+                        return (IActionResult)RedirectToAction("ChooseRepository");
+                    }),
+                    _ => RedirectToAction("Index", "Home").Async<RedirectToActionResult, IActionResult>()
+                );
         }
         
         private static IOption<NonEmptyString> GetVerifiedCode(string code, string state, ISession session)
@@ -98,45 +102,59 @@ namespace CodeInsight.Web.Controllers
         #region ChooseRepository
 
         [HttpGet]
-        public Task<IActionResult> ChooseRepository() => ConnectionAction(connection =>
-            connection
-                .Run(GetAllRepositoriesQuery())
-                .Map(items => new ChooseRepositoryViewModel(items.SelectMany(i => i)))
-                .Map(vm => (IActionResult) View(vm)));
-
-        [HttpPost]
-        public Task<IActionResult> ChooseRepository(string nameWithOwner) => ConnectionAction(async conn =>
+        public Task<IActionResult> ChooseRepository() => ConnectionAction((connection, _) =>
+            GetAllRepositoriesQuery.Get()
+                .Map(items => items.Select(i => new RepositoryInputDto(i.Name, i.Owner)))
+                .Map(items => new ChooseRepositoryViewModel(items))
+                .Map(vm => (IActionResult) View(vm))
+                .Execute(connection));
+        
+        private enum ChooseRepositoryError
         {
-            try
-            {
-                var parts = nameWithOwner.Split('/');
-                var owner = parts[0];
-                var name = parts[1];
-                var query = new Query().Repository(name, owner).Select(r => new { Name = r.Name, Owner = r.Owner.Login }).Compile();
-                var repository = await conn.Run(query);
-                var token = HttpContext.Session.Get<string>(ClientAuthenticator.GithubTokenSessionKey).Get();
-
-                var execution = importerJob.StartNew(token, configuration.ApplicationName, repository.Name, repository.Owner);
-                
-                return RedirectToAction("ImportStatus", "Github", new { JobId = execution.Id });
-            }
-            catch (NotFoundException)
-            {
-                return BadRequest();
-            }
-        });
-        private static ICompiledQuery<IEnumerable<List<RepositoryInputDto>>> GetAllRepositoriesQuery() =>
-            new Query()
-                .Viewer
-                .Organizations()
-                .AllPages()
-                .Select(n => n
-                    .Repositories(null, null, null, null, null, null, null, null, null, null)
-                    .AllPages()
-                    .Select(r => new RepositoryInputDto(r.Name, r.Owner.Login))
-                    .ToList()
+            InvalidNameWithOwner,
+            RepositoryNotFound
+        }
+        
+        [HttpPost]
+        public Task<IActionResult> ChooseRepository2(string nameWithOwner) => ConnectionAction(async (connection, token) =>
+        {
+            var result = await ParseInput(nameWithOwner)
+                .Bind(i => FindRepository(i.owner, i.name))
+                .Bind(r => StartImportJob(importerJob, r, token, configuration.ApplicationName))
+                .Execute(connection);
+            
+            return result.Match(
+                execution => RedirectToAction("ImportStatus", "Github", new { JobId = execution.Id }),
+                error => error.Match(
+                    ChooseRepositoryError.InvalidNameWithOwner, _ => RedirectToAction("ChooseRepository", "Github"),
+                    ChooseRepositoryError.RepositoryNotFound, _ => RedirectToAction("ChooseRepository", "Github")
                 )
-                .Compile();
+            );
+        });
+        
+        private static Reader<IConnection, Task<ITry<(NonEmptyString owner, NonEmptyString name), ChooseRepositoryError>>> ParseInput(string nameWithOwner) =>
+            _ => ParseNameWithOwner(nameWithOwner)
+                .ToTry(_1 => ChooseRepositoryError.InvalidNameWithOwner)
+                .Async();
+        
+        private static Reader<IConnection, Task<ITry<RepositoryDto, ChooseRepositoryError>>> FindRepository(NonEmptyString owner, NonEmptyString name) =>
+            GetRepositoryQuery
+                .Get(owner, name)
+                .Map(r => r.ToTry(_ => ChooseRepositoryError.RepositoryNotFound));
+        
+        private static Reader<IConnection, Task<ITry<JobExecution<string>, ChooseRepositoryError>>> StartImportJob(ImporterJob job, RepositoryDto repository, string token, string applicationName) =>
+            _ => job.StartNew(token, applicationName, repository.Name, repository.Owner)
+                .ToSuccess<JobExecution<string>, ChooseRepositoryError>()
+                .Async();
+
+        private static IOption<(NonEmptyString owner, NonEmptyString name)> ParseNameWithOwner(string nameWithOwner)
+        {
+            var parts = nameWithOwner.Split('/');
+            return
+                from owner in parts.Get(0).FlatMap(NonEmptyString.Create)
+                from name in parts.Get(1).FlatMap(NonEmptyString.Create)
+                select (owner, name);
+        }
         
         #endregion
 
@@ -162,11 +180,11 @@ namespace CodeInsight.Web.Controllers
 
         #endregion
         
-        private Task<IActionResult> ConnectionAction(Func<Connection, Task<IActionResult>> action)
+        private Task<IActionResult> ConnectionAction(Func<Connection, string, Task<IActionResult>> action)
         {
             var token = HttpContext.Session.Get<string>(ClientAuthenticator.GithubTokenSessionKey);
             return token.Match(
-                t => action(new Connection(new Octokit.GraphQL.ProductHeaderValue(configuration.ApplicationName), t)),
+                t => action(new Connection(new Octokit.GraphQL.ProductHeaderValue(configuration.ApplicationName), t), t),
                 _ => NotFound().Async<NotFoundResult, IActionResult>()
             );
         }

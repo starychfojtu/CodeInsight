@@ -22,4 +22,10 @@
       <ProjectReference Include="..\CodeInsight.PullRequests\CodeInsight.PullRequests.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="Octokit, Version=0.32.0.0, Culture=neutral, PublicKeyToken=null">
+        <HintPath>..\..\..\.nuget\packages\octokit\0.32.0\lib\netstandard1.1\Octokit.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>
