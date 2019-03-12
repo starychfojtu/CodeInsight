@@ -109,20 +109,20 @@ namespace CodeInsight.Web.Controllers
         }
         
         [HttpPost]
-        public Task<IActionResult> ChooseRepository(string nameWithOwner) => ConnectionAction(async (connection, token) =>
+        public Task<IActionResult> ChooseRepository(string nameWithOwner) => ConnectionAction((connection, token) =>
         {
-            var result = await ParseInput(nameWithOwner)
+            var result = ParseInput(nameWithOwner)
                 .Bind(i => FindRepository(i.owner, i.name))
                 .Bind(r => StartImportJob(importerJob, r, token, configuration.ApplicationName))
                 .Execute(connection);
-            
-            return result.Match(
-                execution => RedirectToAction("ImportStatus", "Github", new { JobId = execution.Id }),
+
+            return result.Map(r => r.Match(
+                execution => RedirectToAction("ImportStatus", "Github", new {JobId = execution.Id}),
                 error => error.Match(
                     ChooseRepositoryError.InvalidNameWithOwner, _ => RedirectToAction("ChooseRepository"),
-                    ChooseRepositoryError.RepositoryNotFound, _ => RedirectToAction("ChooseRepository")
+                    ChooseRepositoryError.RepositoryNotFound, _ => (IActionResult)BadRequest()
                 )
-            );
+            ));
         });
         
         private static Monad.Reader<IConnection, Task<ITry<(NonEmptyString owner, NonEmptyString name), ChooseRepositoryError>>> ParseInput(string nameWithOwner) =>
