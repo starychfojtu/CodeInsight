@@ -1,12 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Domain.Repository;
-using CodeInsight.Library;
 using CodeInsight.Library.Extensions;
-using CodeInsight.PullRequests;
+using CodeInsight.Library.Types;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -21,6 +20,15 @@ namespace CodeInsight.Data.PullRequest
             this.dbContext = dbContext;
         }
 
+        public Task<IEnumerable<Domain.PullRequest.PullRequest>> GetAllByIds(IEnumerable<NonEmptyString> ids)
+        {
+            var prIds = ids.Select(i => i.Value);
+            return dbContext.PullRequests
+                .Where(pr => prIds.Contains(pr.Id))
+                .ToListAsync()
+                .Map(prs => prs.Select(PullRequest.ToDomain));
+        }
+
         public Task<IEnumerable<Domain.PullRequest.PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
         {
             var start = interval.Start.ToDateTimeOffset();
@@ -32,14 +40,14 @@ namespace CodeInsight.Data.PullRequest
                     (pr.ClosedAt == null || pr.ClosedAt >= start)
                 )
                 .ToListAsync()
-                .Map(prs => prs.Select(pr => PullRequest.ToDomain(pr)));
+                .Map(prs => prs.Select(PullRequest.ToDomain));
         }
 
-        public Task<IEnumerable<Domain.PullRequest.PullRequest>> GetAllOrderedByCreated(RepositoryId repositoryId, uint take)
+        public Task<IEnumerable<Domain.PullRequest.PullRequest>> GetAllOrderedByUpdated(RepositoryId repositoryId, uint take)
         {
             return dbContext.PullRequests
                 .Where(pr => pr.RepositoryId == repositoryId.Value.Value)
-                .OrderByDescending(pr => pr.CreatedAt)
+                .OrderByDescending(pr => pr.UpdatedAt)
                 .Take((int)take)
                 .ToListAsync()
                 .Map(l => l.Select(PullRequest.ToDomain));

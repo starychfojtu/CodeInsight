@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FuncSharp;
 
 namespace CodeInsight.Library.Extensions
 {
@@ -17,6 +18,22 @@ namespace CodeInsight.Library.Extensions
             }
 
             return (first, second);
+        }
+        
+        public static (IReadOnlyList<T> passing, IReadOnlyList<T> violating) Partition<T>(this IEnumerable<T> items, Predicate<T> predicate)
+        {
+            var passing = new List<T>();
+            var violating = new List<T>();
+
+            foreach (var item in items)
+            {
+                predicate(item).Match(
+                    t => passing.Add(item),
+                    f => violating.Add(item)
+                );
+            }
+
+            return (passing, violating);
         }
     }
 }

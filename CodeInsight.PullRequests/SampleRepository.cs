@@ -15,6 +15,11 @@ namespace CodeInsight.PullRequests
 {
     public sealed class SampleRepository : IPullRequestRepository
     {
+        public Task<IEnumerable<PullRequest>> GetAllByIds(IEnumerable<NonEmptyString> ids)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public Task<IEnumerable<PullRequest>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
         {
             var createdAt = SystemClock.Instance.GetCurrentInstant().Minus(Duration.FromDays(10));
@@ -62,7 +67,7 @@ namespace CodeInsight.PullRequests
                 .Async();
         }
 
-        public Task<IEnumerable<PullRequest>> GetAllOrderedByCreated(RepositoryId repositoryId, uint take)
+        public Task<IEnumerable<PullRequest>> GetAllOrderedByUpdated(RepositoryId repositoryId, uint take)
         {
             throw new System.NotImplementedException();
         }

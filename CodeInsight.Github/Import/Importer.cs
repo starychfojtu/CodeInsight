@@ -37,7 +37,7 @@ namespace CodeInsight.Github.Import
 
         public Task<Repository> ImportRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) =>
             GetOrCreateRepository(connection, owner, name)
-                .Bind(r => ImportPullRequests(connection, r));
+                .Bind(r => UpdatePullRequests(connection, r));
         
         private Task<Repository> GetOrCreateRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => 
             repositoryRepository.Get(owner, name)
@@ -60,43 +60,51 @@ namespace CodeInsight.Github.Import
         private Repository AddRepository(Repository repository) =>
             repositoryStorage.Add(repository).Pipe(_ => repository);
 
-        private async Task<Repository> ImportPullRequests(IConnection connection, Repository repository)
+        private async Task<Repository> UpdatePullRequests(IConnection connection, Repository repository)
         {
-            var lastPrs = await pullRequestRepository.GetAllOrderedByCreated(repository.Id, 1);
+            var lastPrs = await pullRequestRepository.GetAllOrderedByUpdated(repository.Id, 1);
             var lastPr = lastPrs.SingleOption();
             var cursor = (string) null;
             
             do
             {
-                var query = GetAllPullRequestQuery.Get(repository, take: 50, cursor: cursor);
+                var query = GetAllPullRequestByUpdatedQuery.Get(repository, take: 50, cursor: cursor);
                 var page = await query.Execute(connection);
-                var pullRequestsToAdd = GetPullRequestsToAdd(lastPr, page.Items).ToImmutableList();
+                var updatedOrNewPullRequests = GetUpdatedOrNewPullRequests(lastPr, page.Items).ToImmutableList();
                 
-                pullRequestStorage.Add(pullRequestsToAdd);
+                // TODO: the code doesn't have to wait for this to finish, but BbContext is nto thread safe, refactor.
+                await UpdateOrAdd(updatedOrNewPullRequests);
 
-                var allPrsWereAdded = pullRequestsToAdd.Count == page.Items.Count;
-                cursor = page.HasNextPage && allPrsWereAdded ? page.EndCursor : null;
+                var allPrsWereNewOrUpdated = updatedOrNewPullRequests.Count == page.Items.Count;
+                cursor = page.HasNextPage && allPrsWereNewOrUpdated ? page.EndCursor : null;
             }
             while (cursor != null);
             
             return repository;
         }
 
-        private static IEnumerable<PullRequest> GetPullRequestsToAdd(IOption<PullRequest> lastPr, IEnumerable<GetAllPullRequestQuery.PullRequestDto> page)
+        private async Task<Unit> UpdateOrAdd(IReadOnlyList<PullRequest> pullRequests)
         {
-            return lastPr.Match(
-                pr =>
-                {
-                    var minCreatedAt = pr.CreatedAt.ToDateTimeOffset();
-                    return page
-                        .TakeWhile(p => p.Id != pr.Id.Value && p.CreatedAt > minCreatedAt)
-                        .Select(p => Map(p));
-                },
-                _ => page.Select(Map)
-            );
+            var ids = pullRequests.Select(pr => pr.Id);
+            var existingPrs = await pullRequestRepository.GetAllByIds(ids);
+            var existingPrIds = existingPrs.Select(pr => pr.Id).ToImmutableHashSet();
+            var (updatedPrs, newPrs) = pullRequests.Partition(pr => existingPrIds.Contains(pr.Id));
+
+            pullRequestStorage.Add(newPrs);
+            return pullRequestStorage.Update(updatedPrs).Success.Get();
         }
 
-        private static PullRequest Map(GetAllPullRequestQuery.PullRequestDto pr) =>
+        private static IEnumerable<PullRequest> GetUpdatedOrNewPullRequests(IOption<PullRequest> lastUpdatedPr, IEnumerable<GetAllPullRequestByUpdatedQuery.PullRequestDto> page) => 
+            lastUpdatedPr
+                .Map(pr =>
+                {
+                    var minUpdatedAt = pr.UpdatedAt.ToDateTimeOffset();
+                    return page.TakeWhile(p => p.UpdatedAt >= minUpdatedAt);
+                })
+                .GetOrElse(page)
+                .Select(Map);
+
+        private static PullRequest Map(GetAllPullRequestByUpdatedQuery.PullRequestDto pr) =>
             new PullRequest(
                 id: NonEmptyString.Create(pr.Id).Get(),
                 repositoryId: NonEmptyString.Create(pr.RepositoryId).Get(),

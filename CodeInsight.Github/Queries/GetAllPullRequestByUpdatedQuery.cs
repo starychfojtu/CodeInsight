@@ -9,11 +9,11 @@ using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github
 {
-    internal static class GetAllPullRequestQuery
+    internal static class GetAllPullRequestByUpdatedQuery
     {
         private static ICompiledQuery<ResponsePage<PullRequestDto>> Query { get; }
         
-        static GetAllPullRequestQuery()
+        static GetAllPullRequestByUpdatedQuery()
         {
             Query = CreateQuery();
         }
@@ -42,7 +42,7 @@ namespace CodeInsight.Github
                     after: Var("after"),
                     orderBy: new IssueOrder
                     {
-                        Field = IssueOrderField.CreatedAt,
+                        Field = IssueOrderField.UpdatedAt,
                         Direction = OrderDirection.Desc
                     }
                 )
