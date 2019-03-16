@@ -16,8 +16,10 @@ using Microsoft.AspNetCore.Mvc;
 using Octokit;
 using Controller = Microsoft.AspNetCore.Mvc.Controller;
 using static CodeInsight.Library.Prelude;
+using Monad;
 using Connection = Octokit.GraphQL.Connection;
 using IConnection = Octokit.GraphQL.IConnection;
+using ObjectExtensions = FuncSharp.ObjectExtensions;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 
 namespace CodeInsight.Web.Controllers
@@ -96,11 +98,14 @@ namespace CodeInsight.Web.Controllers
 
         [HttpGet]
         public Task<IActionResult> ChooseRepository() => ConnectionAction((connection, _) =>
-            GetAllRepositoriesQuery.Get()
-                .Map(items => items.Select(i => new RepositoryInputDto(i.Name, i.Owner)))
-                .Map(items => new ChooseRepositoryViewModel(items))
-                .Map(vm => (IActionResult) View(vm))
-                .Execute(connection));
+        {
+            var result =
+                from repositories in GetAllRepositoriesQuery.Execute(connection)
+                let inputs = repositories.Select(r => new RepositoryInputDto(r.Name, r.Owner))
+                select (IActionResult) View(new ChooseRepositoryViewModel(inputs));
+
+            return result.Execute();
+        });
         
         private enum ChooseRepositoryError
         {
@@ -112,11 +117,10 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> ChooseRepository(string nameWithOwner) => ConnectionAction((connection, token) =>
         {
             var result = ParseInput(nameWithOwner)
-                .Bind(i => FindRepository(i.owner, i.name))
-                .Bind(r => StartImportJob(importerJob, r, token, configuration.ApplicationName))
-                .Execute(connection);
+                .Bind(i => FindRepository(connection, i.owner, i.name))
+                .Bind(r => StartImportJob(importerJob, r, token, configuration.ApplicationName));
 
-            return result.Map(r => r.Match(
+            return result.Execute().Map(r => r.Match(
                 execution => RedirectToAction("ImportStatus", "Github", new {JobId = execution.Id}),
                 error => error.Match(
                     ChooseRepositoryError.InvalidNameWithOwner, _ => RedirectToAction("ChooseRepository"),
@@ -125,23 +129,22 @@ namespace CodeInsight.Web.Controllers
             ));
         });
         
-        private static Monad.Reader<IConnection, Task<ITry<(NonEmptyString owner, NonEmptyString name), ChooseRepositoryError>>> ParseInput(string nameWithOwner) =>
-            _ => ParseNameWithOwner(nameWithOwner)
+        private static IO<Task<ITry<(NonEmptyString owner, NonEmptyString name), ChooseRepositoryError>>> ParseInput(string nameWithOwner) =>
+            () => ParseNameWithOwner(nameWithOwner)
                 .ToTry(_1 => ChooseRepositoryError.InvalidNameWithOwner)
                 .Async();
         
-        private static Monad.Reader<IConnection, Task<ITry<RepositoryDto, ChooseRepositoryError>>> FindRepository(NonEmptyString owner, NonEmptyString name) =>
+        private static IO<Task<ITry<RepositoryDto, ChooseRepositoryError>>> FindRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) =>
             GetRepositoryQuery
-                .Get(owner, name)
-                .Map(r => r.ToTry(_ => ChooseRepositoryError.RepositoryNotFound));
+                .Execute(connection, owner, name)
+                .Map(t => t.Map(r => r.ToTry(_ => ChooseRepositoryError.RepositoryNotFound)));
         
-        private static Monad.Reader<IConnection, Task<ITry<JobExecution<string>, ChooseRepositoryError>>> StartImportJob(ImporterJob job, RepositoryDto repository, string token, string applicationName) =>
-            _ => job.StartNew(token, applicationName, repository.Name, repository.Owner)
-                .ToSuccess<JobExecution<string>, ChooseRepositoryError>()
-                .Async();
+        private static IO<Task<ITry<JobExecution<string>, ChooseRepositoryError>>> StartImportJob(ImporterJob job, RepositoryDto repository, string token, string applicationName) =>
+            job.StartNew(token, applicationName, repository.Name, repository.Owner)
+                .Map(j => j.ToSuccess<JobExecution<string>, ChooseRepositoryError>().Async());
 
         private static IOption<(NonEmptyString owner, NonEmptyString name)> ParseNameWithOwner(string nameWithOwner) =>
-            from parts in nameWithOwner.ToOption().Map(n => n.Split('/'))
+            from parts in ObjectExtensions.ToOption(nameWithOwner).Map(n => n.Split('/'))
             from owner in parts.Get(0).FlatMap(NonEmptyString.Create)
             from name in parts.Get(1).FlatMap(NonEmptyString.Create)
             select (owner, name);

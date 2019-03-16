@@ -17,8 +17,8 @@ namespace CodeInsight.Github.Queries
             Query = CreateQuery();
         }
 
-        public static Reader<IConnection, Task<IEnumerable<RepositoryDto>>> Get() =>
-            conn => conn
+        public static IO<Task<IEnumerable<RepositoryDto>>> Execute(IConnection connection) => () =>
+            connection
                 .Run(Query)
                 .Map(rs => rs.SelectMany(r => r));
         

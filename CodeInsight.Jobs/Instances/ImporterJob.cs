@@ -4,6 +4,7 @@ using CodeInsight.Github.Import;
 using CodeInsight.Library.Types;
 using FuncSharp;
 using Hangfire;
+using Monad;
 using Octokit.GraphQL;
 using static CodeInsight.Library.Prelude;
 
@@ -22,7 +23,7 @@ namespace CodeInsight.Jobs.Instances
             this.repository = repository;
         }
 
-        public JobExecution<string> StartNew(string connectionToken, string applicationName, string name, string owner)
+        public IO<JobExecution<string>> StartNew(string connectionToken, string applicationName, string name, string owner) => () =>
         {
             var jobExecution = JobExecution<string>.CreateNew();
             storage.Add(jobExecution);
@@ -30,7 +31,7 @@ namespace CodeInsight.Jobs.Instances
             BackgroundJob.Enqueue<ImporterJob>(j => j.Execute(jobExecution.Id, connectionToken, applicationName, name, owner));
 
             return jobExecution;
-        }
+        };
         
         public void Execute(Guid executionId, string connectionToken, string applicationName, string name, string owner)
         {

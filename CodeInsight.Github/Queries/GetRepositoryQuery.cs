@@ -20,9 +20,9 @@ namespace CodeInsight.Github.Queries
             Query = CreateQuery();
         }
 
-        public static Reader<IConnection, Task<IOption<RepositoryDto>>> Get(NonEmptyString owner, NonEmptyString name)
+        public static IO<Task<IOption<RepositoryDto>>> Execute(IConnection connection, NonEmptyString owner, NonEmptyString name)
         {
-            return conn =>
+            return () =>
             {
                 var vars = new Dictionary<string, object>
                 {
@@ -30,7 +30,7 @@ namespace CodeInsight.Github.Queries
                     {"repositoryOwner", owner.Value}
                 };
                 
-                return conn.Run(Query, vars).SafeMap(r => r.MatchSingle(
+                return connection.Run(Query, vars).SafeMap(r => r.MatchSingle(
                     repository => Some(repository),
                     e => e is NotFoundException ? None<RepositoryDto>() : throw e
                 ));
