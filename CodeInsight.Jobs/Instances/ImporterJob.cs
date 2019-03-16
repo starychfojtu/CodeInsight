@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using CodeInsight.Domain.Repository;
 using CodeInsight.Github.Import;
+using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using FuncSharp;
 using Hangfire;
@@ -14,13 +16,13 @@ namespace CodeInsight.Jobs.Instances
     {
         private readonly Importer importer;
         private readonly IJobExecutionStorage storage;
-        private readonly IJobExecutionRepository repository;
+        private readonly IJobExecutionRepository jobExecutionRepository;
 
-        public ImporterJob(Importer importer, IJobExecutionStorage storage, IJobExecutionRepository repository)
+        public ImporterJob(Importer importer, IJobExecutionStorage storage, IJobExecutionRepository jobExecutionRepository)
         {
             this.importer = importer;
             this.storage = storage;
-            this.repository = repository;
+            this.jobExecutionRepository = jobExecutionRepository;
         }
 
         public IO<JobExecution<string>> StartNew(string connectionToken, string applicationName, string name, string owner) => () =>
@@ -33,17 +35,26 @@ namespace CodeInsight.Jobs.Instances
             return jobExecution;
         };
         
-        public void Execute(Guid executionId, string connectionToken, string applicationName, string name, string owner)
+        public Task Execute(Guid executionId, string connectionToken, string applicationName, string name, string owner)
         {
-                
             var connection = new Connection(new ProductHeaderValue(applicationName), connectionToken);
             var repoOwner = NonEmptyString.Create(owner).Get();
             var repoName = NonEmptyString.Create(name).Get();
-            var importedRepository = importer.ImportRepository(connection, repoOwner, repoName).Result;
 
-            var execution = repository.Get<string>(executionId).Get();
-            var finishedJobExecution = execution.With(progress: 100, result: Some(importedRepository.Id.Value.Value));
-            storage.Update(finishedJobExecution);
+            // TODO: Refactor to LINQ.
+            var result = importer.ImportRepository(connection, repoOwner, repoName)
+                .SelectMany(
+                    repository => GetExecution(executionId),
+                    (repository, execution) => execution.With(progress: 100, result: Some(repository.Id.Value.Value))
+                )
+                .Bind(e => storage.Update(e));
+
+            return result.Execute();
+        }
+
+        private IO<Task<JobExecution<string>>> GetExecution(Guid executionId)
+        {
+            return jobExecutionRepository.Get<string>(executionId).Map(e => e.Get());
         }
     }
 }

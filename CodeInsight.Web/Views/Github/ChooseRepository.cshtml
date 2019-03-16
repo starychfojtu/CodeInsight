@@ -7,6 +7,16 @@
 <div class="container">
     <div class="row">
         <h2>Choose a repository</h2>
+        
+        @{
+            if (Model.Error.NonEmpty)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @Model.Error.Get()
+                </div>
+            }
+        }
+        
         <form asp-controller="Github" asp-action="ChooseRepository" method="post">
             @{
                 foreach (var repository in Model.Repositories)
@@ -16,6 +26,7 @@
             }
             <button type="submit">Submit</button>
         </form>
+        
     </div>
 </div>
 

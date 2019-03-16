@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 using CodeInsight.Jobs;
 using CodeInsight.Library.Extensions;
 using FuncSharp;
+using Monad;
+using ObjectExtensions = FuncSharp.ObjectExtensions;
 
 namespace CodeInsight.Data.JobExecution
 {
@@ -21,21 +23,17 @@ namespace CodeInsight.Data.JobExecution
             return Unit.Value;
         }
 
-        public ITry<Unit, JobExecutionUpdateError> Update<T>(JobExecution<T> execution)
+        public IO<Task<Unit>> Update<T>(JobExecution<T> execution)
         {
             var newExecution = JobExecution.FromDomain(execution);
-            return dbContext
-                .Find<JobExecution>(execution.Id)
-                .ToOption()
-                .ToTry(_ => JobExecutionUpdateError.JobExecutionNotFound)
-                .Map(e => Update(e, newExecution));
+            var oldExecution = dbContext.Find<JobExecution>(execution.Id).AsOption().Get();
+            return Update(oldExecution, newExecution);
         }
 
-        private Unit Update(JobExecution oldExecution, JobExecution newExecution)
+        private IO<Task<Unit>> Update(JobExecution oldExecution, JobExecution newExecution) => () =>
         {
             dbContext.Entry(oldExecution).CurrentValues.SetValues(newExecution);
-            dbContext.SaveChanges();
-            return Unit.Value;
-        }
+            return dbContext.SaveChangesAsync().ToUnit();
+        };
     }
 }

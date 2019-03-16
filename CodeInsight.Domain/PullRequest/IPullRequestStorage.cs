@@ -1,16 +1,13 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using CodeInsight.Domain.Common;
 using FuncSharp;
+using Monad;
 
 namespace CodeInsight.Domain.PullRequest
 {
-    public enum PullRequestUpdateError
-    {
-        SomePullRequestNotFound
-    }
-    
     public interface IPullRequestStorage : IStorage<PullRequest>
     {
-        ITry<Unit, PullRequestUpdateError> Update(IEnumerable<PullRequest> pullRequests);
+        IO<Task<Unit>> Update(IEnumerable<PullRequest> pullRequests);
     }
 }

@@ -37,7 +37,7 @@ namespace CodeInsight.Library.Extensions
             return (passing, violating);
         }
 
-        public static IOption<A> Get<A>(this A[] array, int index) =>
+        public static IOption<A> ElementAt<A>(this A[] array, int index) =>
             array.Length > index ? Some(array[index]) : None<A>();
     }
 }

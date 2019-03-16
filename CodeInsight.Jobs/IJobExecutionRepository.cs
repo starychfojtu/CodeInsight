@@ -1,10 +1,12 @@
 using System;
+using System.Threading.Tasks;
 using FuncSharp;
+using Monad;
 
 namespace CodeInsight.Jobs
 {
     public interface IJobExecutionRepository
     {
-        IOption<JobExecution<T>> Get<T>(Guid id);
+        IO<Task<IOption<JobExecution<T>>>> Get<T>(Guid id);
     }
 }

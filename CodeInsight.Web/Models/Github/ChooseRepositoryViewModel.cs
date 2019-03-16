@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using FuncSharp;
 
 namespace CodeInsight.Web.Models.Github
 {
@@ -14,11 +15,14 @@ namespace CodeInsight.Web.Models.Github
     
     public sealed class ChooseRepositoryViewModel
     {
-        public ChooseRepositoryViewModel(IEnumerable<RepositoryInputDto> repositories)
+        public ChooseRepositoryViewModel(IEnumerable<RepositoryInputDto> repositories, IOption<string> error)
         {
             Repositories = repositories;
+            Error = error;
         }
 
         public IEnumerable<RepositoryInputDto> Repositories { get; }
+        
+        public IOption<string> Error { get; }
     }
 }

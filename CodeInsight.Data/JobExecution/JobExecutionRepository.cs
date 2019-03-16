@@ -1,6 +1,9 @@
 using System;
+using System.Threading.Tasks;
 using CodeInsight.Jobs;
+using CodeInsight.Library.Extensions;
 using FuncSharp;
+using Monad;
 
 namespace CodeInsight.Data.JobExecution
 {
@@ -13,9 +16,14 @@ namespace CodeInsight.Data.JobExecution
             this.dbContext = dbContext;
         }
         
-        public IOption<JobExecution<T>> Get<T>(Guid id)
+        public IO<Task<IOption<JobExecution<T>>>> Get<T>(Guid id)
         {
-            return dbContext.JobExecutions.Find(id).ToOption().Map(JobExecution.ToDomain<T>);
+            return () => dbContext.JobExecutions
+                .FindAsync(id)
+                .Map(e => e
+                    .AsOption()
+                    .Map(JobExecution.ToDomain<T>)
+                );
         }
     }
 }

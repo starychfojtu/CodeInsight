@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FuncSharp;
 using Monad;
 using Try = FuncSharp.Try;
+using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.Library.Extensions
 {
@@ -137,6 +138,9 @@ namespace CodeInsight.Library.Extensions
         }
         
         // IO
+
+        public static IO<A> ToIO<A>(this A a) =>
+            () => a;
         
         public static A Execute<A>(this IO<A> io) =>
             io();
@@ -184,6 +188,30 @@ namespace CodeInsight.Library.Extensions
         public static IO<Task<ITry<C, E>>> SelectMany<E, A, B, C>(
             this IO<Task<ITry<A, E>>> ioT,
             Func<A, IO<Task<ITry<B, E>>>> binder,
+            Func<A, B, C> project)
+        {
+            return ioT.Bind(a => binder(a).Map(b => project(a, b)));
+        }
+        
+        // IO Task Option Transformer
+        
+        public static IO<Task<IOption<B>>> Map<A, B>(this IO<Task<IOption<A>>> ioT, Func<A, B> project) =>
+            ioT.Map(t => t.Map(tr => tr.Map(project)));
+        
+        public static IO<Task<IOption<B>>> Select<A, B>(this IO<Task<IOption<A>>> ioT, Func<A, B> project) =>
+            ioT.Map(project);
+        
+        public static IO<Task<IOption<B>>> Bind<A, B>(this IO<Task<IOption<A>>> ioT, Func<A, IO<Task<IOption<B>>>> binder)
+        {
+            return () => ioT.Execute().Bind(t => t.Match(
+                r => binder(r)(),
+                _ => None<B>().Async()
+            ));
+        }
+        
+        public static IO<Task<IOption<C>>> SelectMany<A, B, C>(
+            this IO<Task<IOption<A>>> ioT,
+            Func<A, IO<Task<IOption<B>>>> binder,
             Func<A, B, C> project)
         {
             return ioT.Bind(a => binder(a).Map(b => project(a, b)));

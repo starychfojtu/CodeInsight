@@ -97,20 +97,31 @@ namespace CodeInsight.Web.Controllers
         #region ChooseRepository
 
         [HttpGet]
-        public Task<IActionResult> ChooseRepository() => ConnectionAction((connection, _) =>
+        public Task<IActionResult> ChooseRepository(int? errorCode = null) => ConnectionAction((connection, token) =>
         {
+            var errorMessage = GetErrorMessage(errorCode);
+
             var result =
                 from repositories in GetAllRepositoriesQuery.Execute(connection)
                 let inputs = repositories.Select(r => new RepositoryInputDto(r.Name, r.Owner))
-                select (IActionResult) View(new ChooseRepositoryViewModel(inputs));
+                select (IActionResult) View(new ChooseRepositoryViewModel(inputs, errorMessage));
 
             return result.Execute();
         });
-        
+
+        private static IOption<string> GetErrorMessage(int? errorCode)
+        {
+            var error = errorCode.ToOption().FlatMap(e => e.Cast<ChooseRepositoryError>());
+            return error.FlatMap(e => e.Match(
+                ChooseRepositoryError.InvalidNameWithOwner, _ => Some("Please select one of the repositories."),
+                _ => None<string>()
+            ));
+        }
+
         private enum ChooseRepositoryError
         {
-            InvalidNameWithOwner,
-            RepositoryNotFound
+            InvalidNameWithOwner = 0,
+            RepositoryNotFound = 1
         }
         
         [HttpPost]
@@ -123,7 +134,7 @@ namespace CodeInsight.Web.Controllers
             return result.Execute().Map(r => r.Match(
                 execution => RedirectToAction("ImportStatus", "Github", new {JobId = execution.Id}),
                 error => error.Match(
-                    ChooseRepositoryError.InvalidNameWithOwner, _ => RedirectToAction("ChooseRepository"),
+                    ChooseRepositoryError.InvalidNameWithOwner, _ => RedirectToAction("ChooseRepository", new { errorCode = 0 }),
                     ChooseRepositoryError.RepositoryNotFound, _ => (IActionResult)BadRequest()
                 )
             ));
@@ -144,9 +155,9 @@ namespace CodeInsight.Web.Controllers
                 .Map(j => j.ToSuccess<JobExecution<string>, ChooseRepositoryError>().Async());
 
         private static IOption<(NonEmptyString owner, NonEmptyString name)> ParseNameWithOwner(string nameWithOwner) =>
-            from parts in ObjectExtensions.ToOption(nameWithOwner).Map(n => n.Split('/'))
-            from owner in parts.Get(0).FlatMap(NonEmptyString.Create)
-            from name in parts.Get(1).FlatMap(NonEmptyString.Create)
+            from parts in nameWithOwner.AsOption().Map(n => n.Split('/'))
+            from owner in parts.ElementAt(index: 0).FlatMap(NonEmptyString.Create)
+            from name in parts.ElementAt(index: 1).FlatMap(NonEmptyString.Create)
             select (owner, name);
         
         #endregion
@@ -154,16 +165,14 @@ namespace CodeInsight.Web.Controllers
         #region ImportStatus
 
         [HttpGet]
-        public IActionResult ImportStatus(Guid jobId) =>
-            jobExecutionRepository
-                .Get<string>(jobId)
-                .Match(
-                    job => job.IsFinished 
-                        ? ProcessFinished(job) 
-                        : View(new ImportStatusViewModel(job.Progress)),
-                    _ => NotFound()
-                );
-
+        public Task<IActionResult> ImportStatus(Guid jobId)
+        {
+            return jobExecutionRepository.Get<string>(jobId)
+                .Map(e => e.IsFinished ? ProcessFinished(e) : View(new ImportStatusViewModel(e.Progress)))
+                .Execute()
+                .Map(r => r.GetOrElse((IActionResult)NotFound()));
+        }
+        
         private IActionResult ProcessFinished(JobExecution<string> execution)
         {
             var repositoryId = execution.Result.Get();

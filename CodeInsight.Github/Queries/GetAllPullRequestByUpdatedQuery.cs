@@ -18,21 +18,18 @@ namespace CodeInsight.Github
             Query = CreateQuery();
         }
 
-        internal static Reader<IConnection, Task<ResponsePage<PullRequestDto>>> Get(Repository repository, int take, string cursor = null)
+        internal static IO<Task<ResponsePage<PullRequestDto>>> Execute(IConnection conn, Repository repository, int take, string cursor = null) => () =>
         {
-            return conn =>
+            var vars = new Dictionary<string, object>
             {
-                var vars = new Dictionary<string, object>
-                {
-                    {"repositoryName", repository.Name.Value},
-                    {"repositoryOwner", repository.Owner.Value},
-                    {"after", cursor},
-                    {"first", take}
-                };
-
-                return conn.Run(Query, vars);
+                {"repositoryName", repository.Name.Value},
+                {"repositoryOwner", repository.Owner.Value},
+                {"after", cursor},
+                {"first", take}
             };
-        }
+
+            return conn.Run(Query, vars);
+        };
         
         private static ICompiledQuery<ResponsePage<PullRequestDto>> CreateQuery() =>
             new Query()
