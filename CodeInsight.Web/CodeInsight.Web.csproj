@@ -42,4 +42,8 @@
       <_ContentIncludedByDefault Remove="wwwroot\images\banner3.svg" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="wwwroot\img" />
+    </ItemGroup>
+
 </Project>
