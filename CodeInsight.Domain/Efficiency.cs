@@ -16,7 +16,7 @@ namespace CodeInsight.Domain
         }
 
         public static Efficiency Create(uint changes, Duration time) =>
-            new Efficiency(ChangesToSize(changes) / Math.Max(1, time.TotalHours));
+            new Efficiency(ChangesToSize(changes) / Math.Log10(Math.Max(1, time.TotalHours)));
         
         /// <summary>
         /// Returns value between 0-100 indicating how big the changes are.
