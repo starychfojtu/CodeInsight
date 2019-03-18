@@ -111,7 +111,7 @@ namespace CodeInsight.Web.Controllers
 
         private static IOption<string> GetErrorMessage(int? errorCode)
         {
-            var error = errorCode.ToOption().FlatMap(e => e.Cast<ChooseRepositoryError>());
+            var error = errorCode.ToOption().FlatMap(e => e.AsStruct<ChooseRepositoryError>());
             return error.FlatMap(e => e.Match(
                 ChooseRepositoryError.InvalidNameWithOwner, _ => Some("Please select one of the repositories."),
                 _ => None<string>()

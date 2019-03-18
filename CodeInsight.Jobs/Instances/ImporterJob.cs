@@ -40,18 +40,17 @@ namespace CodeInsight.Jobs.Instances
             var connection = new Connection(new ProductHeaderValue(applicationName), connectionToken);
             var repoOwner = NonEmptyString.Create(owner).Get();
             var repoName = NonEmptyString.Create(name).Get();
-
-            // TODO: Refactor to LINQ.
-            var result = importer.ImportRepository(connection, repoOwner, repoName)
+            
+            var result = GetExecution(executionId)
                 .SelectMany(
-                    repository => GetExecution(executionId),
-                    (repository, execution) => execution.With(progress: 100, result: Some(repository.Id.Value.Value))
+                    _ => importer.ImportRepository(connection, repoOwner, repoName),
+                    (e, r) => e.With(progress: 100, result: Some(r.Id.Value.Value))
                 )
-                .Bind(e => storage.Update(e));
-
+                .Bind(storage.Update);
+            
             return result.Execute();
         }
-
+        
         private IO<Task<JobExecution<string>>> GetExecution(Guid executionId)
         {
             return jobExecutionRepository.Get<string>(executionId).Map(e => e.Get());

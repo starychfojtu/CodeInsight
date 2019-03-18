@@ -21,7 +21,8 @@ namespace CodeInsight.Library.Extensions
         public static IOption<A> AsOption<A>(this A a) =>
             a.ToOption();
 
-        public static IOption<A> Cast<A>(this object obj)
+        public static IOption<A> AsStruct<A>(this object obj)
+            where A : struct
         {
             try
             {

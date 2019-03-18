@@ -1,19 +1,13 @@
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
+using System;
 using System.Threading.Tasks;
-using CodeInsight.Domain;
 using CodeInsight.Domain.Common;
-using CodeInsight.Domain.PullRequest;
 using CodeInsight.Domain.Repository;
 using CodeInsight.Github.Queries;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using FuncSharp;
 using Monad;
-using NodaTime;
 using Octokit.GraphQL;
-using PullRequest = CodeInsight.Domain.PullRequest.PullRequest;
 
 namespace CodeInsight.Github.Import
 {
@@ -22,7 +16,6 @@ namespace CodeInsight.Github.Import
         private readonly PullRequestImporter pullRequestImporter;
         private readonly IRepositoryStorage repositoryStorage;
         private readonly IRepositoryRepository repositoryRepository;
-
 
         public Importer(PullRequestImporter pullRequestImporter, IRepositoryStorage repositoryStorage, IRepositoryRepository repositoryRepository)
         {
@@ -33,7 +26,7 @@ namespace CodeInsight.Github.Import
 
         public IO<Task<Repository>> ImportRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => () =>
             GetOrCreateRepository(connection, owner, name)
-                .Bind(r => pullRequestImporter.UpdatePullRequests(connection, r, i => Unit.Value));
+                .Bind(r => pullRequestImporter.UpdatePullRequests(connection, r));
         
         private Task<Repository> GetOrCreateRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => 
             repositoryRepository.Get(owner, name)

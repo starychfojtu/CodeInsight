@@ -1,13 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain;
-using CodeInsight.Domain.Common;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Domain.Repository;
-using CodeInsight.Github.Queries;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using FuncSharp;
@@ -22,25 +19,20 @@ namespace CodeInsight.Github.Import
     {
         private readonly IPullRequestStorage pullRequestStorage;
         private readonly IPullRequestRepository pullRequestRepository;
-        private readonly IRepositoryStorage repositoryStorage;
 
         public PullRequestImporter(
             IPullRequestStorage pullRequestStorage,
-            IRepositoryStorage repositoryStorage,
             IPullRequestRepository pullRequestRepository)
         {
             this.pullRequestStorage = pullRequestStorage;
-            this.repositoryStorage = repositoryStorage;
             this.pullRequestRepository = pullRequestRepository;
         }
         
-        public async Task<Repository> UpdatePullRequests(IConnection connection, Repository repository, Func<int, Unit> reportProgress)
+        public async Task<Repository> UpdatePullRequests(IConnection connection, Repository repository)
         {
             var lastPrs = await pullRequestRepository.GetAllOrderedByUpdated(repository.Id, take: 1);
             var lastPr = lastPrs.SingleOption();
             var cursor = (string) null;
-            var step = 1;
-            var progress = 0;
             
             do
             {
@@ -52,10 +44,6 @@ namespace CodeInsight.Github.Import
 
                 var allPrsWereNewOrUpdated = updatedOrNewPullRequests.Count == page.Items.Count;
                 cursor = page.HasNextPage && allPrsWereNewOrUpdated ? page.EndCursor : null;
-
-                step++;
-                progress = progress + 100 / step;
-                reportProgress(progress);
             }
             while (cursor != null);
             
