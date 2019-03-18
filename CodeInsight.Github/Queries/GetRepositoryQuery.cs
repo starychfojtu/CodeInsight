@@ -4,7 +4,6 @@ using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using FuncSharp;
 using Monad;
-using Octokit;
 using Octokit.GraphQL;
 using static CodeInsight.Library.Prelude;
 using IConnection = Octokit.GraphQL.IConnection;
@@ -32,7 +31,7 @@ namespace CodeInsight.Github.Queries
                 
                 return connection.Run(Query, vars).SafeMap(r => r.MatchSingle(
                     repository => Some(repository),
-                    e => e is NotFoundException ? None<RepositoryDto>() : throw e
+                    e => throw e // TODO: Handle NotFoundException.
                 ));
             };
         }
