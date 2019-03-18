@@ -163,12 +163,24 @@ namespace CodeInsight.Web.Controllers
         #endregion
 
         #region ImportStatus
+        
+        [HttpGet]
+        public Task<IActionResult> GetImportStatus(Guid jobId)
+        {
+            return jobExecutionRepository
+                .Get<string>(jobId)
+                .Map(e => e.Match<IActionResult>(
+                    execution => Json(new { Progress = execution.Progress }),
+                    _ => NotFound()
+                ))
+                .Execute();
+        }
 
         [HttpGet]
         public Task<IActionResult> ImportStatus(Guid jobId)
         {
             return jobExecutionRepository.Get<string>(jobId)
-                .Map(e => e.IsFinished ? ProcessFinished(e) : View(new ImportStatusViewModel(e.Progress)))
+                .Map(e => e.IsFinished ? ProcessFinished(e) : View(new ImportStatusViewModel(e.Id)))
                 .Execute()
                 .Map(r => r.GetOrElse((IActionResult)NotFound()));
         }

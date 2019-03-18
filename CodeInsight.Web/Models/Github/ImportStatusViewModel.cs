@@ -1,12 +1,14 @@
+using System;
+
 namespace CodeInsight.Web.Models.Github
 {
     public class ImportStatusViewModel
     {
-        public ImportStatusViewModel(uint progress)
+        public ImportStatusViewModel(Guid jobId)
         {
-            Progress = progress;
+            JobId = jobId;
         }
-
-        public uint Progress { get; }
+        
+        public Guid JobId { get; }
     }
 }

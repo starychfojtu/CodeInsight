@@ -6,8 +6,23 @@
 
 <div class="container">
     <div class="row">
-        <h2>Import status</h2>
-        <h2>@Model.Progress %</h2>
+        <h2>Importing in progress</h2>
+        <p>This page will refresh automatically.</p>
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        const url = '@Url.Action("GetImportStatus", "Github", new { JobId = Model.JobId })'
+        
+        setInterval(() => fetch(url)
+            .then(data => data.json())
+            .then(response => {
+                if (response.progress === 100) {
+                    window.location.reload(1);
+                }
+            })
+        , 2000);
+        
+    </script>
+}
