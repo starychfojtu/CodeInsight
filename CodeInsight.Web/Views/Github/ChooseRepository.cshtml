@@ -16,7 +16,7 @@
 
     <form asp-controller="Github" asp-action="ChooseRepository" method="post">
         <div class="form-group row">
-            <label class="col-sm-2 col-form-label col-form-label-lg" for="nameWithOwner">Choose repository</label>
+            <label class="col-sm-2 col-form-label col-form-label-lg text-white" for="nameWithOwner">Choose repository</label>
             <select class="form-control form-control-lg col-sm-10" id="nameWithOwner" name="nameWithOwner">
                 @{
                     foreach (var repository in Model.Repositories)
