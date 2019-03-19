@@ -1,33 +1,43 @@
 ﻿@using FuncSharp
 @model CodeInsight.Web.Models.PullRequest.PullRequestIndexViewModel
 
-<div class="container">
-    <form asp-controller="PullRequest", asp-action="Index" method="post">
-        <div class="form-row">
-            <div class="form-group col-md-4">
-                <label for="fromDate">Start</label>
-                <input data-provide="datepicker" 
-                       data-date-format="dd/mm/yyyy" 
-                       class="form-control" 
-                       id="fromDate" 
-                       name="fromDate" 
-                       value="@Model.Configuration.Interval.Start.ToString("dd/MM/yyyy", null)"/>
+<div class="container" style="padding-top: 25px">
+    <div class="row">
+        @{
+            if (Model.Error.NonEmpty)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @Model.Error.Get()
+                </div>
+            }
+        }
+        <form asp-controller="PullRequest", asp-action="Index" method="post">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="fromDate">Start</label>
+                    <input data-provide="datepicker"
+                           data-date-format="dd/mm/yyyy"
+                           class="form-control"
+                           id="fromDate"
+                           name="fromDate"
+                           value="@Model.Configuration.Interval.Start.ToString("dd/MM/yyyy", null)"/>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="toDate">End</label>
+                    <input data-provide="datepicker"
+                           data-date-format="dd/mm/yyyy"
+                           class="form-control"
+                           id="toDate"
+                           name="toDate"
+                           value="@Model.Configuration.Interval.End.ToString("dd/MM/yyyy", null)"/>
+                </div>
+                <div class="form-group col-md-2">
+                    <label class="invisible">I am hidden</label>
+                    <button type="submit" class="btn btn-primary form-control">Submit</button>
+                </div>
             </div>
-            <div class="form-group col-md-4">
-                <label for="toDate">End</label>
-                <input data-provide="datepicker" 
-                       data-date-format="dd/mm/yyyy" 
-                       class="form-control" 
-                       id="toDate" 
-                       name="toDate" 
-                       value="@Model.Configuration.Interval.End.ToString("dd/MM/yyyy", null)"/>
-            </div>
-            <div class="form-group col-md-2">
-                <label class="invisible">I am hidden</label>
-                <button type="submit" class="btn btn-primary form-control">Submit</button>
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
     <div class="row">
         @foreach (var chart in Model.Charts)
         {
@@ -54,18 +64,18 @@
             <th>Author</th>
             </thead>
             <tbody>
-                @foreach (var pr in Model.PullRequests.OrderByDescending(p => p.Lifetime.IsEmpty).ThenBy(p => p.CreatedAt))
-                {
-                    <tr>
-                        <td>@pr.Title</td>
-                        <td>@pr.CreatedAt.ToString()</td>
-                        <td>@pr.UpdatedAt.ToString()</td>
-                        <td>@pr.Lifetime.Map(t => t.TotalHours.ToString("N2")).GetOrElse("Open")</td>
-                        <td>@pr.Additions</td>
-                        <td>@pr.Deletions</td>
-                        <td>@pr.AuthorId.ToString()</td>
-                    </tr>
-                }
+            @foreach (var pr in Model.PullRequests.OrderByDescending(p => p.Lifetime.IsEmpty).ThenBy(p => p.CreatedAt))
+            {
+                <tr>
+                    <td>@pr.Title</td>
+                    <td>@pr.CreatedAt.ToString()</td>
+                    <td>@pr.UpdatedAt.ToString()</td>
+                    <td>@pr.Lifetime.Map(t => t.TotalHours.ToString("N2")).GetOrElse("Open")</td>
+                    <td>@pr.Additions</td>
+                    <td>@pr.Deletions</td>
+                    <td>@pr.AuthorId.ToString()</td>
+                </tr>
+            }
             </tbody>
         </table>
     </div>

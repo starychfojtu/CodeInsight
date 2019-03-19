@@ -36,6 +36,17 @@ namespace CodeInsight.Library.Extensions
             );
         }
         
+        public static ITry<B, E> Select<E, A, B>(this ITry<A, E> iTry, Func<A, B> project) =>
+            iTry.Map(project);
+        
+        public static ITry<C, E> SelectMany<E, A, B, C>(
+            this ITry<A, E> iTry,
+            Func<A, ITry<B, E>> binder,
+            Func<A, B, C> project)
+        {
+            return iTry.FlatMap(a => binder(a).Map(b => project(a, b)));
+        }
+        
         // Task
         
         public static Task<T> Async<T>(this T obj) =>

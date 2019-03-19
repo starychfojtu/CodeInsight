@@ -38,13 +38,35 @@ namespace CodeInsight.Web.Controllers
 
         #region Index
 
+        public enum ConfigurationError
+        {
+            InvalidFromDate,
+            InvalidToDate,
+            ToDateIsAfterFrom,
+            ToDateIsAfterTomorrow
+        }
+
         public Task<IActionResult> Index(string fromDate, string toDate) => Action(async client =>
         {
             var cultureInfo = GetCultureInfo(HttpContext.Request);
-            // TODO: Return error in view when invalid.
-            var fromIsValid = DateTimeOffset.TryParse(fromDate, cultureInfo, DateTimeStyles.AssumeLocal, out var fromDateTimeOffset);
-            var from = fromIsValid ? Some(fromDateTimeOffset) : None<DateTimeOffset>();
-            var configuration = CreateConfiguration(from);
+            var customConfiguration =
+                from start in fromDate.ToOption()
+                from end in toDate.ToOption()
+                select CreateConfiguration(start, end, cultureInfo, DateTimeZone.Utc);
+
+            var (configuration, error) = customConfiguration.Match(
+                custom => custom.Match(
+                    c => (c, None<string>()),
+                    e => (CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc), Some(e.Match(
+                        ConfigurationError.InvalidFromDate, _ => "Invalid from date.",
+                        ConfigurationError.InvalidToDate, _ => "Invalid to date.",
+                        ConfigurationError.ToDateIsAfterFrom, _ => "Start cannot be after end.",
+                        ConfigurationError.ToDateIsAfterTomorrow, _ => "End cannot be after tomorrow."
+                    )))
+                ),
+                _ => (CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc), None<string>())
+            );
+            
             var instantInterval = new FiniteInterval(
                 configuration.Interval.Start.ToInstant(),
                 configuration.Interval.End.ToInstant()
@@ -54,7 +76,7 @@ namespace CodeInsight.Web.Controllers
             var pullRequests = prs.ToImmutableList();
             var statistics = StatisticsCalculator.Calculate(pullRequests, configuration);
             var charts = CreateIndexCharts(statistics);
-            var vm = new PullRequestIndexViewModel(configuration, pullRequests, charts.ToList());
+            var vm = new PullRequestIndexViewModel(configuration, pullRequests, error, charts.ToList());
             return (IActionResult)View(vm);
         });
         
@@ -93,7 +115,8 @@ namespace CodeInsight.Web.Controllers
 
         public Task<IActionResult> PerAuthors() => Action(client =>
         {
-            var configuration = CreateConfiguration(None<DateTimeOffset>());
+            var cultureInfo = GetCultureInfo(HttpContext.Request);
+            var configuration = CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc);
             var interval = new FiniteInterval(
                 configuration.Interval.Start.ToInstant(),
                 configuration.Interval.End.ToInstant()
@@ -183,20 +206,47 @@ namespace CodeInsight.Web.Controllers
         });
 
         #endregion
-        
-        private static IntervalStatisticsConfiguration CreateConfiguration(IOption<DateTimeOffset> from)
+
+        private static IntervalStatisticsConfiguration CreateDefaultConfiguration(CultureInfo cultureInfo, DateTimeZone zone)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
-            var fromZoned = from.Match(
-                f =>  ZonedDateTime.FromDateTimeOffset(f),
-                _ => now.InUtc().Minus(Duration.FromDays(30))
-            );
-            var zone = fromZoned.Zone;
-            var tomorrow = now.InZone(zone).Date.PlusDays(1);
-            var interval = new DateInterval(fromZoned.Date, tomorrow);
-            var zonedInterval = new ZonedDateInterval(interval, zone);
-            
-            return new IntervalStatisticsConfiguration(zonedInterval, now);
+            var end = now.InZone(zone).Date.PlusDays(1);
+            var start = end.PlusDays(-30);
+            return new IntervalStatisticsConfiguration(new ZonedDateInterval(new DateInterval(start, end), zone), now);
+        }
+        
+        private static ITry<IntervalStatisticsConfiguration, ConfigurationError> CreateConfiguration(
+            string fromDate,
+            string toDate,
+            CultureInfo cultureInfo,
+            DateTimeZone zone)
+        {
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var maxToDate = now.InZone(zone).Date.PlusDays(1);
+
+            var start = ParseDate(fromDate, cultureInfo).ToTry(_ => ConfigurationError.InvalidFromDate);
+            var end = ParseDate(toDate, cultureInfo)
+                .ToTry(_ => ConfigurationError.InvalidToDate)
+                .FlatMap(d => (d <= maxToDate).ToTry(t => d, f => ConfigurationError.ToDateIsAfterTomorrow));
+
+            return
+                from e in end
+                from s in start
+                from interval in CreateInterval(s, e).ToTry(_ => ConfigurationError.ToDateIsAfterFrom)
+                select new IntervalStatisticsConfiguration(new ZonedDateInterval(interval, zone), now);
+        }
+
+        private static IOption<DateInterval> CreateInterval(LocalDate start, LocalDate end)
+        {
+            return end < start ? None<DateInterval>() : Some(new DateInterval(start, end));
+        }
+
+        private static IOption<LocalDate> ParseDate(string date, CultureInfo cultureInfo)
+        {
+            DateTimeOffset.TryParse("12/20/2018", new System.Globalization.CultureInfo("en-US"), System.Globalization.DateTimeStyles.AssumeLocal, out var res);
+            var dateIsValid = DateTimeOffset.TryParse(date, cultureInfo, DateTimeStyles.AssumeLocal, out var result);
+            var resultAsOffset = dateIsValid ? Some(result) : None<DateTimeOffset>();
+            return resultAsOffset.Map(ZonedDateTime.FromDateTimeOffset).Map(d => d.Date);
         }
 
         private static IReadOnlyList<Dataset> CreateDataSets(IntervalStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)
