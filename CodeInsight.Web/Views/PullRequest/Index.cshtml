@@ -53,17 +53,17 @@
             </div>
         }
     </div>
-    <h2>Individual Pull Requests (@Model.PullRequests.Count)</h2><br>
+    <h4 class="display-4" style="margin-bottom: 25px">Pull Requests (@Model.PullRequests.Count)</h4>
     <div class="row">
-        <table>
-            <thead>
-            <th>Title</th>
-            <th>CreatedAt</th>
-            <th>UpdatedAt</th>
-            <th>LifeTime (hours)</th>
-            <th>Additions</th>
-            <th>Deletions</th>
-            <th>Author</th>
+        <table class="table">
+            <thead class="thead-light">
+                <th>Title</th>
+                <th>CreatedAt</th>
+                <th>UpdatedAt</th>
+                <th>LifeTime (hours)</th>
+                <th>Additions</th>
+                <th>Deletions</th>
+                <th>Author</th>
             </thead>
             <tbody>
             @foreach (var pr in Model.PullRequests.OrderByDescending(p => p.Lifetime.IsEmpty).ThenBy(p => p.CreatedAt))
