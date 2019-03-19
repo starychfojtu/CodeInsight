@@ -15,5 +15,8 @@ namespace CodeInsight.Library.Types
 
         public ZonedDateTime End =>
             DateInterval.End.AtStartOfDayInZone(Zone);
+
+        public FiniteInterval ToInstantInterval() =>
+            new FiniteInterval(Start.ToInstant(), End.ToInstant());
     }
 }

@@ -1,9 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
-using CodeInsight.Library;
+using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using FuncSharp;
 using NodaTime;
@@ -24,6 +24,9 @@ namespace CodeInsight.PullRequests
         
         public IntervalStatisticsConfiguration Configuration { get; }
         public ZonedDateInterval Interval => Configuration.Interval;
+
+        public DataCube1<LocalDate, T> Map<T>(Func<Statistics, T> project) =>
+            data.Map(ToStatistics).Map(project);
         
         public IOption<Statistics> Get(LocalDate date) =>
             data.Get(date).Map(ToStatistics);

@@ -19,6 +19,7 @@ using CodeInsight.Web.Common.Security;
 using CodeInsight.Web.Models;
 using CodeInsight.Web.Models.PullRequest;
 using FuncSharp;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -46,68 +47,49 @@ namespace CodeInsight.Web.Controllers
             ToDateIsAfterTomorrow
         }
 
-        public Task<IActionResult> Index(string fromDate, string toDate) => Action(async client =>
+        public Task<IActionResult> Index(string fromDate, string toDate) => ConfigurationAction(fromDate, toDate, async (client, config, error) =>
         {
-            var cultureInfo = GetCultureInfo(HttpContext.Request);
-            var customConfiguration =
-                from start in NonEmptyString.Create(fromDate)
-                from end in NonEmptyString.Create(toDate)
-                select CreateConfiguration(start, end, cultureInfo, DateTimeZone.Utc);
-
-            var (configuration, error) = customConfiguration.Match(
-                custom => custom.Match(
-                    c => (c, None<string>()),
-                    e => (CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc), Some(e.Match(
-                        ConfigurationError.InvalidFromDate, _ => "Invalid from date.",
-                        ConfigurationError.InvalidToDate, _ => "Invalid to date.",
-                        ConfigurationError.ToDateIsAfterFrom, _ => "Start cannot be after end.",
-                        ConfigurationError.ToDateIsAfterTomorrow, _ => "End cannot be after tomorrow."
-                    )))
-                ),
-                _ => (CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc), None<string>())
-            );
-            
-            var instantInterval = new FiniteInterval(
-                configuration.Interval.Start.ToInstant(),
-                configuration.Interval.End.ToInstant()
-            );
-
+            var instantInterval = config.Interval.ToInstantInterval();
             var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, instantInterval);
             var pullRequests = prs.ToImmutableList();
-            var statistics = StatisticsCalculator.Calculate(pullRequests, configuration);
+            var statistics = StatisticsCalculator.Calculate(pullRequests, config);
             var charts = CreateIndexCharts(statistics);
-            var vm = new PullRequestIndexViewModel(configuration, pullRequests, error, charts.ToList());
+            var vm = new PullRequestIndexViewModel(config, pullRequests, error, charts.ToList());
             return (IActionResult)View(vm);
         });
+
+        private static string ToErrorMessage(ConfigurationError error)
+        {
+            return error.Match(
+                ConfigurationError.InvalidFromDate, _ => "Invalid from date.",
+                ConfigurationError.InvalidToDate, _ => "Invalid to date.",
+                ConfigurationError.ToDateIsAfterFrom, _ => "Start cannot be after end.",
+                ConfigurationError.ToDateIsAfterTomorrow, _ => "End cannot be after tomorrow."
+            );
+        }
         
         private static IEnumerable<Chart> CreateIndexCharts(IntervalStatistics statistics)
         {
-            var dateSets = CreateDataSets(
-                statistics,
-                new LineDataSetConfiguration(
-                    "Average lifetime",
-                    s => s.AverageLifeTime.TotalHours,
-                    Color.LawnGreen
-                ),
-                new LineDataSetConfiguration(
-                    "Efficiency",
-                    s => s.AverageEfficiency,
-                    Color.ForestGreen
-                )
-            ).ToImmutableArray();
+            var averageLifeTimeData = statistics.Map(s => s.AverageLifeTime.TotalHours);
+            var averageLifeTimeConfiguration = new LineDataSetConfiguration("Average lifetime", Color.LawnGreen);
+            var averageLifetimeDataSet = CreateDataSet(statistics.Interval.DateInterval, averageLifeTimeData, averageLifeTimeConfiguration);
             
             yield return Chart.FromInterval(
                 "Average pull request lifetime",
                 statistics.Interval.DateInterval,
-                new List<Dataset> { dateSets[0] },
+                new List<Dataset> { averageLifetimeDataSet },
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Hours").Get()
             );
             
+            var efficiencyData = statistics.Map(s => s.AverageEfficiency.Value);
+            var efficiencyConfiguration = new LineDataSetConfiguration("Efficiency", Color.ForestGreen);
+            var efficiencyDataSet = CreateDataSet(statistics.Interval.DateInterval, efficiencyData, efficiencyConfiguration);
+            
             yield return Chart.FromInterval(
                 "Average efficiency",
                 statistics.Interval.DateInterval,
-                new List<Dataset> { dateSets[1] },
+                new List<Dataset> { efficiencyDataSet },
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Efficiency index").Get()
             );
@@ -117,23 +99,13 @@ namespace CodeInsight.Web.Controllers
 
         #region PerAuthors
 
-        public Task<IActionResult> PerAuthors() => Action(client =>
+        public Task<IActionResult> PerAuthors(string fromDate, string toDate) => ConfigurationAction(fromDate, toDate, async (client, config, error) =>
         {
-            var cultureInfo = GetCultureInfo(HttpContext.Request);
-            var configuration = CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc);
-            var interval = new FiniteInterval(
-                configuration.Interval.Start.ToInstant(),
-                configuration.Interval.End.ToInstant()
-            );
-            
-            return pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, interval)
-                .Map(prs => prs
-                    .GroupBy(pr => pr.AuthorId)
-                    .ToDictionary(g => g.Key, g => StatisticsCalculator.Calculate(g, configuration))
-                )
-                .Map(statistics => CreatePerAuthorCharts(configuration.Interval.DateInterval, statistics))
-                .Map(charts => new ChartsViewModel(charts.ToImmutableList()))
-                .Map(vm => (IActionResult)View(vm));
+            var instantInterval = config.Interval.ToInstantInterval();
+            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, instantInterval);
+            var statistics = prs.GroupBy(pr => pr.AuthorId).ToDictionary(g => g.Key, g => StatisticsCalculator.Calculate(g, config));
+            var charts = CreatePerAuthorCharts(config.Interval.DateInterval, statistics);
+            return View(new ChartsViewModel(charts.ToImmutableList()));
         });
         
         private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, IntervalStatistics> statistics)
@@ -143,13 +115,10 @@ namespace CodeInsight.Web.Controllers
             yield return Chart.FromInterval(
                 "Pull request average lifetimes per author",
                 interval,
-                statistics.SelectMany(kvp => CreateDataSets(
-                    kvp.Value,
-                    new LineDataSetConfiguration(
-                        kvp.Key, 
-                        s => s.AverageLifeTime.TotalHours,
-                        colors[kvp.Key]
-                    )
+                statistics.Select(kvp => CreateDataSet(
+                    interval,
+                    kvp.Value.Map(v => v.AverageLifeTime.TotalHours),
+                    new LineDataSetConfiguration(kvp.Key, colors[kvp.Key])
                 )).ToList(),
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Hours").Get()
@@ -158,13 +127,10 @@ namespace CodeInsight.Web.Controllers
             yield return Chart.FromInterval(
                 "Efficiency per author",
                 interval,
-                statistics.SelectMany(kvp => CreateDataSets(
-                    kvp.Value,
-                    new LineDataSetConfiguration(
-                        kvp.Key,
-                        s => s.AverageEfficiency.Value,
-                        colors[kvp.Key]
-                    )
+                statistics.Select(kvp => CreateDataSet(
+                    interval,
+                    kvp.Value.Map(v => v.AverageEfficiency.Value),
+                    new LineDataSetConfiguration(kvp.Key, colors[kvp.Key])
                 )).ToList(),
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Efficiency index").Get()
@@ -175,52 +141,56 @@ namespace CodeInsight.Web.Controllers
 
         #region Efficiency
 
-        public Task<IActionResult> Efficiency() => Action(async client =>
+        public Task<IActionResult> EfficiencyAndChanges() => Action(async client =>
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             var finiteInterval = new FiniteInterval(
                 now.Minus(Duration.FromDays(365)),
                 now
             );
-
-            // TODO: Change to average efficiency, not duration.
-            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, finiteInterval);
-            var statistics = prs
-                .Select(pr => pr.Lifetime.Map(l => (
-                    Efficiency: Domain.Efficiency.Create(pr.TotalChanges, l),
-                    Changes: pr.TotalChanges
-                )))
-                .Flatten()
-                .Where(s => s.Changes <= 1000);
             
-            var data = statistics.Select(s => new LineScatterData { x = s.Changes.ToString(), y = s.Efficiency.ToString() }).ToList();
-            var chartData = new ChartJSCore.Models.Data
-            {
-                Datasets = new List<Dataset>
-                {
-                    new LineScatterDataset
-                    {
-                        Fill = "false",
-                        ShowLine = false,
-                        Label = "Efficiency",
-                        Data = data
-                    }
-                }
-            };
+            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, finiteInterval);
+            var data = prs
+                .Where(pr => pr.TotalChanges <= 1000 && pr.Lifetime.NonEmpty)
+                .Select(pr => new LineScatterData {
+                    y = Efficiency.Create(pr.TotalChanges, pr.Lifetime.Get()).Value.ToString(),
+                    x = pr.TotalChanges.ToString()
+                })
+                .ToList();
             
             var chart = new Chart(
                 "Efficiency per pull request size", 
                 ChartType.Scatter, 
-                chartData,
+                Chart.CreateScatterData("Efficiency", data),
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Efficiency index").Get()
             );
-            var vm = new EfficiencyViewModel(ImmutableList.Create(chart));
-            return (IActionResult)View(vm);
+            return View(new EfficiencyViewModel(ImmutableList.Create(chart)));
         });
 
         #endregion
+        
+        private delegate Task<IActionResult> IntervalStatisticsAction(Client client, IntervalStatisticsConfiguration config, IOption<string> error);
 
+        private Task<IActionResult> ConfigurationAction(string fromDate, string toDate, IntervalStatisticsAction action) => Action(client =>
+        {
+            var cultureInfo = GetCultureInfo(HttpContext.Request);
+            var parseConfigurationResult =
+                from start in NonEmptyString.Create(fromDate)
+                from end in NonEmptyString.Create(toDate)
+                select ParseConfiguration(start, end, cultureInfo, DateTimeZone.Utc);
+
+            var configuration = parseConfigurationResult
+                .FlatMap(c => c.Success)
+                .GetOrElse(CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc));
+
+            var errorMessage = parseConfigurationResult
+                .FlatMap(c => c.Error)
+                .Map(ToErrorMessage);
+            
+            return action(client, configuration, errorMessage);
+        });
+        
         private static IntervalStatisticsConfiguration CreateDefaultConfiguration(CultureInfo cultureInfo, DateTimeZone zone)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
@@ -229,7 +199,7 @@ namespace CodeInsight.Web.Controllers
             return new IntervalStatisticsConfiguration(new ZonedDateInterval(new DateInterval(start, end), zone), now);
         }
         
-        private static ITry<IntervalStatisticsConfiguration, ConfigurationError> CreateConfiguration(
+        private static ITry<IntervalStatisticsConfiguration, ConfigurationError> ParseConfiguration(
             NonEmptyString fromDate,
             NonEmptyString toDate,
             CultureInfo cultureInfo,
@@ -257,47 +227,28 @@ namespace CodeInsight.Web.Controllers
 
         private static IOption<LocalDate> ParseDate(string date, CultureInfo cultureInfo)
         {
-            DateTimeOffset.TryParse("12/20/2018", new System.Globalization.CultureInfo("en-US"), System.Globalization.DateTimeStyles.AssumeLocal, out var res);
             var dateIsValid = DateTimeOffset.TryParse(date, cultureInfo, DateTimeStyles.AssumeLocal, out var result);
             var resultAsOffset = dateIsValid ? Some(result) : None<DateTimeOffset>();
             return resultAsOffset.Map(ZonedDateTime.FromDateTimeOffset).Map(d => d.Date);
         }
-
-        private static IReadOnlyList<Dataset> CreateDataSets(IntervalStatistics statistics, params LineDataSetConfiguration[] lineDataSetConfigurations)
+        
+        private static LineDataset CreateDataSet(DateInterval interval, DataCube1<LocalDate, double> data, LineDataSetConfiguration configuration)
         {
-            var dataSets = lineDataSetConfigurations.Select(c =>
+            var color = configuration.Color.ToArgbString();
+            var colorList = new List<string> { color };
+            var dataSetData = interval.Select(date => data.Get(date).GetOrElse(double.NaN)).ToList();
+            return new LineDataset
             {
-                var color = c.Color.ToArgbString();
-                var colorList = new List<string> { color };
-                return new LineDataset
-                {
-                    Label = c.Label,
-                    Data = new List<double>(),
-                    BorderColor = color,
-                    BackgroundColor = color,
-                    PointBorderColor = colorList,
-                    PointHoverBorderColor = colorList,
-                    PointBackgroundColor = colorList,
-                    PointHoverBackgroundColor = colorList,
-                    Fill = "false"
-                    
-                };
-            }).ToArray();
-            
-            var dates = statistics.Interval.DateInterval;
-            foreach (var date in dates)
-            {
-                var statisticsForDate = statistics.Get(date);
-                for (var i = 0; i < dataSets.Length; i++)
-                {
-                    var newValue = statisticsForDate
-                        .Map(lineDataSetConfigurations[i].ValueGetter)
-                        .GetOrElse(double.NaN);
-                    dataSets[i].Data.Add(newValue);
-                }
-            }
-
-            return dataSets;
+                Label = configuration.Label,
+                Data = dataSetData,
+                BorderColor = color,
+                BackgroundColor = color,
+                PointBorderColor = colorList,
+                PointHoverBorderColor = colorList,
+                PointBackgroundColor = colorList,
+                PointHoverBackgroundColor = colorList,
+                Fill = "false"
+            };
         }
     }
 }

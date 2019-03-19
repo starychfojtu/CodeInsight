@@ -1,21 +1,16 @@
-using System;
 using System.Drawing;
-using CodeInsight.PullRequests;
 
 namespace CodeInsight.Web.Common.Charts
 {
     public class LineDataSetConfiguration
     {
-        public LineDataSetConfiguration(string label, Func<Statistics, double?> valueGetter, Color color)
+        public LineDataSetConfiguration(string label, Color color)
         {
             Label = label;
-            ValueGetter = valueGetter;
             Color = color;
         }
 
         public string Label { get; }
-        
-        public Func<Statistics, double?> ValueGetter { get; }
         
         public Color Color { get; }
     }

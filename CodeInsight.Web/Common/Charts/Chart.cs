@@ -81,13 +81,30 @@ namespace CodeInsight.Web.Common.Charts
         
         public ChartJSCore.Models.Chart JsChart { get; }
         
-        public static Chart FromInterval(string title, DateInterval interval, IReadOnlyList<Dataset> dataSets, NonEmptyString xAxis, NonEmptyString yAxis)
+        public static Chart FromInterval(string title, DateInterval interval, IEnumerable<Dataset> dataSets, NonEmptyString xAxis, NonEmptyString yAxis)
         {
             return new Chart(title, ChartType.Line, new ChartJSCore.Models.Data
             {
                 Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
                 Datasets = dataSets.ToList()
             }, xAxis, yAxis);
+        }
+
+        public static ChartJSCore.Models.Data CreateScatterData(string label, IEnumerable<LineScatterData> data)
+        {
+            return new ChartJSCore.Models.Data
+            {
+                Datasets = new List<Dataset>
+                {
+                    new LineScatterDataset
+                    {
+                        Fill = "false",
+                        ShowLine = false,
+                        Label = label,
+                        Data = data.ToList()
+                    }
+                }
+            };
         }
     }
 }

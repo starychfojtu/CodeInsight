@@ -26,7 +26,7 @@ namespace CodeInsight.Web.Common
             );
         }
 
-        protected CultureInfo GetCultureInfo(HttpRequest request)
+        protected static CultureInfo GetCultureInfo(HttpRequest request)
         {
             var language = request.GetTypedHeaders().AcceptLanguage.FirstOption();
             return language.Match(
