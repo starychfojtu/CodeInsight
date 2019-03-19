@@ -25,24 +25,5 @@ namespace CodeInsight.Web.Common
                 _ => Task.FromResult((IActionResult) new NotFoundResult())
             );
         }
-
-        protected static CultureInfo GetCultureInfo(HttpRequest request)
-        {
-            var language = request.GetTypedHeaders().AcceptLanguage.FirstOption();
-            return language.Match(
-                l =>
-                {
-                    try
-                    {
-                        return new CultureInfo(l.Value.Value);
-                    }
-                    catch (CultureNotFoundException)
-                    {
-                        return CultureInfo.InvariantCulture;
-                    }
-                },
-                _ => CultureInfo.InvariantCulture
-            );
-        }
     }
 }

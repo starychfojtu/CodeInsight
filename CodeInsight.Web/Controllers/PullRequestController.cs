@@ -159,15 +159,14 @@ namespace CodeInsight.Web.Controllers
 
         private Task<IActionResult> StatisticsAction(string fromDate, string toDate, IntervalStatisticsAction action) => Action(async client =>
         {
-            var cultureInfo = GetCultureInfo(HttpContext.Request);
             var parseConfigurationResult =
                 from start in NonEmptyString.Create(fromDate)
                 from end in NonEmptyString.Create(toDate)
-                select ParseConfiguration(start, end, cultureInfo, DateTimeZone.Utc);
+                select ParseConfiguration(start, end, DateTimeZone.Utc);
 
             var configuration = parseConfigurationResult
                 .FlatMap(c => c.Success)
-                .GetOrElse(CreateDefaultConfiguration(cultureInfo, DateTimeZone.Utc));
+                .GetOrElse(CreateDefaultConfiguration(DateTimeZone.Utc));
 
             var errorMessage = parseConfigurationResult
                 .FlatMap(c => c.Error)
@@ -185,14 +184,14 @@ namespace CodeInsight.Web.Controllers
         private static string ToErrorMessage(ConfigurationError error)
         {
             return error.Match(
-                ConfigurationError.InvalidFromDate, _ => "Invalid from date.",
-                ConfigurationError.InvalidToDate, _ => "Invalid to date.",
+                ConfigurationError.InvalidFromDate, _ => "Invalid Start date.",
+                ConfigurationError.InvalidToDate, _ => "Invalid End date.",
                 ConfigurationError.ToDateIsAfterFrom, _ => "Start cannot be after end.",
                 ConfigurationError.ToDateIsAfterTomorrow, _ => "End cannot be after tomorrow."
             );
         }
         
-        private static IntervalStatisticsConfiguration CreateDefaultConfiguration(CultureInfo cultureInfo, DateTimeZone zone)
+        private static IntervalStatisticsConfiguration CreateDefaultConfiguration(DateTimeZone zone)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             var end = now.InZone(zone).Date.PlusDays(1);
@@ -203,14 +202,13 @@ namespace CodeInsight.Web.Controllers
         private static ITry<IntervalStatisticsConfiguration, ConfigurationError> ParseConfiguration(
             NonEmptyString fromDate,
             NonEmptyString toDate,
-            CultureInfo cultureInfo,
             DateTimeZone zone)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             var maxToDate = now.InZone(zone).Date.PlusDays(1);
 
-            var start = ParseDate(fromDate, cultureInfo).ToTry(_ => ConfigurationError.InvalidFromDate);
-            var end = ParseDate(toDate, cultureInfo)
+            var start = ParseDate(fromDate).ToTry(_ => ConfigurationError.InvalidFromDate);
+            var end = ParseDate(toDate)
                 .ToTry(_ => ConfigurationError.InvalidToDate)
                 .FlatMap(d => (d <= maxToDate).ToTry(t => d, f => ConfigurationError.ToDateIsAfterTomorrow));
 
@@ -226,9 +224,9 @@ namespace CodeInsight.Web.Controllers
             return end < start ? None<DateInterval>() : Some(new DateInterval(start, end));
         }
 
-        private static IOption<LocalDate> ParseDate(string date, CultureInfo cultureInfo)
+        private static IOption<LocalDate> ParseDate(string date)
         {
-            var dateIsValid = DateTimeOffset.TryParse(date, cultureInfo, DateTimeStyles.AssumeLocal, out var result);
+            var dateIsValid = DateTimeOffset.TryParseExact(date, "dd/MM/yyyy", null, DateTimeStyles.AssumeLocal, out var result);
             var resultAsOffset = dateIsValid ? Some(result) : None<DateTimeOffset>();
             return resultAsOffset.Map(ZonedDateTime.FromDateTimeOffset).Map(d => d.Date);
         }
