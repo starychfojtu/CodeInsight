@@ -99,13 +99,17 @@ namespace CodeInsight.Web.Controllers
             yield return Chart.FromInterval(
                 "Average pull request lifetime",
                 statistics.Interval.DateInterval,
-                new List<Dataset> { dateSets[0] }
+                new List<Dataset> { dateSets[0] },
+                xAxis: NonEmptyString.Create("Dates").Get(),
+                yAxis: NonEmptyString.Create("Hours").Get()
             );
             
             yield return Chart.FromInterval(
                 "Average efficiency",
                 statistics.Interval.DateInterval,
-                new List<Dataset> { dateSets[1] }
+                new List<Dataset> { dateSets[1] },
+                xAxis: NonEmptyString.Create("Dates").Get(),
+                yAxis: NonEmptyString.Create("Efficiency index").Get()
             );
         }
         
@@ -146,7 +150,9 @@ namespace CodeInsight.Web.Controllers
                         s => s.AverageLifeTime.TotalHours,
                         colors[kvp.Key]
                     )
-                )).ToList()
+                )).ToList(),
+                xAxis: NonEmptyString.Create("Dates").Get(),
+                yAxis: NonEmptyString.Create("Hours").Get()
             );
             
             yield return Chart.FromInterval(
@@ -159,7 +165,9 @@ namespace CodeInsight.Web.Controllers
                         s => s.AverageEfficiency.Value,
                         colors[kvp.Key]
                     )
-                )).ToList()
+                )).ToList(),
+                xAxis: NonEmptyString.Create("Dates").Get(),
+                yAxis: NonEmptyString.Create("Efficiency index").Get()
             );
         }
 
@@ -200,7 +208,13 @@ namespace CodeInsight.Web.Controllers
                 }
             };
             
-            var chart = new Chart("Efficiency per pull request size", ChartType.Scatter, chartData);
+            var chart = new Chart(
+                "Efficiency per pull request size", 
+                ChartType.Scatter, 
+                chartData,
+                xAxis: NonEmptyString.Create("Dates").Get(),
+                yAxis: NonEmptyString.Create("Efficiency index").Get()
+            );
             var vm = new EfficiencyViewModel(ImmutableList.Create(chart));
             return (IActionResult)View(vm);
         });
