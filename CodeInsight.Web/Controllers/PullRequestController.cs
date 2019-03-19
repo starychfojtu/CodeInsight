@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using ChartJSCore.Models;
@@ -37,22 +38,23 @@ namespace CodeInsight.Web.Controllers
 
         #region Index
 
-        public Task<IActionResult> Index(string fromIso8601, string toIso8601) => Action(async client =>
+        public Task<IActionResult> Index(string fromDate, string toDate) => Action(async client =>
         {
+            var cultureInfo = GetCultureInfo(HttpContext.Request);
             // TODO: Return error in view when invalid.
-            var fromIsValid = DateTimeOffset.TryParse(fromIso8601, out var fromDateTimeOffset);
+            var fromIsValid = DateTimeOffset.TryParse(fromDate, cultureInfo, DateTimeStyles.AssumeLocal, out var fromDateTimeOffset);
             var from = fromIsValid ? Some(fromDateTimeOffset) : None<DateTimeOffset>();
             var configuration = CreateConfiguration(from);
-            var interval = new FiniteInterval(
+            var instantInterval = new FiniteInterval(
                 configuration.Interval.Start.ToInstant(),
                 configuration.Interval.End.ToInstant()
             );
 
-            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, interval);
+            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, instantInterval);
             var pullRequests = prs.ToImmutableList();
             var statistics = StatisticsCalculator.Calculate(pullRequests, configuration);
             var charts = CreateIndexCharts(statistics);
-            var vm = new PullRequestIndexViewModel(interval, pullRequests, charts.ToList());
+            var vm = new PullRequestIndexViewModel(configuration, pullRequests, charts.ToList());
             return (IActionResult)View(vm);
         });
         

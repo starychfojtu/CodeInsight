@@ -1,7 +1,9 @@
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using CodeInsight.Library;
 using CodeInsight.Web.Common.Security;
+using FuncSharp;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,6 +23,25 @@ namespace CodeInsight.Web.Common
             return clientAuthenticator.Authenticate(HttpContext).Match(
                 client=> f(client),
                 _ => Task.FromResult((IActionResult) new NotFoundResult())
+            );
+        }
+
+        protected CultureInfo GetCultureInfo(HttpRequest request)
+        {
+            var language = request.GetTypedHeaders().AcceptLanguage.FirstOption();
+            return language.Match(
+                l =>
+                {
+                    try
+                    {
+                        return new CultureInfo(l.Value.Value);
+                    }
+                    catch (CultureNotFoundException)
+                    {
+                        return CultureInfo.InvariantCulture;
+                    }
+                },
+                _ => CultureInfo.InvariantCulture
             );
         }
     }
