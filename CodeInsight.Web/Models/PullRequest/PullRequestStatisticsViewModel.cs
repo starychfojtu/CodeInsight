@@ -8,9 +8,9 @@ using NodaTime;
 
 namespace CodeInsight.Web.Models.PullRequest
 {
-    public sealed class PullRequestIndexViewModel : ChartsViewModel
+    public sealed class PullRequestStatisticsViewModel : ChartsViewModel
     {        
-        public PullRequestIndexViewModel(
+        public PullRequestStatisticsViewModel(
             IntervalStatisticsConfiguration configuration,
             IReadOnlyList<Domain.PullRequest.PullRequest> pullRequests,
             IOption<string> error,

@@ -39,34 +39,11 @@ namespace CodeInsight.Web.Controllers
 
         #region Index
 
-        public enum ConfigurationError
+        public Task<IActionResult> Index(string fromDate, string toDate) => StatisticsAction(fromDate, toDate, (config, pullRequests) =>
         {
-            InvalidFromDate,
-            InvalidToDate,
-            ToDateIsAfterFrom,
-            ToDateIsAfterTomorrow
-        }
-
-        public Task<IActionResult> Index(string fromDate, string toDate) => ConfigurationAction(fromDate, toDate, async (client, config, error) =>
-        {
-            var instantInterval = config.Interval.ToInstantInterval();
-            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, instantInterval);
-            var pullRequests = prs.ToImmutableList();
             var statistics = StatisticsCalculator.Calculate(pullRequests, config);
-            var charts = CreateIndexCharts(statistics);
-            var vm = new PullRequestIndexViewModel(config, pullRequests, error, charts.ToList());
-            return (IActionResult)View(vm);
+            return CreateIndexCharts(statistics).ToImmutableList();
         });
-
-        private static string ToErrorMessage(ConfigurationError error)
-        {
-            return error.Match(
-                ConfigurationError.InvalidFromDate, _ => "Invalid from date.",
-                ConfigurationError.InvalidToDate, _ => "Invalid to date.",
-                ConfigurationError.ToDateIsAfterFrom, _ => "Start cannot be after end.",
-                ConfigurationError.ToDateIsAfterTomorrow, _ => "End cannot be after tomorrow."
-            );
-        }
         
         private static IEnumerable<Chart> CreateIndexCharts(IntervalStatistics statistics)
         {
@@ -99,13 +76,13 @@ namespace CodeInsight.Web.Controllers
 
         #region PerAuthors
 
-        public Task<IActionResult> PerAuthors(string fromDate, string toDate) => ConfigurationAction(fromDate, toDate, async (client, config, error) =>
+        public Task<IActionResult> PerAuthors(string fromDate, string toDate) => StatisticsAction(fromDate, toDate, (config, pullRequests) =>
         {
-            var instantInterval = config.Interval.ToInstantInterval();
-            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, instantInterval);
-            var statistics = prs.GroupBy(pr => pr.AuthorId).ToDictionary(g => g.Key, g => StatisticsCalculator.Calculate(g, config));
-            var charts = CreatePerAuthorCharts(config.Interval.DateInterval, statistics);
-            return View(new ChartsViewModel(charts.ToImmutableList()));
+            var statistics = pullRequests
+                .GroupBy(pr => pr.AuthorId)
+                .ToDictionary(g => g.Key, g => StatisticsCalculator.Calculate(g, config));
+            
+            return CreatePerAuthorCharts(config.Interval.DateInterval, statistics).ToImmutableList();
         });
         
         private static IEnumerable<Chart> CreatePerAuthorCharts(DateInterval interval, IReadOnlyDictionary<AccountId, IntervalStatistics> statistics)
@@ -170,9 +147,17 @@ namespace CodeInsight.Web.Controllers
 
         #endregion
         
-        private delegate Task<IActionResult> IntervalStatisticsAction(Client client, IntervalStatisticsConfiguration config, IOption<string> error);
+        private delegate IReadOnlyList<Chart> IntervalStatisticsAction(IntervalStatisticsConfiguration config, IEnumerable<PullRequest> prs);
 
-        private Task<IActionResult> ConfigurationAction(string fromDate, string toDate, IntervalStatisticsAction action) => Action(client =>
+        public enum ConfigurationError
+        {
+            InvalidFromDate,
+            InvalidToDate,
+            ToDateIsAfterFrom,
+            ToDateIsAfterTomorrow
+        }
+
+        private Task<IActionResult> StatisticsAction(string fromDate, string toDate, IntervalStatisticsAction action) => Action(async client =>
         {
             var cultureInfo = GetCultureInfo(HttpContext.Request);
             var parseConfigurationResult =
@@ -188,8 +173,24 @@ namespace CodeInsight.Web.Controllers
                 .FlatMap(c => c.Error)
                 .Map(ToErrorMessage);
             
-            return action(client, configuration, errorMessage);
+            var instantInterval = configuration.Interval.ToInstantInterval();
+            var prs = await pullRequestRepository.GetAllIntersecting(client.CurrentRepositoryId, instantInterval);
+            var pullRequests = prs.ToImmutableList();
+            
+            var charts = action(configuration, pullRequests);
+            
+            return View("Statistics", new PullRequestStatisticsViewModel(configuration, pullRequests, errorMessage, charts));
         });
+        
+        private static string ToErrorMessage(ConfigurationError error)
+        {
+            return error.Match(
+                ConfigurationError.InvalidFromDate, _ => "Invalid from date.",
+                ConfigurationError.InvalidToDate, _ => "Invalid to date.",
+                ConfigurationError.ToDateIsAfterFrom, _ => "Start cannot be after end.",
+                ConfigurationError.ToDateIsAfterTomorrow, _ => "End cannot be after tomorrow."
+            );
+        }
         
         private static IntervalStatisticsConfiguration CreateDefaultConfiguration(CultureInfo cultureInfo, DateTimeZone zone)
         {
