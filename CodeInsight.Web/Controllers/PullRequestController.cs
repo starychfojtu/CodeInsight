@@ -50,8 +50,8 @@ namespace CodeInsight.Web.Controllers
         {
             var cultureInfo = GetCultureInfo(HttpContext.Request);
             var customConfiguration =
-                from start in fromDate.ToOption()
-                from end in toDate.ToOption()
+                from start in NonEmptyString.Create(fromDate)
+                from end in NonEmptyString.Create(toDate)
                 select CreateConfiguration(start, end, cultureInfo, DateTimeZone.Utc);
 
             var (configuration, error) = customConfiguration.Match(
@@ -216,8 +216,8 @@ namespace CodeInsight.Web.Controllers
         }
         
         private static ITry<IntervalStatisticsConfiguration, ConfigurationError> CreateConfiguration(
-            string fromDate,
-            string toDate,
+            NonEmptyString fromDate,
+            NonEmptyString toDate,
             CultureInfo cultureInfo,
             DateTimeZone zone)
         {
@@ -266,6 +266,7 @@ namespace CodeInsight.Web.Controllers
                     PointBackgroundColor = colorList,
                     PointHoverBackgroundColor = colorList,
                     Fill = "false"
+                    
                 };
             }).ToArray();
             
