@@ -2,15 +2,17 @@
 @model CodeInsight.Web.Models.PullRequest.PullRequestIndexViewModel
 
 <div class="container" style="padding-top: 25px">
-    <div class="row">
-        @{
-            if (Model.Error.NonEmpty)
-            {
-                <div class="alert alert-danger" role="alert">
+    @{
+        if (Model.Error.NonEmpty)
+        {
+            <div class="row" role="alert">
+                <div class="col-md-6 alert alert-danger">
                     @Model.Error.Get()
                 </div>
-            }
+            </div>
         }
+    }
+    <div class="row">
         <form asp-controller="PullRequest", asp-action="Index" method="post">
             <div class="form-row">
                 <div class="form-group col-md-4">
@@ -41,7 +43,7 @@
     <div class="row">
         @foreach (var chart in Model.Charts)
         {
-            <h2>@chart.Title</h2>
+            <h4 class="display-4" style="margin-bottom: 25px">@chart.Title</h4>
             <div class="card-columns cols-1">
                 <div class="card">
                     <div class="card-body">
