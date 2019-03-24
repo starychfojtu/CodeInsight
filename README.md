@@ -6,3 +6,5 @@ Simple example would be that static analysis would show you code areas to refact
 As for now, CodeInsight provides integration with Github and analyses only Pull Requests.
 The flow is simple, just login via your github account and grant access to organizations you want.
 You will be offered to select one of your repositories to analyze and after a while of importing data, you are taken directly to you statistics.
+
+[Pull request index page](https://github.com/starychfojtu/CodeInsight/blob/master/docs/pr-stats-index.md)
