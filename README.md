@@ -8,3 +8,4 @@ The flow is simple, just login via your github account and grant access to organ
 You will be offered to select one of your repositories to analyze and after a while of importing data, you are taken directly to you statistics.
 
 [Pull request index page](https://github.com/starychfojtu/CodeInsight/blob/master/docs/pr-stats-index.md)
+[Pull request per authors page](https://github.com/starychfojtu/CodeInsight/blob/master/docs/pr-stats-per-authors.md)
