@@ -1,6 +1,6 @@
 # Programmer's documentation
 
-## Projects 
+# Projects 
 
 - CodeInsight.Data: Access to database.
 - CodeInsight.Domain: Plain domain objects without dependency on some tools/infrastructure.
@@ -25,12 +25,12 @@ The main libraries worth mentioning are:
 
 After commit is pushed, Travis CI builds the branch and runs tests. If he succeedes, Heroku will push the new version to production.
 
-# Web layer 
+## Web layer 
 
 Web layer is based on ASP.NET Core MVC (https://docs.microsoft.com/en-us/aspnet/core/mvc/overview?view=aspnetcore-2.2).
 For views, razor is used with chart.js (https://www.chartjs.org/) library for rendering of charts with ChartJSCore (https://github.com/mattosaurus/ChartJSCore) for easier usage within C#.
 
-# Authentication
+## Authentication
 
 Client is represented by following class.
 
@@ -58,10 +58,15 @@ public class GithubRepositoryClient
 They are stored in ASP Session and retrieved via `ClientAuthenticator` class.
 For use in controllers, just inherit `AuthorizedController` class and use its `Action` method, which handles authentication for you.
 
-# Data layer
+## Data layer
 
 MySQL is used as database, but that is just a minor detail, that the application should not rely on.
 Data layer should only leak its abstraction to outer projects.
+
+## Repository lifecycle
+
+When selected by user, repository is imported. Only changes are retrieved and cached in database.
+This is done in background with `ImporterJob`.
 
 # General style of programming
 
@@ -122,3 +127,14 @@ private IOption<Github.ApplicationConfiguration> GetGithubAppConfig() =>
     from clientSecret in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_CLIENT_SECRET"))
     select new Github.ApplicationConfiguration(name, clientId, clientSecret);
 ```
+
+## IO
+
+Use IO type to indicate impurity of function.
+```csharp
+IO<Task<Unit>> Update(IEnumerable<PullRequest> pullRequests);
+```
+
+## Keep refactoring
+
+Things mentioned above are not present everywhere. Always refactor the code to better when you see it.
