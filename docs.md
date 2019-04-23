@@ -96,7 +96,7 @@ private static ITry<IntervalStatisticsConfiguration, ConfigurationError> ParseCo
 
 With FP in mind, classes are always made immutable, like this example:
 
-```
+```csharp
 public class Repository
 {
     public Repository(RepositoryId id, NonEmptyString name, NonEmptyString owner)
