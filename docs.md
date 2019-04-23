@@ -61,7 +61,7 @@ The project is based heavily on functional programming and type safety.
 ## Error handling
 
 One thing worth mentioning is for example error handling. Usage of exception is discourage.
-Instead, define enum or coproduct for your error:
+Instead, it is better to define enum or coproduct for the error:
 
 ```csharp
 public enum ConfigurationError
@@ -73,7 +73,43 @@ public enum ConfigurationError
 }
 ```
 
-and return it from function as follows:
+and then used in return type:
 ```csharp
 private static ITry<IntervalStatisticsConfiguration, ConfigurationError> ParseConfiguration(...
+```
+
+## Immutability
+
+With FP in mind, classes are always made immutable, like this example:
+
+```
+public class Repository
+{
+    public Repository(RepositoryId id, NonEmptyString name, NonEmptyString owner)
+    {
+        Id = id;
+        Name = name;
+        Owner = owner;
+    }
+
+    public RepositoryId Id { get; }
+
+    public NonEmptyString Name { get; }
+
+    public NonEmptyString Owner { get; }
+}
+```
+
+## Null handling
+
+Instead of working with nulls, usage of IOption<T> is in place. It prevents common NPEs. The compiler will force you to handle bot cases.
+
+Side note:
+LINQ syntax for all monads, not only Options and Trys is encouraged:
+```csharp
+private IOption<Github.ApplicationConfiguration> GetGithubAppConfig() =>
+    from name in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_APP_NAME"))
+    from clientId in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_CLIENT_ID"))
+    from clientSecret in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_CLIENT_SECRET"))
+    select new Github.ApplicationConfiguration(name, clientId, clientSecret);
 ```
