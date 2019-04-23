@@ -21,6 +21,10 @@ The main libraries worth mentioning are:
 - Entity Framework Core (https://docs.microsoft.com/en-us/ef/core/), standard ORM for .NET Core, which is used only in Data Layer.
 - Octokit (https://github.com/octokit/octokit.graphql.net), SDK fot github API
 
+# Deployment
+
+After commit is pushed, Travis CI builds the branch and runs tests. If he succeedes, Heroku will push the new version to production.
+
 # Web layer 
 
 Web layer is based on ASP.NET Core MVC (https://docs.microsoft.com/en-us/aspnet/core/mvc/overview?view=aspnetcore-2.2).
@@ -53,6 +57,11 @@ public class GithubRepositoryClient
 
 They are stored in ASP Session and retrieved via `ClientAuthenticator` class.
 For use in controllers, just inherit `AuthorizedController` class and use its `Action` method, which handles authentication for you.
+
+# Data layer
+
+MySQL is used as database, but that is just a minor detail, that the application should not rely on.
+Data layer should only leak its abstraction to outer projects.
 
 # General style of programming
 
