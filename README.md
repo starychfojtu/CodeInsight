@@ -11,4 +11,4 @@ You will be offered to select one of your repositories to analyze and after a wh
 
 [Pull request per authors page](https://github.com/starychfojtu/CodeInsight/blob/master/docs/pr-stats-per-authors.md)
 
-[Pull request changes and efficiency page](https://github.com/starychfojtu/CodeInsight/blob/master/docs/pr-stats-efficiency)
+[Pull request changes and efficiency page](https://github.com/starychfojtu/CodeInsight/blob/master/docs/pr-stats-efficiency.md)
