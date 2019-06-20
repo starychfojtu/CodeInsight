@@ -1,10 +1,10 @@
-﻿{
+{
   "iisSettings": {
-    "windowsAuthentication": false, 
-    "anonymousAuthentication": true, 
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:23008",
-      "sslPort": 44333
+      "applicationUrl": "https://localhost:5001/",
+      "sslPort": 0
     }
   },
   "profiles": {
@@ -12,16 +12,21 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "GITHUB_CLIENT_SECRET": "c89c4d34e79c35836bce6bc99fbc96a04756fa44",
+        "GITHUB_CLIENT_ID": "2224edef97abe8940110",
+        "GITHUB_APP_NAME": "CodeInsightDevelopment"
       }
     },
     "CodeInsight.Web": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:5001;http://localhost:5000",
       "environmentVariables": {
+        "GITHUB_CLIENT_SECRET": "c89c4d34e79c35836bce6bc99fbc96a04756fa44",
+        "GITHUB_CLIENT_ID": "2224edef97abe8940110",
+        "GITHUB_APP_NAME": "CodeInsightDevelopment",
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "applicationUrl": "https://localhost:5001/"
     }
   }
 }
