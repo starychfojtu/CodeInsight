@@ -2,6 +2,7 @@
 
 namespace CodeInsight.Commits
 {
+    //TODO: TABLE WITH STATS PER AUTHOR/CONTRIBUTOR
     /*
      * TABLE WITH STATS PER AUTHOR/CONTRIBUTOR
      *
