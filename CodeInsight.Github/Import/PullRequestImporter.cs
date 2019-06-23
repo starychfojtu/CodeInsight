@@ -39,7 +39,7 @@ namespace CodeInsight.Github.Import
                 var page = await GetAllPullRequestByUpdatedQuery.Execute(connection, repository, take: 50, cursor: cursor).Execute();
                 var updatedOrNewPullRequests = GetUpdatedOrNewPullRequests(lastPr, page.Items).ToImmutableList();
                 
-                // TODO: the code doesn't have to wait for this to finish, but DbContext is not thread safe so it is not easy, refactor to separate transaction.
+                // TODO - the code doesn't have to wait for this to finish, but DbContext is not thread safe so it is not easy, refactor to separate transaction.
                 await UpdateOrAdd(updatedOrNewPullRequests).Execute();
 
                 var allPrsWereNewOrUpdated = updatedOrNewPullRequests.Count == page.Items.Count;

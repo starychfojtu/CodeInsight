@@ -5,12 +5,13 @@ using NodaTime.Extensions;
 
 namespace CodeInsight.Data.Commit
 {
-    //TODO: Solve the numbers of files changed in an issue
     public sealed class Commit
     {
         public string Id { get; private set; }
 
         public string RepositoryId { get; private set; }
+        
+        public string AuthorName { get; private set; }
 
         public string AuthorId { get; private set; }
 
@@ -26,6 +27,7 @@ namespace CodeInsight.Data.Commit
         public Commit(
             string id, 
             string repositoryId, 
+            string authorName, 
             string authorId, 
             int additions, 
             int deletions, 
@@ -34,6 +36,7 @@ namespace CodeInsight.Data.Commit
         {
             Id = id;
             RepositoryId = repositoryId;
+            AuthorName = authorName;
             AuthorId = authorId;
             Additions = additions;
             Deletions = deletions;
@@ -46,6 +49,7 @@ namespace CodeInsight.Data.Commit
             return new Commit(
                 commit.Id,
                 commit.RepositoryId,
+                commit.AuthorName,
                 commit.AuthorId,
                 (int)commit.Additions,
                 (int)commit.Deletions,
@@ -58,6 +62,7 @@ namespace CodeInsight.Data.Commit
             return new Domain.Commit.Commit(
                 NonEmptyString.Create(commit.Id).Get(),
                 NonEmptyString.Create(commit.RepositoryId).Get(),
+                NonEmptyString.Create(commit.AuthorName).Get(),
                 new AccountId(commit.AuthorId),
                 (uint) commit.Additions,
                 (uint) commit.Deletions,

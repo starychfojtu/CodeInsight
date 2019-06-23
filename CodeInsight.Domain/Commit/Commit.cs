@@ -14,6 +14,8 @@ namespace CodeInsight.Domain.Commit
 
         public NonEmptyString RepositoryId { get; private set; }
 
+        public NonEmptyString AuthorName { get; private set; }
+
         public AccountId AuthorId { get; private set; }
 
         public uint Additions { get; private set; }
@@ -25,16 +27,19 @@ namespace CodeInsight.Domain.Commit
         //TEMP - might be useful for task<->commit connection
         public NonEmptyString Comment { get; private set; }
 
-        public Commit(NonEmptyString id, 
+        public Commit(
+            NonEmptyString id, 
             NonEmptyString repositoryId, 
+            NonEmptyString authorName, 
             AccountId authorId, 
             uint additions, 
             uint deletions, 
-            Instant commitedAt, 
+            Instant commitedAt,
             NonEmptyString comment)
         {
             Id = id;
             RepositoryId = repositoryId;
+            AuthorName = authorName;
             AuthorId = authorId;
             Additions = additions;
             Deletions = deletions;

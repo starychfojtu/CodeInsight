@@ -31,7 +31,7 @@ namespace CodeInsight.Github.Queries
                 
                 return connection.Run(Query, vars).SafeMap(r => r.MatchSingle(
                     repository => Some(repository),
-                    e => throw e // TODO: Handle NotFoundException.
+                    e => throw e // TODO - Handle NotFoundException.
                 ));
             };
         }
