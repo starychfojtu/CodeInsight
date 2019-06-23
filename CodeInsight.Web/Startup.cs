@@ -54,6 +54,9 @@ namespace CodeInsight.Web
 
             services.AddTransient<ClientAuthenticator>();
             services.AddTransient<Importer>();
+            //TODO: make work
+            //services.AddTransient<CommitImporter>();
+            //services.AddTransient<IssueImporter>();
             services.AddTransient<PullRequestImporter>();
             services.AddTransient<ImporterJob>();
             services.AddTransient<IPullRequestRepository, PullRequestRepository>();

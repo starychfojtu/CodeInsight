@@ -13,20 +13,32 @@ namespace CodeInsight.Github.Import
 {
     public sealed class Importer
     {
+        //private readonly CommitImporter commitImporter;
+        //private readonly IssueImporter issueImporter;
         private readonly PullRequestImporter pullRequestImporter;
         private readonly IRepositoryStorage repositoryStorage;
         private readonly IRepositoryRepository repositoryRepository;
 
-        public Importer(PullRequestImporter pullRequestImporter, IRepositoryStorage repositoryStorage, IRepositoryRepository repositoryRepository)
+        public Importer(
+            //CommitImporter commitImporter, 
+            //IssueImporter issueImporter, 
+            PullRequestImporter pullRequestImporter, 
+            IRepositoryStorage repositoryStorage, 
+            IRepositoryRepository repositoryRepository)
         {
+            //this.commitImporter = commitImporter;
+            //this.issueImporter = issueImporter;
             this.pullRequestImporter = pullRequestImporter;
             this.repositoryStorage = repositoryStorage;
             this.repositoryRepository = repositoryRepository;
         }
 
-        public IO<Task<Repository>> ImportRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => () =>
+        public IO<Task<Repository>>
+            ImportRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => () =>
             GetOrCreateRepository(connection, owner, name)
                 .Bind(r => pullRequestImporter.UpdatePullRequests(connection, r));
+                //.Bind(r => commitImporter.UpdateCommits(connection, r))
+                //.Bind(r => issueImporter.UpdateIssues(connection, r))
         
         private Task<Repository> GetOrCreateRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => 
             repositoryRepository.Get(owner, name)

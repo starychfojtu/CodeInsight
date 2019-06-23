@@ -21,6 +21,7 @@ namespace CodeInsight.Data
             
             modelBuilder.Entity<PullRequest.PullRequest>().HasKey(r => r.Id);
             modelBuilder.Entity<PullRequest.PullRequest>().HasOne<Repository.Repository>().WithMany().HasForeignKey(pr => pr.RepositoryId);
+            //TODO: Edit accordingly ~ add commits
         }
     }
 }
