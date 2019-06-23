@@ -2,28 +2,20 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using CodeInsight.Domain.Repository;
 using Monad;
 using Octokit;
-using Octokit.GraphQL;
+using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github.Queries
 {
     //TODO: Add a way of getting the data from github
-    internal static class GetAllCommitsQuery
+    internal class GetAllCommits
     {
-        private static ICompiledQuery<ResponsePage<CommitDto>> Query { get; }
 
-        static GetAllCommitsQuery()
+        private async void AwaitCommits()
         {
-            Query = CreateQuery();
-        }
-
-        private static ICompiledQuery<ResponsePage<CommitDto>> CreateQuery()
-        {
-            var github = new GitHubClient(new ProductHeaderValue("MyAmazingApp"));
-            var user = await github.User.Get("half-ogre");
-            Console.WriteLine(user.Followers + " folks love the half ogre!");
+            var github = new GitHubClient(new ProductHeaderValue("octokit.net"));
+            var commits = await github.Repository.Commit.GetAll(repositoryId: 125);
         }
 
         internal static IO<Task<ResponsePage<CommitDto>>> Execute(IConnection conn, Repository repository, int take, string cursor = null) => () =>
@@ -36,7 +28,6 @@ namespace CodeInsight.Github.Queries
                 {"first", take}
             };
 
-            return conn.Run(Query, vars);
         };
 
         internal sealed class CommitDto
