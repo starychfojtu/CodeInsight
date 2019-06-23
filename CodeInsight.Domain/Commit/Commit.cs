@@ -16,7 +16,7 @@ namespace CodeInsight.Domain.Commit
 
         public NonEmptyString AuthorName { get; private set; }
 
-        public AccountId AuthorId { get; private set; }
+        public NonEmptyString AuthorId { get; private set; }
 
         public uint Additions { get; private set; }
 
@@ -30,8 +30,8 @@ namespace CodeInsight.Domain.Commit
         public Commit(
             NonEmptyString id, 
             NonEmptyString repositoryId, 
-            NonEmptyString authorName, 
-            AccountId authorId, 
+            NonEmptyString authorName,
+            NonEmptyString authorId, 
             uint additions, 
             uint deletions, 
             Instant commitedAt,
