@@ -10,7 +10,6 @@ namespace CodeInsight.Commits
      *
      * Number of commits - graph with per week and per day per that week commit count
      * Addition/Deletion graph
-     * Table with per tasks changes - time of commit, task, added/deleted lines&diff, changed files, authors
      */
     class OverTimeStats
     {
