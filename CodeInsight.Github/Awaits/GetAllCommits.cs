@@ -32,8 +32,8 @@ namespace CodeInsight.Github.Awaits
                 var newEntry = new CommitDto(
                     NonEmptyString.Create(commit.Sha).Get(),
                     NonEmptyString.Create(commit.Repository.Id.ToString()).Get(),
-                    NonEmptyString.Create(commit.Commit.User.Name).Get(),
-                    NonEmptyString.Create(commit.Committer.Id.ToString()).Get(),
+                    NonEmptyString.Create(commit.Commit.Author.Name).Get(),
+                    NonEmptyString.Create(commit.Author.Id.ToString()).Get(),
                     (uint) commit.Stats.Additions,
                     (uint) commit.Stats.Deletions,
                     commit.Commit.Author.Date.ToInstant(),

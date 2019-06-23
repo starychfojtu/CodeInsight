@@ -1,7 +1,4 @@
-﻿using System;
-using NodaTime;
-using Octokit;
-using Commit = CodeInsight.Domain.Commit.Commit;
+﻿using NodaTime;
 
 namespace CodeInsight.Commits
 {

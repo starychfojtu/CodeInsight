@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using CodeInsight.Domain.Commit;
 using CodeInsight.Library.Extensions;
-using CodeInsight.Library.Types;
 using FuncSharp;
 using NodaTime;
 
