@@ -43,6 +43,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Models\Commit\" />
       <Folder Include="wwwroot\img" />
     </ItemGroup>
 

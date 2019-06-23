@@ -5,7 +5,7 @@ using NodaTime.Extensions;
 
 namespace CodeInsight.Data.Commit
 {
-    //TODO: solve the numbers of files changed in an issue
+    //TODO: Solve the numbers of files changed in an issue
     public sealed class Commit
     {
         public string Id { get; private set; }

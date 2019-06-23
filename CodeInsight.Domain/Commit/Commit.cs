@@ -6,7 +6,7 @@ using NodaTime;
 
 namespace CodeInsight.Domain.Commit
 {
-    //TODO - add needed overrides
+    //TODO: Add needed overrides
 
     public sealed class Commit
     {
