@@ -12,6 +12,9 @@
     <Reference Include="Octokit">
       <HintPath>..\..\..\..\..\.nuget\packages\octokit\0.32.0\lib\netstandard1.1\Octokit.dll</HintPath>
     </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>..\..\..\..\..\.nuget\packages\system.collections.immutable\1.5.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
