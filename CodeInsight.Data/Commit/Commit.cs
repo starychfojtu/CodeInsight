@@ -63,7 +63,7 @@ namespace CodeInsight.Data.Commit
                 NonEmptyString.Create(commit.Id).Get(),
                 NonEmptyString.Create(commit.RepositoryId).Get(),
                 NonEmptyString.Create(commit.AuthorName).Get(),
-                new AccountId(commit.AuthorId),
+                NonEmptyString.Create(commit.AuthorId).Get(),
                 (uint) commit.Additions,
                 (uint) commit.Deletions,
                 commit.CommitedAt.ToInstant(),

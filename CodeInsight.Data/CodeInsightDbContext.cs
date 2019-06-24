@@ -14,6 +14,10 @@ namespace CodeInsight.Data
         
         public DbSet<PullRequest.PullRequest> PullRequests { get; private set; }
 
+        public DbSet<Commit.Commit> Commits { get; private set; }
+
+        public DbSet<Issue.Issue> Issues { get; private set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<JobExecution.JobExecution>().HasKey(r => r.Id);
@@ -21,7 +25,12 @@ namespace CodeInsight.Data
             
             modelBuilder.Entity<PullRequest.PullRequest>().HasKey(r => r.Id);
             modelBuilder.Entity<PullRequest.PullRequest>().HasOne<Repository.Repository>().WithMany().HasForeignKey(pr => pr.RepositoryId);
-            //TODO: Edit accordingly ~ add commits
+
+            modelBuilder.Entity<Commit.Commit>().HasKey(c => c.Id);
+            modelBuilder.Entity<Commit.Commit>().HasOne<Repository.Repository>().WithMany().HasForeignKey(c => c.RepositoryId);
+
+            modelBuilder.Entity<Issue.Issue>().HasKey(i => i.Id);
+            modelBuilder.Entity<Issue.Issue>().HasOne<Repository.Repository>().WithMany().HasForeignKey(i => i.RepositoryId);
         }
     }
 }
