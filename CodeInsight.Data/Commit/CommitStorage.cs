@@ -32,7 +32,7 @@ namespace CodeInsight.Data.Commit
                 let oldC = dbContext.Find<Commit>(newC.Id).AsOption().Get()
                 select Update(oldC, newC);
 
-            return dbContext.SaveChangesAsync().ToUnit();
+            return dbContext.SaveChangesAsync().ToUnit;
         }
 
         private Unit Update(Commit oldC, Commit newC)

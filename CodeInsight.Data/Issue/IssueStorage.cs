@@ -32,7 +32,7 @@ namespace CodeInsight.Data.Issue
                 let oldI = dbContext.Find<Issue>(newI.Id).AsOption().Get()
                 select Update(oldI, newI);
 
-            return dbContext.SaveChangesAsync().ToUnit();
+            return dbContext.SaveChangesAsync().ToUnit;
         }
 
         private Unit Update(Issue oldI, Issue newI)

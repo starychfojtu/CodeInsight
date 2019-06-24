@@ -6,8 +6,6 @@ using NodaTime;
 
 namespace CodeInsight.Domain.Commit
 {
-    //TODO: Add needed overrides
-
     public sealed class Commit
     {
         public NonEmptyString Id { get; private set; }

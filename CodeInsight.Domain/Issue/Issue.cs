@@ -6,8 +6,6 @@ using NodaTime;
 
 namespace CodeInsight.Domain.Issue
 {
-    //TODO: Add needed overrides
-
     public sealed class Issue
     {
         public NonEmptyString Id { get; private set; }
@@ -20,15 +18,19 @@ namespace CodeInsight.Domain.Issue
 
         public Instant LastCommitAt { get; private set; }
 
+        public Instant LastUpdateAt { get; private set; }
+
         public uint ChangedFilesCount { get; private set; }
 
         public uint AuthorsCount { get; private set; }
 
-        public Issue(NonEmptyString id, 
+        public Issue(
+            NonEmptyString id, 
             NonEmptyString repositoryId, 
             uint additions, 
             uint deletions, 
             Instant lastCommitAt, 
+            Instant lastUpdateAt, 
             uint changedFilesCount, 
             uint authorsCount)
         {
@@ -37,6 +39,7 @@ namespace CodeInsight.Domain.Issue
             Additions = additions;
             Deletions = deletions;
             LastCommitAt = lastCommitAt;
+            LastUpdateAt = lastUpdateAt;
             ChangedFilesCount = changedFilesCount;
             AuthorsCount = authorsCount;
         }

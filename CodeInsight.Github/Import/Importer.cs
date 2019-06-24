@@ -33,12 +33,18 @@ namespace CodeInsight.Github.Import
             this.repositoryRepository = repositoryRepository;
         }
 
-        public IO<Task<Repository>>
-            ImportRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => () =>
-            GetOrCreateRepository(connection, owner, name)
+        public IO<Task<Repository>> ImportRepository(
+            IConnection connection, 
+            NonEmptyString owner, 
+            NonEmptyString name) => () =>
+
+        {
+            return GetOrCreateRepository(connection, owner, name)
                 .Bind(r => pullRequestImporter.UpdatePullRequests(connection, r));
                 //.Bind(r => commitImporter.UpdateCommits(connection, r))
                 //.Bind(r => issueImporter.UpdateIssues(connection, r))
+        };
+
         
         private Task<Repository> GetOrCreateRepository(IConnection connection, NonEmptyString owner, NonEmptyString name) => 
             repositoryRepository.Get(owner, name)

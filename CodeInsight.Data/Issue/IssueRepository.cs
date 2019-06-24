@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CodeInsight.Domain.Issue;
 using CodeInsight.Domain.Repository;
 using CodeInsight.Library.Extensions;
+using CodeInsight.Library.Types;
 using Microsoft.EntityFrameworkCore;
 
 namespace CodeInsight.Data.Issue
@@ -15,6 +16,15 @@ namespace CodeInsight.Data.Issue
         public IssueRepository(CodeInsightDbContext dbContext)
         {
             this.dbContext = dbContext;
+        }
+
+        public Task<IEnumerable<Domain.Issue.Issue>> GetAllOrderedByIds(IEnumerable<NonEmptyString> ids)
+        {
+            var issIds = ids.Select(i => i.Value);
+            return dbContext.Issues
+                .Where(i => issIds.Contains(i.Id))
+                .ToListAsync()
+                .Map(l => l.Select(Issue.ToDomain));
         }
 
         public Task<IEnumerable<Domain.Issue.Issue>> GetAllOrderedByLastCommitAt(RepositoryId repositoryId, uint take)

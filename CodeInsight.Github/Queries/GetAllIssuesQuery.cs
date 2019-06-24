@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Monad;
 using Octokit.GraphQL;
+using Octokit.GraphQL.Model;
+using static Octokit.GraphQL.Variable;
 using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github.Queries
 {
-    //TODO: Add a way of getting the data from github
     public static class GetAllIssuesQuery
     {
         private static ICompiledQuery<ResponsePage<IssueDto>> Query { get; }
@@ -38,7 +39,15 @@ namespace CodeInsight.Github.Queries
         {
             return new Query()
                 .Repository("name", "owner")
-                .Issues(null, null, null, null, null, null, null)
+                .Issues(
+                    first: Var("first"),
+                    after: Var("after"),
+                    orderBy: new IssueOrder
+                    {
+                        Field = IssueOrderField.UpdatedAt,
+                        Direction = OrderDirection.Desc
+                    }
+                )
                 .Select(issues => new ResponsePage<IssueDto>(
                     issues.PageInfo.HasNextPage,
                     issues.PageInfo.EndCursor,
@@ -46,10 +55,10 @@ namespace CodeInsight.Github.Queries
                         {
                             Id = issue.Id.Value,
                             RepositoryId = issue.Repository.Id.Value,
-                            //TODO: Foreach commit associated with this issue - add to additions etc.
                             Additions = 0,
                             Deletions = 0,
                             LastCommitAt = new DateTimeOffset(1998, 02, 17, 7, 00, 00, new TimeSpan(0, 0, 0, 0)),
+                            LastUpdateAt = issue.UpdatedAt,
                             ChangedFilesCount = 0,
                             AuthorsCount = 0
                         })
@@ -57,22 +66,24 @@ namespace CodeInsight.Github.Queries
                 ))
                 .Compile();
         }
-    }
 
-    internal sealed class IssueDto
-    {
-        public string Id { get; set; }
+        internal sealed class IssueDto
+        {
+            public string Id { get; set; }
 
-        public string RepositoryId { get; set; }
+            public string RepositoryId { get; set; }
 
-        public int Additions { get; set; }
+            public int Additions { get; set; }
 
-        public int Deletions { get; set; }
+            public int Deletions { get; set; }
 
-        public DateTimeOffset LastCommitAt { get; set; }
+            public DateTimeOffset LastCommitAt { get; set; }
 
-        public int ChangedFilesCount { get; set; }
+            public DateTimeOffset LastUpdateAt { get; set; }
 
-        public int AuthorsCount { get; set; }
+            public int ChangedFilesCount { get; set; }
+
+            public int AuthorsCount { get; set; }
+        }
     }
 }

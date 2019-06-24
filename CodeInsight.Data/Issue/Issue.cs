@@ -17,6 +17,8 @@ namespace CodeInsight.Data.Issue
 
         public DateTimeOffset LastCommitAt { get; private set; }
 
+        public DateTimeOffset LastUpdateAt { get; private set; }
+
         public int ChangedFilesCount { get; private set; }
 
         public int AuthorsCount { get; private set; }
@@ -25,8 +27,9 @@ namespace CodeInsight.Data.Issue
             string id, 
             string repositoryId, 
             int additions, 
-            int deletions, 
+            int deletions,
             DateTimeOffset lastCommitAt, 
+            DateTimeOffset lastUpdateAt, 
             int changedFilesCount, 
             int authorsCount)
         {
@@ -35,6 +38,7 @@ namespace CodeInsight.Data.Issue
             Additions = additions;
             Deletions = deletions;
             LastCommitAt = lastCommitAt;
+            LastUpdateAt = lastUpdateAt;
             ChangedFilesCount = changedFilesCount;
             AuthorsCount = authorsCount;
         }
@@ -47,6 +51,7 @@ namespace CodeInsight.Data.Issue
                 (int)issue.Additions,
                 (int)issue.Deletions,
                 issue.LastCommitAt.ToDateTimeOffset(),
+                issue.LastUpdateAt.ToDateTimeOffset(),
                 (int)issue.ChangedFilesCount,
                 (int)issue.AuthorsCount
                 );
@@ -60,6 +65,7 @@ namespace CodeInsight.Data.Issue
                 (uint)issue.Additions,
                 (uint)issue.Deletions,
                 issue.LastCommitAt.ToInstant(),
+                issue.LastUpdateAt.ToInstant(),
                 (uint)issue.ChangedFilesCount,
                 (uint)issue.AuthorsCount
                 );

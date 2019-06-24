@@ -17,7 +17,6 @@ namespace CodeInsight.Github.Awaits
     //TODO: Add a way of getting the data from github
     internal class GetAllCommits
     {
-        //TODO: 
         private async Task<List<CommitDto>> AwaitCommits(IConnection connection, Repository repository)
         {
             var github = new GitHubClient(connection);
@@ -43,8 +42,6 @@ namespace CodeInsight.Github.Awaits
             }
             return ret;
         }
-
-
         internal sealed class CommitDto
         {
             public NonEmptyString Id { get; private set; }
@@ -65,13 +62,13 @@ namespace CodeInsight.Github.Awaits
             public NonEmptyString Comment { get; private set; }
 
             public CommitDto(
-                NonEmptyString id, 
-                NonEmptyString repositoryId, 
-                NonEmptyString authorName, 
-                NonEmptyString authorId, 
-                uint additions, 
+                NonEmptyString id,
+                NonEmptyString repositoryId,
+                NonEmptyString authorName,
+                NonEmptyString authorId,
+                uint additions,
                 uint deletions,
-                Instant commitedAt, 
+                Instant commitedAt,
                 NonEmptyString comment)
             {
                 Id = id;
