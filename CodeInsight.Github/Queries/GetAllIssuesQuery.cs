@@ -11,6 +11,7 @@ namespace CodeInsight.Github.Queries
 {
     public static class GetAllIssuesQuery
     {
+        //TODO: GetAllIssuesQuery - correctly add additions, deletions etc
         private static ICompiledQuery<ResponsePage<IssueDto>> Query { get; }
 
         static GetAllIssuesQuery()
