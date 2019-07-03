@@ -20,7 +20,7 @@ namespace CodeInsight.Domain.Commit
 
         public uint Deletions { get; private set; }
 
-        public Instant CommitedAt { get; private set; }
+        public Instant CommittedAt { get; private set; }
 
         //TEMP - might be useful for task<->commit connection
         public NonEmptyString Comment { get; private set; }
@@ -32,7 +32,7 @@ namespace CodeInsight.Domain.Commit
             NonEmptyString authorId, 
             uint additions, 
             uint deletions, 
-            Instant commitedAt,
+            Instant committedAt,
             NonEmptyString comment)
         {
             Id = id;
@@ -41,7 +41,7 @@ namespace CodeInsight.Domain.Commit
             AuthorId = authorId;
             Additions = additions;
             Deletions = deletions;
-            CommitedAt = commitedAt;
+            CommittedAt = committedAt;
             Comment = comment;
         }
 

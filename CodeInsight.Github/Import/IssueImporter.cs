@@ -15,6 +15,7 @@ using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github.Import
 {
+    //USUSED
     public sealed class IssueImporter
     {
         private readonly IIssueStorage issueStorage;

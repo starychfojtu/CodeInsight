@@ -29,8 +29,8 @@ namespace CodeInsight.Commits
         private static DateInterval GetDates(Commit commit, ZonedDateTime maxEnd)
         {
             return new DateInterval(
-                commit.CommitedAt.InZone(maxEnd.Zone).Date, 
-                LocalDate.Min(commit.CommitedAt.InZone(maxEnd.Zone).Date, maxEnd.Date));
+                commit.CommittedAt.InZone(maxEnd.Zone).Date, 
+                LocalDate.Min(commit.CommittedAt.InZone(maxEnd.Zone).Date, maxEnd.Date));
         }
     }
 }

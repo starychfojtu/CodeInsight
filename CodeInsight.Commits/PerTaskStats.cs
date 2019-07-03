@@ -7,6 +7,7 @@ using NodaTime;
 
 namespace CodeInsight.Commits
 {
+    //UNUSED
     public class PerTaskStats
     {
         public Instant LastCommit { get; }
@@ -17,7 +18,7 @@ namespace CodeInsight.Commits
 
         public uint Deletions { get; }
 
-        public uint CodeChangeDiff { get { return Additions - Deletions; } }
+        public uint CodeChangeDiff => Additions - Deletions;
 
         public uint ChangedFilesCount { get; }
 

@@ -9,9 +9,9 @@ using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github.Queries
 {
+    //USUSED
     public static class GetAllIssuesQuery
     {
-        //TODO: GetAllIssuesQuery - correctly add additions, deletions etc
         private static ICompiledQuery<ResponsePage<IssueDto>> Query { get; }
 
         static GetAllIssuesQuery()
@@ -49,6 +49,7 @@ namespace CodeInsight.Github.Queries
                         Direction = OrderDirection.Desc
                     }
                 )
+                //TO DO: GetAllIssuesQuery - correctly add additions, deletions etc
                 .Select(issues => new ResponsePage<IssueDto>(
                     issues.PageInfo.HasNextPage,
                     issues.PageInfo.EndCursor,
