@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\CodeInsight.Commits\CodeInsight.Commits.csproj" />
       <ProjectReference Include="..\CodeInsight.Github\CodeInsight.Github.csproj" />
     </ItemGroup>
 

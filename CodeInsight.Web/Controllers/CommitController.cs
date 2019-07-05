@@ -43,7 +43,6 @@ namespace CodeInsight.Web.Controllers
         }
 
         #region OverTimeTab
-        //Testing
         /**/
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
@@ -75,8 +74,6 @@ namespace CodeInsight.Web.Controllers
             return View("TestView");
         });
         /**/
-        //TODO: Add enum charts
-
         #endregion
 
         /*/
@@ -90,17 +87,19 @@ namespace CodeInsight.Web.Controllers
         /**/
 
         #region AuthorTab
-
         public Task<IActionResult> AuthorTable() => Action(async client =>
         {
             var commits = commitRepository.GetAll();
-            var authors = commits.Select()
+            var authors = commits.Result.Select(cm => cm.AuthorName);
 
-            return View(new AuthorViewModel(ImmutableList.Create()));
-            //return View("AuthorView");
-            return View("TestView");
+            var stats = new List<AuthorStats>();
+            foreach (var author in authors)
+            {
+                stats.Add(AuthorCalculator.PerAuthor(commits.Result, author));
+            }
+
+            return View("AuthorView", new AuthorViewModel(ImmutableList.CreateRange(stats)));
         });
-
         #endregion
     }
 }
