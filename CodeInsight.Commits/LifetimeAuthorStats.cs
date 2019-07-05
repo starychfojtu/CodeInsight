@@ -10,13 +10,13 @@ namespace CodeInsight.Commits
 
         public uint Deletions { get; }
 
-        public uint CodeChangeDiff { get { return Additions - Deletions; } }
+        public uint CodeChangeDiff => Additions - Deletions;
 
         public Instant LastCommitAt { get; }
 
         public Instant FirstCommitAt { get; }
 
-        public Duration TimeSpendOnProject { get { return LastCommitAt - FirstCommitAt; } }
+        public Duration TimeSpentOnProject => LastCommitAt - FirstCommitAt;
 
         public LifetimeAuthorStats (
             string authorName,

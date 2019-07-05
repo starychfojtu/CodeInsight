@@ -29,6 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\CodeInsight.Commits\CodeInsight.Commits.csproj" />
       <ProjectReference Include="..\CodeInsight.Data\CodeInsight.Data.csproj" />
       <ProjectReference Include="..\CodeInsight.Domain\CodeInsight.Domain.csproj" />
       <ProjectReference Include="..\CodeInsight.Github\CodeInsight.Github.csproj" />
@@ -48,6 +49,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Update="Views\Commit\AuthorView.cshtml">
+        <Pack>$(IncludeRazorContentInPack)</Pack>
+      </Content>
+      <Content Update="Views\Commit\OverTimeStatisticsView.cshtml">
+        <Pack>$(IncludeRazorContentInPack)</Pack>
+      </Content>
       <Content Update="Views\Commit\TestView.cshtml">
         <Pack>$(IncludeRazorContentInPack)</Pack>
       </Content>

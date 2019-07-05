@@ -44,10 +44,10 @@ namespace CodeInsight.Web.Controllers
 
         #region OverTimeTab
         //Testing
-        /*
+        /**/
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
-
+            /*/
             var now = SystemClock.Instance.GetCurrentInstant();
             var finiteInterval = new FiniteInterval(
                 now.Minus(Duration.FromDays(365)),
@@ -71,12 +71,15 @@ namespace CodeInsight.Web.Controllers
                 );
                 
             return View(new WeekViewModel(ImmutableList.Create(chart)));
+            /**/
+            return View("TestView");
         });
-        */
+        /**/
         //TODO: Add enum charts
 
         #endregion
 
+        /*/
         #region ByTaskTab
         public Task<IActionResult> PerTaskTable() => Action(async client =>
         {
@@ -84,11 +87,13 @@ namespace CodeInsight.Web.Controllers
         });
 
         #endregion
+        /**/
 
         #region AuthorTab
 
         public Task<IActionResult> AuthorTable() => Action(async client =>
         {
+            //return View("AuthorView");
             return View("TestView");
         });
 

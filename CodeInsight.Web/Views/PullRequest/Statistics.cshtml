@@ -13,7 +13,7 @@
         }
     }
     <div class="row">
-        <form asp-controller="PullRequest", asp-action="@ViewContext.RouteData.Values["action"]" method="post">
+        <form asp-controller="PullRequest" , asp-action="@ViewContext.RouteData.Values["action"]" method="post">
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label for="fromDate">Start</label>
@@ -22,7 +22,7 @@
                            class="form-control"
                            id="fromDate"
                            name="fromDate"
-                           value="@Model.Configuration.Interval.Start.ToString("dd/MM/yyyy", null)"/>
+                           value="@Model.Configuration.Interval.Start.ToString("dd/MM/yyyy", null)" />
                 </div>
                 <div class="form-group col-md-4">
                     <label for="toDate">End</label>
@@ -31,7 +31,7 @@
                            class="form-control"
                            id="toDate"
                            name="toDate"
-                           value="@Model.Configuration.Interval.End.ToString("dd/MM/yyyy", null)"/>
+                           value="@Model.Configuration.Interval.End.ToString("dd/MM/yyyy", null)" />
                 </div>
                 <div class="form-group col-md-2">
                     <label class="invisible">I am hidden</label>
@@ -57,25 +57,25 @@
     <div class="row">
         <table class="table">
             <thead class="thead-light">
-                <th>Title</th>
-                <th>Created</th>
-                <th>LifeTime (hours)</th>
-                <th>Additions</th>
-                <th>Deletions</th>
-                <th>Author</th>
+            <th>Title</th>
+            <th>Created</th>
+            <th>LifeTime (hours)</th>
+            <th>Additions</th>
+            <th>Deletions</th>
+            <th>Author</th>
             </thead>
             <tbody>
-            @foreach (var pr in Model.PullRequests.OrderByDescending(p => p.Lifetime.IsEmpty).ThenBy(p => p.CreatedAt))
-            {
-                <tr>
-                    <td>@pr.Title</td>
-                    <td>@pr.CreatedAt.ToString("dd/MM/yyyy", null)</td>
-                    <td>@pr.Lifetime.Map(t => t.TotalHours.ToString("N2")).GetOrElse("Open")</td>
-                    <td>@pr.Additions</td>
-                    <td>@pr.Deletions</td>
-                    <td>@pr.AuthorId.ToString()</td>
-                </tr>
-            }
+                @foreach (var pr in Model.PullRequests.OrderByDescending(p => p.Lifetime.IsEmpty).ThenBy(p => p.CreatedAt))
+                {
+                    <tr>
+                        <td>@pr.Title</td>
+                        <td>@pr.CreatedAt.ToString("dd/MM/yyyy", null)</td>
+                        <td>@pr.Lifetime.Map(t => t.TotalHours.ToString("N2")).GetOrElse("Open")</td>
+                        <td>@pr.Additions</td>
+                        <td>@pr.Deletions</td>
+                        <td>@pr.AuthorId.ToString()</td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>

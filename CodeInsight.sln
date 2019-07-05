@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.28307.539
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeInsight.Web", "CodeInsight.Web\CodeInsight.Web.csproj", "{3FC9FB0B-CF15-4D3E-8DBD-E0EDCBC075DE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{254BE460-8DCA-4131-869D-41CCECC307AC} = {254BE460-8DCA-4131-869D-41CCECC307AC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeInsight.Github", "CodeInsight.Github\CodeInsight.Github.csproj", "{E73EEBCC-AD41-418A-BCB4-D4A1585084A1}"
 EndProject
@@ -19,7 +22,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeInsight.Data", "CodeIns
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeInsight.Jobs", "CodeInsight.Jobs\CodeInsight.Jobs.csproj", "{54A42AA2-0E40-4CB0-87D7-269E2B35FD25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeInsight.Commits", "CodeInsight.Commits\CodeInsight.Commits.csproj", "{254BE460-8DCA-4131-869D-41CCECC307AC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeInsight.Commits", "CodeInsight.Commits\CodeInsight.Commits.csproj", "{254BE460-8DCA-4131-869D-41CCECC307AC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,0 +1,31 @@
+﻿@model CodeInsight.Web.Models.Commit.AuthorViewModel
+
+<div class="container" style="padding-top: 25px">
+    <h2 class="display-4" style="margin-bottom: 25px">Authors (@Model.Authors.Count)</h2>
+    <div class="row">
+        <table class="table">
+            <thead class="thead-light">
+            <th>Author</th>
+            <th>Last Contribution</th>
+            <th>Additions</th>
+            <th>Deletions</th>
+            <th>NW</th>
+            <th>Time Spent On Project</th>
+            </thead>
+            <tbody>
+            @foreach (var auth in Model.Authors.OrderByDescending(auth => auth.LastCommitAt))
+            {
+                <tr>
+                    <td>@auth.AuthorName</td>
+                    <td>@auth.LastCommitAt.ToString("dd/MM/yyyy", null)</td>
+                    <td>@auth.Additions</td>
+                    <td>@auth.Deletions</td>
+                    <td>@auth.CodeChangeDiff</td>
+                    <td>@auth.TimeSpentOnProject</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
