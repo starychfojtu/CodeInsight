@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using CodeInsight.Domain.Commit;
+using NodaTime;
 
 namespace CodeInsight.Commits
 {
     public class WeekStats
     {
+        public Period Period { get; }
+
         public uint Additions { get; }
 
         public uint Deletions { get; }

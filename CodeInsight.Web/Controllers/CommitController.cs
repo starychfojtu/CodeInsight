@@ -30,7 +30,6 @@ using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.Web.Controllers
 {
-    //TODO: Controller for commits
     public class CommitController : AuthorizedController
     {
         private readonly ICommitRepository commitRepository;
@@ -42,49 +41,103 @@ namespace CodeInsight.Web.Controllers
             this.issueRepository = issueRepository;
         }
 
+        //TODO: CodeTab
         #region OverTimeTab
-        /**/
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
-            /*/
             var now = SystemClock.Instance.GetCurrentInstant();
             var finiteInterval = new FiniteInterval(
                 now.Minus(Duration.FromDays(365)),
                 now
             );
 
-            var commits = await commitRepository.GetAllByAuthors(NonEmptyString.Create("name").Get());
-            var data = commits
+            var commits = await commitRepository.GetAll();
+            var dataAllTime = new List<WeekStats>();
+            foreach (var entry in commits)
+            {
+                
+            }
+            var chartDataAllTime = commits
                 .Select(c => new LineScatterData
                 {
                     y = 128.ToString(),
                     x = 0.ToString()
                 });
 
-            var chart = new Chart(
-                "Title",
+            var chartDataWeek = commits
+                .Select(c => new LineScatterData
+                {
+                    y = 128.ToString(),
+                    x = 0.ToString()
+                });
+
+            var listOfCharts = new List<Chart>();
+
+            var chartAllTime = new Chart(
+                "All Time",
                 ChartType.Scatter,
-                Chart.CreateScatterData("Number of commits", data),
+                Chart.CreateScatterData("Number of commits", chartDataAllTime),
                 xAxis: NonEmptyString.Create("Week").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
                 );
-                
-            return View("OverTimeStatisticsView", new WeekViewModel(ImmutableList.Create(chart)));
-            /**/
-            return View("TestView");
+            listOfCharts.Add(chartAllTime);
+
+
+            var week = "test";
+            var chartWeek = new Chart(
+                "Week " + week,
+                ChartType.Scatter,
+                Chart.CreateScatterData("Number of commits", chartDataWeek),
+                xAxis: NonEmptyString.Create("Week").Get(),
+                yAxis: NonEmptyString.Create("Number of commits").Get()
+            );
+            listOfCharts.Add(chartWeek);
+
+            return View("OverTimeStatisticsView", new WeekViewModel(ImmutableList.CreateRange(listOfCharts)));
         });
-        /**/
         #endregion
 
-        /*/
+        //Abandoned
         #region ByTaskTab
+        /*/
         public Task<IActionResult> PerTaskTable() => Action(async client =>
         {
             return View("TestView");
         });
+        /**/
+        #endregion
+
+        //TODO: CodeTab
+        #region CodeTab
+
+        public Task<IActionResult> CodeTab() => Action(async client =>
+        {
+            var commits = await commitRepository.GetAll();
+            var dataAllTime = new List<WeekStats>();
+            foreach (var entry in commits)
+            {
+
+            }
+
+            var chartDataAllTimeCode = commits
+                .Select(c => new LineScatterData
+                {
+                    y = 128.ToString(),
+                    x = 0.ToString()
+                });
+
+            var chartAllTimeCode = new Chart(
+                "All Time Code",
+                ChartType.Scatter,
+                Chart.CreateScatterData("Number of commits", chartDataAllTimeCode),
+                xAxis: NonEmptyString.Create("Week").Get(),
+                yAxis: NonEmptyString.Create("Number of commits").Get()
+            );
+
+            return View("OverTimeStatisticsView", new WeekViewModel(ImmutableList.Create(chartAllTimeCode)));
+        });
 
         #endregion
-        /**/
 
         #region AuthorTab
         public Task<IActionResult> AuthorTable() => Action(async client =>

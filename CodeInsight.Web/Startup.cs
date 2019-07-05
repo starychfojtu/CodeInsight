@@ -58,15 +58,14 @@ namespace CodeInsight.Web
 
             services.AddTransient<ClientAuthenticator>();
             services.AddTransient<Importer>();
-            //TODO: make work
-            //services.AddTransient<CommitImporter>();
-            //services.AddTransient<IssueImporter>();
+            services.AddTransient<CommitImporter>();
+            services.AddTransient<IssueImporter>();
             services.AddTransient<PullRequestImporter>();
             services.AddTransient<ImporterJob>();
-            //services.AddTransient<ICommitRepository, CommitRepository>();
-            //services.AddTransient<ICommitStorage, CommitStorage>();
-            //services.AddTransient<IIssueRepository, IssueRepository>();
-            //services.AddTransient<IIssueStorage, IssueStorage>();
+            services.AddTransient<ICommitRepository, CommitRepository>();
+            services.AddTransient<ICommitStorage, CommitStorage>();
+            services.AddTransient<IIssueRepository, IssueRepository>();
+            services.AddTransient<IIssueStorage, IssueStorage>();
             services.AddTransient<IPullRequestRepository, PullRequestRepository>();
             services.AddTransient<IPullRequestStorage, PullRequestStorage>();
             services.AddTransient<IRepositoryRepository, RepositoryRepository>();
