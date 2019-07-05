@@ -19,7 +19,7 @@ namespace CodeInsight.Data.Commit
 
         public int Deletions { get; private set; }
 
-        public DateTimeOffset CommitedAt { get; private set; }
+        public DateTimeOffset CommittedAt { get; private set; }
 
         //TEMP - might be useful for task<->commit connection
         public string Comment { get; private set; }
@@ -31,7 +31,7 @@ namespace CodeInsight.Data.Commit
             string authorId, 
             int additions, 
             int deletions, 
-            DateTimeOffset commitedAt, 
+            DateTimeOffset committedAt, 
             string comment)
         {
             Id = id;
@@ -40,7 +40,7 @@ namespace CodeInsight.Data.Commit
             AuthorId = authorId;
             Additions = additions;
             Deletions = deletions;
-            CommitedAt = commitedAt;
+            CommittedAt = committedAt;
             Comment = comment;
         }
 
@@ -53,7 +53,7 @@ namespace CodeInsight.Data.Commit
                 commit.AuthorId,
                 (int)commit.Additions,
                 (int)commit.Deletions,
-                commit.CommitedAt.ToDateTimeOffset(),
+                commit.CommittedAt.ToDateTimeOffset(),
                 commit.Comment
                 );
         }
@@ -66,7 +66,7 @@ namespace CodeInsight.Data.Commit
                 NonEmptyString.Create(commit.AuthorId).Get(),
                 (uint) commit.Additions,
                 (uint) commit.Deletions,
-                commit.CommitedAt.ToInstant(),
+                commit.CommittedAt.ToInstant(),
                 NonEmptyString.Create(commit.Comment).Get()
                 );
         }
