@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Data.Common;
 using CodeInsight.Data;
+using CodeInsight.Data.Commit;
+using CodeInsight.Data.Issue;
 using CodeInsight.Data.JobExecution;
 using CodeInsight.Data.PullRequest;
 using CodeInsight.Data.Repository;
+using CodeInsight.Domain.Commit;
+using CodeInsight.Domain.Issue;
 using CodeInsight.Domain.PullRequest;
 using CodeInsight.Domain.Repository;
 using CodeInsight.Github.Import;
@@ -59,6 +63,10 @@ namespace CodeInsight.Web
             //services.AddTransient<IssueImporter>();
             services.AddTransient<PullRequestImporter>();
             services.AddTransient<ImporterJob>();
+            //services.AddTransient<ICommitRepository, CommitRepository>();
+            //services.AddTransient<ICommitStorage, CommitStorage>();
+            //services.AddTransient<IIssueRepository, IssueRepository>();
+            //services.AddTransient<IIssueStorage, IssueStorage>();
             services.AddTransient<IPullRequestRepository, PullRequestRepository>();
             services.AddTransient<IPullRequestStorage, PullRequestStorage>();
             services.AddTransient<IRepositoryRepository, RepositoryRepository>();

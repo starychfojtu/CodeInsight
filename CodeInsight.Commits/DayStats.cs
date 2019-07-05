@@ -20,9 +20,9 @@ namespace CodeInsight.Commits
             CommitCount = commitCount;
         }
 
-        public static OverTimeStats FromCommits(Commit commit)
+        public static WeekStats FromCommits(Commit commit)
         {
-            return new OverTimeStats(commit.Additions, commit.Deletions, 1);
+            return new WeekStats(commit.Additions, commit.Deletions, 1);
         }
 
         public static DayStats Combine(DayStats a, DayStats b)

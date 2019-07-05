@@ -1,36 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Collections.Immutable;
+using System.Linq;
 using CodeInsight.Domain.Commit;
+using CodeInsight.Library.Extensions;
+using FuncSharp;
+using NodaTime;
 
 namespace CodeInsight.Commits
 {
-    public class OverTimeStats
+    public sealed class OverTimeStats
     {
-        public uint Additions { get; }
+        private readonly DataCube1<LocalDate, IImmutableSet<Commit>> Data;
 
-        public uint Deletions { get; }
-
-        public uint CommitCount { get; }
-
-        public OverTimeStats(uint additions, uint deletions, uint commitCount)
+        public OverTimeStats(
+            DataCube1<LocalDate, IImmutableSet<Commit>> data
+            )
         {
-            Additions = additions;
-            Deletions = deletions;
-            CommitCount = commitCount;
+            this.Data = data;
         }
 
-        public static OverTimeStats FromCommits(Commit commit)
-        {
-            return new OverTimeStats(commit.Additions, commit.Deletions, 1);
-        }
+        public DataCube1<LocalDate, T> Map<T>(Func<WeekStats, T> project) =>
+            Data.Map(ToStats).Map(project);
 
-        public static OverTimeStats Combine(OverTimeStats a, OverTimeStats b)
-        {
-            return new OverTimeStats(
-                a.Additions+b.Additions,
-                a.Deletions+b.Deletions,
-                a.CommitCount+b.CommitCount);
-        }
+        public IOption<WeekStats> Get(LocalDate date) =>
+            Data.Get(date).Map(ToStats);
+
+        private WeekStats ToStats(IEnumerable<Commit> commits) =>
+            commits
+                .Select(WeekStats.FromCommits)
+                .Aggregate(WeekStats.Combine);
     }
 }

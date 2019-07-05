@@ -6,9 +6,9 @@ using NodaTime;
 
 namespace CodeInsight.Commits
 {
-    public static class WeekStatsCalculator
+    public static class OverTimeCalculator
     {
-        public static WeekStats Calculate(IEnumerable<Commit> commits, ZonedDateTime startDate)
+        public static OverTimeStats Calculate(IEnumerable<Commit> commits, ZonedDateTime startDate)
         {
             var stats = new DataCube1<LocalDate, IImmutableSet<Commit>>();
             //TODO: Add a way of setting the duration to 7
@@ -23,7 +23,7 @@ namespace CodeInsight.Commits
                 }
 
             }
-            return new WeekStats(stats);
+            return new OverTimeStats(stats);
         }
 
         private static DateInterval GetDates(Commit commit, ZonedDateTime maxEnd)

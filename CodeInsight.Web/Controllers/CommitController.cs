@@ -69,7 +69,7 @@ namespace CodeInsight.Web.Controllers
                 yAxis: NonEmptyString.Create("Number of commits").Get()
                 );
                 
-            return View(new WeekViewModel(ImmutableList.Create(chart)));
+            return View("OverTimeStatisticsView", new WeekViewModel(ImmutableList.Create(chart)));
             /**/
             return View("TestView");
         });
