@@ -2,7 +2,7 @@
 
 namespace CodeInsight.Commits
 {
-    public class LifetimeAuthorStats
+    public class AuthorStats
     {
         public string AuthorName { get; }
 
@@ -18,7 +18,7 @@ namespace CodeInsight.Commits
 
         public Duration TimeSpentOnProject => LastCommitAt - FirstCommitAt;
 
-        public LifetimeAuthorStats (
+        public AuthorStats (
             string authorName,
             uint additions, 
             uint deletions, 
@@ -32,9 +32,9 @@ namespace CodeInsight.Commits
             FirstCommitAt = firstCommitAt;
         }
 
-        public static LifetimeAuthorStats Combine(LifetimeAuthorStats a, LifetimeAuthorStats b)
+        public static AuthorStats Combine(AuthorStats a, AuthorStats b)
         {
-            return new LifetimeAuthorStats(
+            return new AuthorStats(
                 a.AuthorName,
                 a.Additions+b.Additions,
                 a.Deletions+b.Deletions,

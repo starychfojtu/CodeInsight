@@ -13,7 +13,7 @@ using CodeInsight.Domain.Repository;
 using CodeInsight.Library;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
-using CodeInsight.PullRequests;
+using CodeInsight.Commits;
 using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Charts;
 using CodeInsight.Web.Common.Security;
@@ -54,7 +54,7 @@ namespace CodeInsight.Web.Controllers
                 now
             );
 
-            var commits = await commitRepository.GetAllByAuthor(NonEmptyString.Create("name").Get());
+            var commits = await commitRepository.GetAllByAuthors(NonEmptyString.Create("name").Get());
             var data = commits
                 .Select(c => new LineScatterData
                 {
@@ -93,6 +93,10 @@ namespace CodeInsight.Web.Controllers
 
         public Task<IActionResult> AuthorTable() => Action(async client =>
         {
+            var commits = commitRepository.GetAll();
+            var authors = commits.Select()
+
+            return View(new AuthorViewModel(ImmutableList.Create()));
             //return View("AuthorView");
             return View("TestView");
         });

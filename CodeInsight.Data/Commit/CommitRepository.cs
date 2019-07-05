@@ -19,11 +19,18 @@ namespace CodeInsight.Data.Commit
             this.dbContext = dbContext;
         }
 
-        public Task<IEnumerable<Domain.Commit.Commit>> GetAllByAuthor(IEnumerable<NonEmptyString> ids)
+        public Task<IEnumerable<Domain.Commit.Commit>> GetAllByAuthors(IEnumerable<NonEmptyString> ids)
         {
             var authIds = ids.Select(i => i.Value);
             return dbContext.Commits
                 .Where(c => authIds.Contains(c.AuthorId))
+                .ToListAsync()
+                .Map(c => c.Select(Commit.ToDomain));
+        }
+
+        public Task<IEnumerable<Domain.Commit.Commit>> GetAll()
+        {
+            return dbContext.Commits
                 .ToListAsync()
                 .Map(c => c.Select(Commit.ToDomain));
         }

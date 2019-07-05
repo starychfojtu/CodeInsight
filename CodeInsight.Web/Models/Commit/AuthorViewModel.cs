@@ -7,16 +7,13 @@ using CodeInsight.Web.Common.Charts;
 
 namespace CodeInsight.Web.Models.Commit
 {
-    public class AuthorViewModel : ChartsViewModel
+    public class AuthorViewModel
     {
-        public AuthorViewModel(
-            IReadOnlyList<LifetimeAuthorStats> authors,
-            IReadOnlyList<Chart> charts) 
-            : base(charts)
+        public AuthorViewModel(IReadOnlyList<AuthorStats> authors) 
         {
             Authors = authors;
         }
 
-        public IReadOnlyList<LifetimeAuthorStats> Authors { get; }
+        public IReadOnlyList<AuthorStats> Authors { get; }
     }
 }

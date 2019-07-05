@@ -28,7 +28,7 @@ namespace CodeInsight.Commits
 
         private OverTimeStats ToStats(IEnumerable<Commit> commits) =>
             commits
-                .Select(c => OverTimeStats.FromCommits(c))
+                .Select(OverTimeStats.FromCommits)
                 .Aggregate(OverTimeStats.Combine);
     }
 }

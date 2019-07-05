@@ -6,7 +6,7 @@ namespace CodeInsight.Data.Issue
 {
     public sealed class Issue
     {
-        //TODO: Solve the numbers of files changed in an issue
+        //TO DO: Solve the numbers of files changed in an issue
         public string Id { get; private set; }
 
         public string RepositoryId { get; private set; }
