@@ -42,8 +42,8 @@ namespace CodeInsight.Data.Commit
             return dbContext.Commits
                 .Where(c => 
                     c.RepositoryId == repositoryId.Value.Value && 
-                    c.CommitedAt >= start && 
-                    c.CommitedAt <= end)
+                    c.CommittedAt >= start && 
+                    c.CommittedAt <= end)
                 .ToListAsync()
                 .Map(c => c.Select(Commit.ToDomain));
         }
