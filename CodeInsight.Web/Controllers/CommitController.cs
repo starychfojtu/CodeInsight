@@ -52,7 +52,7 @@ namespace CodeInsight.Web.Controllers
                 new WeekViewModel(ImmutableList.CreateRange(CreateOverTimeCharts(commits, interval))));
         });
         
-        //TODO: CodeTab
+        //TODO: OverTimeTab
         private static IEnumerable<Chart> CreateOverTimeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
             //TODO: Call get
@@ -100,15 +100,12 @@ namespace CodeInsight.Web.Controllers
         //Abandoned
         #region ByTaskTab
 
-        /*/
         public Task<IActionResult> PerTaskTable() => Action(async client =>
         {
-            return View("TestView");
+            return View("FeatureUnavailable");
         });
-        /**/
 
         #endregion
-
 
         #region CodeTab
 
@@ -142,6 +139,7 @@ namespace CodeInsight.Web.Controllers
         #endregion
 
         #region AuthorTab
+
         public Task<IActionResult> AuthorTable() => Action( async client =>
         {
             var commits = commitRepository.GetAll();
@@ -151,6 +149,7 @@ namespace CodeInsight.Web.Controllers
 
             return View("AuthorView", new AuthorViewModel(ImmutableList.CreateRange(stats)));
         });
+
         #endregion
 
         //COMMON
