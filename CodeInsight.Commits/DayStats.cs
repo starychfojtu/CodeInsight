@@ -6,7 +6,7 @@ using NodaTime;
 
 namespace CodeInsight.Commits
 {
-    class DayStats
+    public class DayStats
     {
         public Instant Day { get; }
 

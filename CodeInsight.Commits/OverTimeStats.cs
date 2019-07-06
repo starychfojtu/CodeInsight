@@ -17,7 +17,7 @@ namespace CodeInsight.Commits
             DataCube1<LocalDate, IImmutableSet<Commit>> data
             )
         {
-            this.Data = data;
+            Data = data;
         }
 
         public DataCube1<LocalDate, T> Map<T>(Func<WeekStats, T> project) =>
