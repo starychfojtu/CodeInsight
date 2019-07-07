@@ -9,15 +9,13 @@ namespace CodeInsight.Commits
 {
     public static class WeekCalculator
     {
-        public static WeekStats Calculate(IEnumerable<Commit> commits, Interval interval)
+        public static WeekStats Calculate(IEnumerable<DayStats> stats)
         {
-            var count = (uint) commits.Count(cm => interval.Contains(cm.CommittedAt));
-            var additions = commits
-                .Where(cm => interval.Contains(cm.CommittedAt))
+            var count = (uint) stats.Count();
+            var additions = stats
                 .Select(cm => cm.Additions)
                 .Aggregate((uint) 0, (current, entry) => current + entry);
-            var deletion = commits
-                .Where(cm => interval.Contains(cm.CommittedAt))
+            var deletion = stats
                 .Select(cm => cm.Deletions)
                 .Aggregate((uint)0, (current, entry) => current + entry);
 

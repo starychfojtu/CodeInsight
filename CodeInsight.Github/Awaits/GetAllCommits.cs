@@ -15,7 +15,6 @@ using Octokit;
 
 namespace CodeInsight.Github.Awaits
 {
-    //TODO: Add a way of getting the data from github
     internal static class GetAllCommits
     {
         internal static async Task<IEnumerable<CommitDto>> AwaitCommits(IConnection connection, Repository repository)

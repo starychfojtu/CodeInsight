@@ -17,7 +17,6 @@ namespace CodeInsight.Commits
             var max = commits
                 .Where(cm => cm.AuthorName == authName)
                 .Max(a => a.CommittedAt);
-            //TODO: check LINQ
             var additions = commits
                 .Where(cm => cm.AuthorName == authName)
                 .Select(cm => cm.Additions)

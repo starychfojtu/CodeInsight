@@ -9,6 +9,7 @@ using CodeInsight.Domain.Repository;
 using CodeInsight.Github.Awaits;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
+using NodaTime;
 using Octokit.GraphQL;
 
 namespace CodeInsight.Github.Import
@@ -26,13 +27,31 @@ namespace CodeInsight.Github.Import
 
         public async Task<Repository> UpdateCommits(IConnection connection, Repository repository)
         {
-            commitStorage.Add(GetAllCommits.AwaitCommits((Octokit.Connection) connection, repository).Result.Select(Map));
+            //TODO: Update
+            var tempList = new List<Commit>
+            {
+                new Commit(NonEmptyString.Create("1").Get(), NonEmptyString.Create(repository.Id.Value).Get(),
+                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
+                    Instant.FromDateTimeUtc(DateTime.Now), NonEmptyString.Create("Comment").Get()),
+                new Commit(NonEmptyString.Create("2").Get(), NonEmptyString.Create(repository.Id.Value).Get(),
+                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 1, 2,
+                    Instant.FromDateTimeUtc(DateTime.Now).Minus(Duration.FromDays(3)),
+                    NonEmptyString.Create("Comment 2").Get()),
+                new Commit(NonEmptyString.Create("3").Get(), NonEmptyString.Create(repository.Id.Value).Get(),
+                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
+                    Instant.FromDateTimeUtc(DateTime.Now).Minus(Duration.FromDays(2)),
+                    NonEmptyString.Create("Comment 3").Get())
+            };
+            var newEntries = await GetAllCommits.AwaitCommits((Octokit.Connection) connection, repository);
+            commitStorage.Add(tempList);
+            commitStorage.Add(newEntries.Select(Map));
+            //commitStorage.Add(GetAllCommits.AwaitCommits((Octokit.Connection) connection, repository).Result.Select(Map));
 
             return repository;
         }
 
         //TODO: UpdateOrAdd
-        //TODO: GetUpdatedOrNewPullRequests
+        //TODO: GetUpdatedOrNewCommits
 
         private static Commit Map(GetAllCommits.CommitDto cm) =>
             new Commit(

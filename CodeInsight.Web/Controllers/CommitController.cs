@@ -25,6 +25,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using NodaTime.Extensions;
 using Chart = CodeInsight.Web.Common.Charts.Chart;
 using static CodeInsight.Library.Prelude;
 
@@ -43,39 +44,33 @@ namespace CodeInsight.Web.Controllers
         
         #region OverTimeTab
 
+        //TODO: OverTimeTab
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
             var commits = await commitRepository.GetAll();
-            var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MinIsoValue );
+            var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MaxIsoValue);
 
             return View("OverTimeStatisticsView", 
                 new WeekViewModel(ImmutableList.CreateRange(CreateOverTimeCharts(commits, interval))));
         });
-        
-        //TODO: OverTimeTab
+
         private static IEnumerable<Chart> CreateOverTimeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
-            //TODO: Call GetWeekStats
             var config = new LineDataSetConfiguration("Number of commits", Color.Cyan);
-            var dates = commits.Select(cm => cm.CommittedAt);
-            var stats = dates.Select(entry => DayCalculator.PerDay(commits, entry)).ToList();
-
-            stats.Add(new DayStats(Instant.FromDateTimeOffset(DateTimeOffset.Now), 10,5, 2));
-            stats.Add(new DayStats(Instant.FromDateTimeOffset(DateTimeOffset.MinValue), 7, 5, 2));
+            var stats = GetAllWeekStats(commits);
 
             //TODO: Correctly use graph/chart
             yield return Chart.FromInterval(
                 "All Time",
                 interval,
-                stats.Select(day => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
+                stats.Select(week => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
                 xAxis: NonEmptyString.Create("Week").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
 
-            //TODO: Use correct graph/chart
-            var week = "test";
+            var weeks = "test";
             yield return Chart.FromInterval(
-                "Week" + week,
+                "Week" + weeks,
                 interval,
                 stats.Select(kvp => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
                 xAxis: NonEmptyString.Create("Days").Get(),
@@ -100,34 +95,27 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> CodeTab() => Action(async client =>
         {
             var commits = await commitRepository.GetAll();
-            
+            var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MaxIsoValue);
+
             return View("OverTimeStatisticsView",
-                new WeekViewModel(ImmutableList.CreateRange(CreateCodeCharts(commits))));
+                new WeekViewModel(ImmutableList.CreateRange(CreateCodeCharts(commits, interval))));
         });
 
         //TODO: CodeTab
-        private static IEnumerable<Chart> CreateCodeCharts(IEnumerable<Commit> commits)
+        private static IEnumerable<Chart> CreateCodeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
-            //TODO: Call GetWeekStats
-            var chartDataAllTimeCode = commits
-                .Select(c => new LineScatterData
-                {
-                    y = 128.ToString(),
-                    x = 0.ToString()
-                });
+            var config = new LineDataSetConfiguration("Number of commits", Color.DarkRed);
+            var stats = GetAllWeekStats(commits);
 
-            //TODO: Use correct graph/chart
-            yield return new Chart(
+            yield return Chart.FromInterval(
                 "All Time Code",
-                ChartType.Scatter,
-                Chart.CreateScatterData("Number of Code Changes", chartDataAllTimeCode),
+                interval,
+                stats.Select(week => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
                 xAxis: NonEmptyString.Create("Week").Get(),
                 yAxis: NonEmptyString.Create("Number of Code Changes").Get()
             );
         }
-
-
-
+        
         #endregion
 
         #region AuthorTab
@@ -145,16 +133,26 @@ namespace CodeInsight.Web.Controllers
         #endregion
 
         //COMMON
-        private static IEnumerable<WeekStats> GetWeekStats(IEnumerable<Commit> commits)
+        private static IEnumerable<WeekStats> GetAllWeekStats(IEnumerable<Commit> commits)
         {
-            //TODO: per week get week stats, use per day GetDayStats
-            yield break;
+            var current = commits.Min(cm => cm.CommittedAt);
+            var max = commits.Max(cm => cm.CommittedAt);
+
+            while (max.ToDateTimeUtc().ToLocalDateTime() > current.ToDateTimeUtc().ToLocalDateTime())
+            {
+                var period = Period.Between(current.ToDateTimeUtc().ToLocalDateTime(), LocalDateTime.Min(max.ToDateTimeUtc().ToLocalDateTime(), current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday))).Days;
+                yield return WeekCalculator.Calculate(GetDayStats(commits, current, period));
+                current = current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday).ToDateTimeUnspecified().ToInstant();
+            }
         }
 
-        private static IEnumerable<WeekStats> GetDayStats(IEnumerable<Commit> commits)
+        private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, Instant day, int count)
         {
-            //TODO: per day, per week get week stats
-            yield break;
+            for (int i = 0; i < count - 1; i++)
+            {
+                yield return DayCalculator.PerDay(commits, day);
+                day.Plus(Duration.FromDays(1));
+            }
         }
 
         //TODO: Refactor
