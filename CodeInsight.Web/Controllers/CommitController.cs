@@ -46,7 +46,7 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
             var commits = await commitRepository.GetAll();
-            var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MaxIsoValue );
+            var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MinIsoValue );
 
             return View("OverTimeStatisticsView", 
                 new WeekViewModel(ImmutableList.CreateRange(CreateOverTimeCharts(commits, interval))));
@@ -55,42 +55,30 @@ namespace CodeInsight.Web.Controllers
         //TODO: OverTimeTab
         private static IEnumerable<Chart> CreateOverTimeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
-            //TODO: Call get
+            //TODO: Call GetWeekStats
             var config = new LineDataSetConfiguration("Number of commits", Color.Cyan);
             var dates = commits.Select(cm => cm.CommittedAt);
             var stats = dates.Select(entry => DayCalculator.PerDay(commits, entry)).ToList();
+
             stats.Add(new DayStats(Instant.FromDateTimeOffset(DateTimeOffset.Now), 10,5, 2));
             stats.Add(new DayStats(Instant.FromDateTimeOffset(DateTimeOffset.MinValue), 7, 5, 2));
-            var chartDataAllTime = stats
-                .Select(c => new LineScatterData
-                {
-                    y = c.Additions.ToString(),
-                    x = c.Day.ToString()
-                });
-
-            var chartDataWeek = commits
-                .Select(c => new LineScatterData
-                {
-                    y = 128.ToString(),
-                    x = 0.ToString()
-                });
 
             //TODO: Correctly use graph/chart
             yield return Chart.FromInterval(
                 "All Time",
                 interval,
-                chartDataAllTime.Select(kvp => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
+                stats.Select(day => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
                 xAxis: NonEmptyString.Create("Week").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
 
             //TODO: Use correct graph/chart
             var week = "test";
-            yield return new Chart(
-                "Week " + week,
-                ChartType.Scatter,
-                Chart.CreateScatterData("Number of commits", chartDataWeek),
-                xAxis: NonEmptyString.Create("Week").Get(),
+            yield return Chart.FromInterval(
+                "Week" + week,
+                interval,
+                stats.Select(kvp => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
+                xAxis: NonEmptyString.Create("Days").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
         }
@@ -120,6 +108,7 @@ namespace CodeInsight.Web.Controllers
         //TODO: CodeTab
         private static IEnumerable<Chart> CreateCodeCharts(IEnumerable<Commit> commits)
         {
+            //TODO: Call GetWeekStats
             var chartDataAllTimeCode = commits
                 .Select(c => new LineScatterData
                 {
@@ -127,6 +116,7 @@ namespace CodeInsight.Web.Controllers
                     x = 0.ToString()
                 });
 
+            //TODO: Use correct graph/chart
             yield return new Chart(
                 "All Time Code",
                 ChartType.Scatter,
@@ -135,6 +125,8 @@ namespace CodeInsight.Web.Controllers
                 yAxis: NonEmptyString.Create("Number of Code Changes").Get()
             );
         }
+
+
 
         #endregion
 
@@ -153,7 +145,6 @@ namespace CodeInsight.Web.Controllers
         #endregion
 
         //COMMON
-        //TODO: Refactor
         private static IEnumerable<WeekStats> GetWeekStats(IEnumerable<Commit> commits)
         {
             //TODO: per week get week stats, use per day GetDayStats
@@ -166,6 +157,7 @@ namespace CodeInsight.Web.Controllers
             yield break;
         }
 
+        //TODO: Refactor
         private static LineDataset CreateDataSet(DateInterval interval, DataCube1<LocalDate, double> data, LineDataSetConfiguration configuration)
         {
             var color = configuration.Color.ToArgbString();

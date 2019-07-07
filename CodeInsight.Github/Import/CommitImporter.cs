@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CodeInsight.Domain;
 using CodeInsight.Domain.Commit;
 using CodeInsight.Domain.Repository;
+using CodeInsight.Github.Awaits;
+using CodeInsight.Library.Extensions;
+using CodeInsight.Library.Types;
 using Octokit.GraphQL;
 
 namespace CodeInsight.Github.Import
@@ -21,9 +26,24 @@ namespace CodeInsight.Github.Import
 
         public async Task<Repository> UpdateCommits(IConnection connection, Repository repository)
         {
-            //TODO: After implementing the communication with github, update accordingly
+            commitStorage.Add(GetAllCommits.AwaitCommits((Octokit.Connection) connection, repository).Result.Select(Map));
 
             return repository;
         }
+
+        //TODO: UpdateOrAdd
+        //TODO: GetUpdatedOrNewPullRequests
+
+        private static Commit Map(GetAllCommits.CommitDto cm) =>
+            new Commit(
+                id: NonEmptyString.Create(cm.Id).Get(),
+                repositoryId: NonEmptyString.Create(cm.RepositoryId).Get(),
+                authorName: NonEmptyString.Create(cm.AuthorName).Get(),
+                authorId: NonEmptyString.Create(cm.AuthorId).Get(),
+                additions: (uint)cm.Additions,
+                deletions: (uint)cm.Deletions,
+                committedAt: cm.CommittedAt,
+                comment: NonEmptyString.Create(cm.Comment).Get()
+            );
     }
 }

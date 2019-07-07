@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Repository = CodeInsight.Domain.Repository.Repository;
@@ -15,32 +16,24 @@ using Octokit;
 namespace CodeInsight.Github.Awaits
 {
     //TODO: Add a way of getting the data from github
-    internal class GetAllCommits
+    internal static class GetAllCommits
     {
-        private async Task<List<CommitDto>> AwaitCommits(IConnection connection, Repository repository)
+        internal static async Task<IEnumerable<CommitDto>> AwaitCommits(IConnection connection, Repository repository)
         {
             var github = new GitHubClient(connection);
             
-            var commits = await github.Repository.Commit.GetAll(Int64.Parse(repository.Id.Value));
+            var commits = await github.Repository.Commit.GetAll(long.Parse(repository.Id.Value));
 
-            var ret = new List<CommitDto>();
-            GitHubCommit a = new GitHubCommit();
-            
-            foreach (var commit in commits)
-            {
-                var newEntry = new CommitDto(
-                    NonEmptyString.Create(commit.Sha).Get(),
-                    NonEmptyString.Create(commit.Repository.Id.ToString()).Get(),
-                    NonEmptyString.Create(commit.Commit.Author.Name).Get(),
-                    NonEmptyString.Create(commit.Author.Id.ToString()).Get(),
-                    (uint) commit.Stats.Additions,
-                    (uint) commit.Stats.Deletions,
-                    commit.Commit.Author.Date.ToInstant(),
-                    NonEmptyString.Create(commit.Commit.Message).Get()
-                    );
-                ret.Add(newEntry);
-            }
-            return ret;
+            return commits.Select(commit => new CommitDto(
+                NonEmptyString.Create(commit.Sha).Get(), 
+                NonEmptyString.Create(commit.Repository.Id.ToString()).Get(), 
+                NonEmptyString.Create(commit.Commit.Author.Name).Get(), 
+                NonEmptyString.Create(commit.Author.Id.ToString()).Get(), 
+                (uint) commit.Stats.Additions, 
+                (uint) commit.Stats.Deletions, 
+                commit.Commit.Author.Date.ToInstant(), 
+                NonEmptyString.Create(commit.Commit.Message).Get()))
+                .ToList();
         }
         internal sealed class CommitDto
         {
@@ -56,9 +49,8 @@ namespace CodeInsight.Github.Awaits
 
             public uint Deletions { get; private set; }
 
-            public Instant CommitedAt { get; private set; }
+            public Instant CommittedAt { get; private set; }
 
-            //TEMP - might be useful for task<->commit connection
             public NonEmptyString Comment { get; private set; }
 
             public CommitDto(
@@ -68,7 +60,7 @@ namespace CodeInsight.Github.Awaits
                 NonEmptyString authorId,
                 uint additions,
                 uint deletions,
-                Instant commitedAt,
+                Instant committedAt,
                 NonEmptyString comment)
             {
                 Id = id;
@@ -77,7 +69,7 @@ namespace CodeInsight.Github.Awaits
                 AuthorId = authorId;
                 Additions = additions;
                 Deletions = deletions;
-                CommitedAt = commitedAt;
+                CommittedAt = committedAt;
                 Comment = comment;
             }
         }
