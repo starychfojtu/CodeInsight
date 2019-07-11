@@ -23,7 +23,7 @@ namespace CodeInsight.Domain.Commit
         public Instant CommittedAt { get; private set; }
 
         //TEMP - might be useful for task<->commit connection
-        public NonEmptyString Comment { get; private set; }
+        public NonEmptyString CommitMsg { get; private set; }
 
         public Commit(
             NonEmptyString id, 
@@ -33,7 +33,7 @@ namespace CodeInsight.Domain.Commit
             uint additions, 
             uint deletions, 
             Instant committedAt,
-            NonEmptyString comment)
+            NonEmptyString commitMsg)
         {
             Id = id;
             RepositoryId = repositoryId;
@@ -42,7 +42,7 @@ namespace CodeInsight.Domain.Commit
             Additions = additions;
             Deletions = deletions;
             CommittedAt = committedAt;
-            Comment = comment;
+            CommitMsg = commitMsg;
         }
 
         private bool Equals(Commit other)

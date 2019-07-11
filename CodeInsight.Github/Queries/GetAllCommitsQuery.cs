@@ -1,39 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Repository = CodeInsight.Domain.Repository.Repository;
-using Commit = CodeInsight.Domain.Commit.Commit;
 using CodeInsight.Library.Types;
 using Monad;
 using NodaTime;
-using NodaTime.Extensions;
-using Octokit;
+using Octokit.GraphQL;
+using Octokit.GraphQL.Model;
+using static Octokit.GraphQL.Variable;
+using Repository = CodeInsight.Domain.Repository.Repository;
 
-
-namespace CodeInsight.Github.Awaits
+namespace CodeInsight.Github.Import
 {
-    internal static class GetAllCommits
+    internal static class GetAllCommitsQuery
     {
-        internal static async Task<IEnumerable<CommitDto>> AwaitCommits(IConnection connection, Repository repository)
-        {
-            var github = new GitHubClient(connection);
-            
-            var commits = await github.Repository.Commit.GetAll(long.Parse(repository.Id.Value));
+        private static ICompiledQuery<IGitObject> Query { get; }
 
-            return commits.Select(commit => new CommitDto(
-                NonEmptyString.Create(commit.Sha).Get(), 
-                NonEmptyString.Create(commit.Repository.Id.ToString()).Get(), 
-                NonEmptyString.Create(commit.Commit.Author.Name).Get(), 
-                NonEmptyString.Create(commit.Author.Id.ToString()).Get(), 
-                (uint) commit.Stats.Additions, 
-                (uint) commit.Stats.Deletions, 
-                commit.Commit.Author.Date.ToInstant(), 
-                NonEmptyString.Create(commit.Commit.Message).Get()))
-                .ToList();
+        static GetAllCommitsQuery()
+        {
+            Query = CreateQuery();
         }
+
+        internal static IO<Task<IGitObject>> Execute(IConnection conn, Repository repository, int take, string cursor = null) => () =>
+        {
+            var vars = new Dictionary<string, object>
+            {
+                {"repositoryName", repository.Name.Value},
+                {"repositoryOwner", repository.Owner.Value},
+                {"after", cursor},
+                {"first", take}
+            };
+
+            return conn.Run(Query, vars);
+        };
+
+        private static ICompiledQuery<IGitObject> CreateQuery() =>
+            new Query()
+                .Repository(Var("repositoryName"), Var("repositoryOwner"))
+                .Ref("master")
+                .Target.Compile();
+
         internal sealed class CommitDto
         {
             public NonEmptyString Id { get; private set; }

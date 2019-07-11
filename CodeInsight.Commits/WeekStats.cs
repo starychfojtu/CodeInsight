@@ -8,7 +8,9 @@ namespace CodeInsight.Commits
 {
     public class WeekStats
     {
-        public Period Period { get; }
+        public Instant FirstDay { get; }
+
+        public uint Duration { get; }
 
         public uint Additions { get; }
 
@@ -16,8 +18,10 @@ namespace CodeInsight.Commits
 
         public uint CommitCount { get; }
 
-        public WeekStats(uint additions, uint deletions, uint commitCount)
+        public WeekStats(Instant firstDay, uint duration, uint additions, uint deletions, uint commitCount)
         {
+            FirstDay = firstDay;
+            Duration = duration;
             Additions = additions;
             Deletions = deletions;
             CommitCount = commitCount;
@@ -25,12 +29,15 @@ namespace CodeInsight.Commits
 
         public static WeekStats FromCommits(Commit commit)
         {
-            return new WeekStats(commit.Additions, commit.Deletions, 1);
+            return new WeekStats(commit.CommittedAt, 1, commit.Additions, commit.Deletions, 1);
         }
 
+        //TODO: Delete
         public static WeekStats Combine(WeekStats a, WeekStats b)
         {
             return new WeekStats(
+                a.FirstDay,
+                a.Duration,
                 a.Additions+b.Additions,
                 a.Deletions+b.Deletions,
                 a.CommitCount+b.CommitCount);

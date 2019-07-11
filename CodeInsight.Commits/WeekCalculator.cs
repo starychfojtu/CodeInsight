@@ -9,17 +9,13 @@ namespace CodeInsight.Commits
 {
     public static class WeekCalculator
     {
-        public static WeekStats Calculate(IEnumerable<DayStats> stats)
+        public static WeekStats Calculate(IImmutableList<DayStats> stats)
         {
-            var count = (uint) stats.Count();
-            var additions = stats
-                .Select(cm => cm.Additions)
-                .Aggregate((uint) 0, (current, entry) => current + entry);
-            var deletion = stats
-                .Select(cm => cm.Deletions)
-                .Aggregate((uint)0, (current, entry) => current + entry);
+            var count = stats.Count();
+            var additions = stats.Sum(cm => cm.Additions);
+            var deletion = stats.Sum(cm => cm.Deletions);
 
-            return new WeekStats(additions, deletion, count);
+            return new WeekStats(stats.Min(st => st.Day), (uint)stats.Count(), (uint) additions, (uint) deletion, (uint) count);
         }
     }
 }

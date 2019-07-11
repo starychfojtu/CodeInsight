@@ -28,6 +28,15 @@ namespace CodeInsight.Data.Commit
                 .Map(c => c.Select(Commit.ToDomain));
         }
 
+        public Task<IEnumerable<Domain.Commit.Commit>> GetAllByIds(IEnumerable<NonEmptyString> ids)
+        {
+            var commitIds = ids.Select(i => i.Value);
+            return dbContext.Commits
+                .Where(cm => commitIds.Contains(cm.Id))
+                .ToListAsync()
+                .Map(cms => cms.Select(Commit.ToDomain));
+        }
+
         public Task<IEnumerable<Domain.Commit.Commit>> GetAll()
         {
             return dbContext.Commits

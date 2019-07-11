@@ -22,6 +22,7 @@ using CodeInsight.Web.Models.Commit;
 using CodeInsight.Web.Models.PullRequest;
 using FuncSharp;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -45,9 +46,28 @@ namespace CodeInsight.Web.Controllers
         #region OverTimeTab
 
         //TODO: OverTimeTab
+        //TODO: REFACTOR - add GetWeeks
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
-            var commits = await commitRepository.GetAll();
+            //var commits = commitRepository.GetAll();
+
+            //TEMP
+            var commits = new List<Commit>
+            {
+                new Commit(NonEmptyString.Create("1").Get(), NonEmptyString.Create("12").Get(),
+                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
+                    Instant.FromDateTimeOffset(DateTime.UtcNow), NonEmptyString.Create("CommitMsg").Get()),
+                new Commit(NonEmptyString.Create("2").Get(), NonEmptyString.Create("12").Get(),
+                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 1, 2,
+                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(3)),
+                    NonEmptyString.Create("CommitMsg 2").Get()),
+                new Commit(NonEmptyString.Create("3").Get(), NonEmptyString.Create("12").Get(),
+                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
+                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(2)),
+                    NonEmptyString.Create("CommitMsg 3").Get())
+            };
+
+            //TODO: View based choosing of week
             var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MaxIsoValue);
 
             return View("OverTimeStatisticsView", 
@@ -83,10 +103,7 @@ namespace CodeInsight.Web.Controllers
         //Abandoned
         #region ByTaskTab
 
-        public Task<IActionResult> PerTaskTable() => Action(async client =>
-        {
-            return View("FeatureUnavailable");
-        });
+        public Task<IActionResult> PerTaskTable() => Action(async client => View("FeatureUnavailable"));
 
         #endregion
 
@@ -101,10 +118,9 @@ namespace CodeInsight.Web.Controllers
                 new WeekViewModel(ImmutableList.CreateRange(CreateCodeCharts(commits, interval))));
         });
 
-        //TODO: CodeTab
         private static IEnumerable<Chart> CreateCodeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
-            var config = new LineDataSetConfiguration("Number of commits", Color.DarkRed);
+            var config = new LineDataSetConfiguration("Number of commits", Color.Green);
             var stats = GetAllWeekStats(commits);
 
             yield return Chart.FromInterval(
@@ -141,25 +157,26 @@ namespace CodeInsight.Web.Controllers
             while (max.ToDateTimeUtc().ToLocalDateTime() > current.ToDateTimeUtc().ToLocalDateTime())
             {
                 var period = Period.Between(current.ToDateTimeUtc().ToLocalDateTime(), LocalDateTime.Min(max.ToDateTimeUtc().ToLocalDateTime(), current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday))).Days;
-                yield return WeekCalculator.Calculate(GetDayStats(commits, current, period));
-                current = current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday).ToDateTimeUnspecified().ToInstant();
+                yield return WeekCalculator.Calculate(GetDayStats(commits, current, period).ToImmutableList());
+                //TODO: Correct time change
+                //current = current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday);
             }
         }
 
         private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, Instant day, int count)
         {
-            for (int i = 0; i < count - 1; i++)
+            for (int i = 0; i < count; i++)
             {
                 yield return DayCalculator.PerDay(commits, day);
                 day.Plus(Duration.FromDays(1));
             }
         }
 
-        //TODO: Refactor
         private static LineDataset CreateDataSet(DateInterval interval, DataCube1<LocalDate, double> data, LineDataSetConfiguration configuration)
         {
             var color = configuration.Color.ToArgbString();
             var colorList = new List<string> { color };
+            //TODO: Correct representation
             var dataSetData = interval.Select(date => data.Get(date).GetOrElse(double.NaN)).ToList();
             return new LineDataset
             {
