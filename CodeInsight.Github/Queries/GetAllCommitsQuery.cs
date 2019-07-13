@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CodeInsight.Library.Types;
+using FuncSharp;
 using Monad;
 using NodaTime;
 using Octokit.GraphQL;

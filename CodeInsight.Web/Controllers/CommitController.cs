@@ -14,6 +14,7 @@ using CodeInsight.Library;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using CodeInsight.Commits;
+using CodeInsight.PullRequests;
 using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Charts;
 using CodeInsight.Web.Common.Security;
@@ -46,7 +47,7 @@ namespace CodeInsight.Web.Controllers
         #region OverTimeTab
 
         //TODO: OverTimeTab
-        //TODO: REFACTOR - add GetWeeks
+        //TODO: REFACTOR - add GetWeeks > send it to <option>
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
             //var commits = commitRepository.GetAll();
@@ -77,13 +78,15 @@ namespace CodeInsight.Web.Controllers
         private static IEnumerable<Chart> CreateOverTimeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
             var config = new LineDataSetConfiguration("Number of commits", Color.Cyan);
-            var stats = GetAllWeekStats(commits);
+            var statsAll = GetAllWeekStats(commits);
+            var statsWeek = GetDayStats(commits, option.Day, option.Count);
 
             //TODO: Correctly use graph/chart
             yield return Chart.FromInterval(
                 "All Time",
                 interval,
-                stats.Select(week => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
+                new List<Dataset>()
+                { CreateCommitDataSet(interval, statsAll, config) }, 
                 xAxis: NonEmptyString.Create("Week").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
@@ -92,7 +95,8 @@ namespace CodeInsight.Web.Controllers
             yield return Chart.FromInterval(
                 "Week" + weeks,
                 interval,
-                stats.Select(kvp => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
+                new List<Dataset>()
+                { CreateCodeDataSet(interval, statsWeek, config) }, 
                 xAxis: NonEmptyString.Create("Days").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
@@ -120,13 +124,16 @@ namespace CodeInsight.Web.Controllers
 
         private static IEnumerable<Chart> CreateCodeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
-            var config = new LineDataSetConfiguration("Number of commits", Color.Green);
+            var configAdded = new LineDataSetConfiguration("Number of commits", Color.Green);
+            var configDeleted = new LineDataSetConfiguration("Number of commits", Color.DarkRed);
             var stats = GetAllWeekStats(commits);
 
             yield return Chart.FromInterval(
                 "All Time Code",
                 interval,
-                stats.Select(week => CreateDataSet(interval, new DataCube1<LocalDate, double>(), config)).ToList(),
+                new List<Dataset>()
+                    { CreateCodeDataSet(interval, stats, configAdded),
+                      CreateCodeDataSet(interval, stats, configDeleted) },
                 xAxis: NonEmptyString.Create("Week").Get(),
                 yAxis: NonEmptyString.Create("Number of Code Changes").Get()
             );
@@ -154,8 +161,10 @@ namespace CodeInsight.Web.Controllers
             var current = commits.Min(cm => cm.CommittedAt);
             var max = commits.Max(cm => cm.CommittedAt);
 
+
             while (max.ToDateTimeUtc().ToLocalDateTime() > current.ToDateTimeUtc().ToLocalDateTime())
             {
+                var interval = new DateInterval(current.ToDateTimeOffset(), );
                 var period = Period.Between(current.ToDateTimeUtc().ToLocalDateTime(), LocalDateTime.Min(max.ToDateTimeUtc().ToLocalDateTime(), current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday))).Days;
                 yield return WeekCalculator.Calculate(GetDayStats(commits, current, period).ToImmutableList());
                 //TODO: Correct time change
@@ -172,12 +181,74 @@ namespace CodeInsight.Web.Controllers
             }
         }
 
-        private static LineDataset CreateDataSet(DateInterval interval, DataCube1<LocalDate, double> data, LineDataSetConfiguration configuration)
+        //TODO: interval parser
+        private static IntervalStatisticsConfiguration CreateDefaultConfiguration(DateTimeZone zone)
+        {
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var end = now.InZone(zone).Date.PlusDays(1);
+            var start = end.PlusDays(-30);
+            return new IntervalStatisticsConfiguration(new ZonedDateInterval(new DateInterval(start, end), zone), now);
+        }
+
+        private static ITry<IntervalStatisticsConfiguration, PullRequestController.ConfigurationError> ParseConfiguration(
+            NonEmptyString fromDate,
+            NonEmptyString toDate,
+            DateTimeZone zone)
+        {
+            var now = SystemClock.Instance.GetCurrentInstant();
+            var maxToDate = now.InZone(zone).Date.PlusDays(1);
+
+            var start = ParseDate(fromDate).ToTry(_ => PullRequestController.ConfigurationError.InvalidFromDate);
+            var end = ParseDate(toDate)
+                .ToTry(_ => PullRequestController.ConfigurationError.InvalidToDate)
+                .FlatMap(d => (d <= maxToDate).ToTry(t => d, f => PullRequestController.ConfigurationError.ToDateIsAfterTomorrow));
+
+            return
+                from e in end
+                from s in start
+                from interval in CreateInterval(s, e).ToTry(_ => PullRequestController.ConfigurationError.ToDateIsAfterFrom)
+                select new IntervalStatisticsConfiguration(new ZonedDateInterval(interval, zone), now);
+        }
+
+        private static IOption<DateInterval> CreateInterval(LocalDate start, LocalDate end)
+        {
+            return end < start ? None<DateInterval>() : Some(new DateInterval(start, end));
+        }
+
+        private static IOption<LocalDate> ParseDate(string date)
+        {
+            var dateIsValid = DateTimeOffset.TryParseExact(date, "dd/MM/yyyy", null, DateTimeStyles.AssumeLocal, out var result);
+            var resultAsOffset = dateIsValid ? Some(result) : None<DateTimeOffset>();
+            return resultAsOffset.Map(ZonedDateTime.FromDateTimeOffset).Map(d => d.Date);
+        }
+
+
+        private static LineDataset CreateCommitDataSet(DateInterval interval, IEnumerable<WeekStats> data, LineDataSetConfiguration configuration)
         {
             var color = configuration.Color.ToArgbString();
             var colorList = new List<string> { color };
-            //TODO: Correct representation
-            var dataSetData = interval.Select(date => data.Get(date).GetOrElse(double.NaN)).ToList();
+            var dataSetData = interval.Select(date => data.Where(stat => stat.FirstDay == date).Select(stat => stat.CommitCount).GetOrElse(double.NaN)).ToList();
+            return new LineDataset
+            {
+                Label = configuration.Label,
+                Data = dataSetData,
+                BorderColor = color,
+                BackgroundColor = color,
+                PointBorderColor = colorList,
+                PointHoverBorderColor = colorList,
+                PointBackgroundColor = colorList,
+                PointHoverBackgroundColor = colorList,
+                Fill = "false"
+            };
+        }
+
+        private static LineDataset CreateCodeDataSet(DateInterval interval, IEnumerable<WeekStats> data, LineDataSetConfiguration configuration)
+        {
+            var color = configuration.Color.ToArgbString();
+            var colorList = new List<string> { color };
+            //TODO: Generalize or copy-paste
+            var dataSetData = interval.Select(date => data.Where(stat => stat.FirstDay == date).Select(stat => stat.Additions).GetOrElse(double.NaN)).ToList();
+
             return new LineDataset
             {
                 Label = configuration.Label,
