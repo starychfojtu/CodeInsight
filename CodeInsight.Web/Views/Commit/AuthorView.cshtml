@@ -8,12 +8,12 @@
     <div class="row">
         <table class="table">
             <thead class="thead-light">
-            <th>Author</th>
-            <th>Last Contribution</th>
-            <th>Additions</th>
-            <th>Deletions</th>
-            <th>NW</th>
-            <th>Time Spent On Project</th>
+                <th>Author</th>
+                <th>Last Contribution (dd/mm/yyyy)</th>
+                <th>Additions</th>
+                <th>Deletions</th>
+                <th>Net</th>
+                <th>Time On Project (days:hours:minutes)</th>
             </thead>
             <tbody>
                 @foreach (var auth in Model.Authors.OrderByDescending(auth => auth.LastCommitAt))
@@ -24,7 +24,7 @@
                         <td>@auth.Additions</td>
                         <td>@auth.Deletions</td>
                         <td>@auth.CodeChangeDiff</td>
-                        <td>@auth.TimeSpentOnProject</td>
+                        <td>@auth.TimeSpentOnProject.ToString("D:hh:mm", null)</td>
                     </tr>
                 }
             </tbody>

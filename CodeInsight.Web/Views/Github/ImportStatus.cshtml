@@ -1,6 +1,9 @@
 ﻿@{
     Layout = "_AnonymousLayout";
 }
+@{
+    ViewData["Title"] = "Import";
+}
 
 @model CodeInsight.Web.Models.Github.ImportStatusViewModel
 
@@ -19,7 +22,7 @@
 </div>
 
 @section Scripts {
-     <script>
+    <script>
          const url = '@Url.Action("GetImportStatus", "Github", new { JobId = Model.JobId })'
          setInterval(() => fetch(url)
              .then(data => data.json())
@@ -29,5 +32,5 @@
                  }
              })
          , 2000);
-     </script>
+    </script>
 }

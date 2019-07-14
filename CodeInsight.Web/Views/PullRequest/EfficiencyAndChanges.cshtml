@@ -1,8 +1,11 @@
 ﻿@model ChartsViewModel
+@{
+    ViewData["Title"] = "Efficiency Analysis";
+}
 
 <div class="container">
     <div class="row">
-        
+
         @foreach (var chart in Model.Charts)
         {
             <h2>@chart.Title</h2>

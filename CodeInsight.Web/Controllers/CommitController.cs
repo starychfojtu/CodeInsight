@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using ChartJSCore.Models;
 using CodeInsight.Domain;
@@ -55,34 +56,34 @@ namespace CodeInsight.Web.Controllers
                 commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
                 commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date);
 
+            //TODO: Add error msg and config
             return View("OverTimeView", 
                 new OverTimeModel(
-                    null, 
-                    null,
+                    new IntervalStatisticsConfiguration(new ZonedDateInterval(interval, DateTimeZone.Utc), Instant.FromDateTimeUtc(DateTime.UtcNow) ), //change
+                    null, //change
                     ImmutableList.CreateRange(CreateOverTimeCharts(commits, interval)))
                 );
         });
 
-        //TODO: Add the use of datepicker
         private static IEnumerable<Chart> CreateOverTimeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
             var config = new LineDataSetConfiguration("Number of commits", Color.Cyan);
-            var statsAll = GetDayStats(commits, commits.Min(cm => cm.CommittedAt), commits.Max(cm => cm.CommittedAt));
-            //var statsWeek = GetDayStats(commits, option.Day, option.Count);
+            
             var commitsCube = new DataCube1<LocalDate, double>();
             var selectedWeekCube = new DataCube1<LocalDate, double>();
 
+            var statsAll = GetDayStats(commits, commits.Min(cm => cm.CommittedAt), commits.Max(cm => cm.CommittedAt));
             foreach (var stat in statsAll)
             {
                 commitsCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.CommitCount);
-                //if (stat.Day = option.Day)
+                if (interval.Contains(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date))
                 {
                     selectedWeekCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.CommitCount);
                 }
             }
 
             yield return Chart.FromInterval(
-                "Selected",
+                "Number of Commits on Selected Interval",
                 interval,
                 new List<Dataset>() { CreateDataSet(interval, selectedWeekCube, config) },
                 xAxis: NonEmptyString.Create("Dates").Get(),
@@ -90,8 +91,10 @@ namespace CodeInsight.Web.Controllers
             );
 
             yield return Chart.FromInterval(
-                "All Time",
-                interval,
+                "All Time Numbers of Commits",
+                new DateInterval(
+                commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
+                commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date),
                 new List<Dataset>() { CreateDataSet(interval, commitsCube, config) }, 
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
@@ -138,7 +141,7 @@ namespace CodeInsight.Web.Controllers
             }
 
             yield return Chart.FromInterval(
-                "All Time Code",
+                "All Time Code Changes",
                 interval,
                 new List<Dataset>()
                     { CreateDataSet(interval, addedCube, configAdded),
@@ -168,7 +171,8 @@ namespace CodeInsight.Web.Controllers
         //TODO: Fix calculation issue with the loop
         private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, Instant start, Instant end)
         {
-            for (int i = 0; i < 7; i++)
+            DateInterval a = new DateInterval(start.ToDateTimeOffset().Date.ToLocalDateTime().Date, end.ToDateTimeOffset().Date.ToLocalDateTime().Date);
+            for (int i = 0; i < a.Length; i++)
             {
                 yield return DayCalculator.PerDay(commits, start);
                 start = start.Plus(Duration.FromDays(1));

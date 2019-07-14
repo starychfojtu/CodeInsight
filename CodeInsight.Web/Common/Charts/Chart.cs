@@ -85,7 +85,7 @@ namespace CodeInsight.Web.Common.Charts
         {
             return new Chart(title, ChartType.Line, new ChartJSCore.Models.Data
             {
-                Labels = interval.Select(d => $"{d.Day}.{d.Month}").ToImmutableList(),
+                Labels = interval.Select(d => $"{d.Day}.{d.Month}.").ToImmutableList(),
                 Datasets = dataSets.ToList()
             }, xAxis, yAxis);
         }

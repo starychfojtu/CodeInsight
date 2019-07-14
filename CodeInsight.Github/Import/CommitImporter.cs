@@ -27,14 +27,17 @@ namespace CodeInsight.Github.Import
             this.commitRepository = commitRepository;
         }
 
+        //TODO: Remove mock up
         public async Task<Repository> UpdateCommits(IConnection connection, Repository repository)
         {
-            //TODO: GetUpdate
-            //TODO: GetUpdatedOrNewCommits
+            //TO DO: Use GetUpdate
+            //TO DO:  Make and Use GetUpdatedOrNewCommits
+
             //var lastPrs = await commitRepository.GetAll();
             //var lastPr = lastPrs.SingleOption();
             //var cursor = (string)null;
-            //TODO: Deserialize
+
+            //TO DO: Deserialize
             //var page = await GetAllCommitsQuery.Execute(connection, repository, take: 50, cursor: cursor).Execute();
 
             commitStorage.Add(new List<Commit>
@@ -49,6 +52,18 @@ namespace CodeInsight.Github.Import
                 new Commit(NonEmptyString.Create("3").Get(), NonEmptyString.Create("12").Get(),
                     NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
                     Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(2)),
+                    NonEmptyString.Create("CommitMsg 3").Get()),
+                new Commit(NonEmptyString.Create("4").Get(), NonEmptyString.Create("12").Get(),
+                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
+                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(2)),
+                    NonEmptyString.Create("CommitMsg 3").Get()),
+                new Commit(NonEmptyString.Create("5").Get(), NonEmptyString.Create("12").Get(),
+                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 1, 2,
+                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(5)),
+                    NonEmptyString.Create("CommitMsg 2").Get()),
+                new Commit(NonEmptyString.Create("6").Get(), NonEmptyString.Create("12").Get(),
+                    NonEmptyString.Create("Tester 3").Get(), NonEmptyString.Create("1").Get(), 1, 2,
+                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(4)),
                     NonEmptyString.Create("CommitMsg 3").Get())
             });
 
@@ -68,12 +83,12 @@ namespace CodeInsight.Github.Import
 
 
         /*
-        private static IEnumerable<Commit> GetUpdatedOrNewPullRequests(IOption<Commit> lastUpdatedPr, IEnumerable<GetAllCommitsQuery.CommitDto> page) =>
-            lastUpdatedPr
-                .Map(pr =>
+        private static IEnumerable<Commit> GetUpdatedOrCommits(IOption<Commit> lastUpdatedCm, IEnumerable<GetAllCommitsQuery.CommitDto> page) =>
+            lastUpdatedCm
+                .Map(cm =>
                 {
-                    var minUpdatedAt = pr.UpdatedAt.ToDateTimeOffset();
-                    return page.TakeWhile(p => p.UpdatedAt >= minUpdatedAt);
+                    var minUpdatedAt = cm.CommittedAt.ToDateTimeOffset();
+                    return page.TakeWhile(c => c.UpdatedAt >= minUpdatedAt);
                 })
                 .GetOrElse(page)
                 .Select(Map);
