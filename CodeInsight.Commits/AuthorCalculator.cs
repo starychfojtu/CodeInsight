@@ -19,17 +19,15 @@ namespace CodeInsight.Commits
                 .Max(a => a.CommittedAt);
             var additions = commits
                 .Where(cm => cm.AuthorName == authName)
-                .Select(cm => cm.Additions)
-                .Aggregate<uint, uint>(0, (current, entry) => current + entry);
+                .Sum(cm => cm.Additions);
             var deletions = commits
                 .Where(cm => cm.AuthorName == authName)
-                .Select(cm => cm.Deletions)
-                .Aggregate<uint, uint>(0, (current, entry) => current + entry);
+                .Sum(cm => cm.Deletions);
 
             return new AuthorStats(
                 authorName: authName,
-                additions: additions,
-                deletions: deletions,
+                additions: (uint) additions,
+                deletions: (uint) deletions,
                 lastCommitAt: max,
                 firstCommitAt: min
                 );

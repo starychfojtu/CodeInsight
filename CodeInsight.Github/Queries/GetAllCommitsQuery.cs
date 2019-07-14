@@ -1,44 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using CodeInsight.Library.Types;
-using FuncSharp;
 using Monad;
 using NodaTime;
 using Octokit.GraphQL;
-using Octokit.GraphQL.Model;
-using static Octokit.GraphQL.Variable;
 using Repository = CodeInsight.Domain.Repository.Repository;
 
-namespace CodeInsight.Github.Import
+namespace CodeInsight.Github.Queries
 {
     internal static class GetAllCommitsQuery
     {
-        private static ICompiledQuery<IGitObject> Query { get; }
+        internal static IO<Task<string>> Execute(IConnection conn, Repository repository, int take,
+            string cursor = null) => () => conn.Run(CreateQuery(repository.Name.Value, repository.Owner.Value));
 
-        static GetAllCommitsQuery()
+        //TODO: Parametrize correctly
+
+        private static string CreateQuery(string repoName, string repoOwner)
         {
-            Query = CreateQuery();
+            var result = $@"query {{
+                repository(name: ""{repoName}"", owner: ""{repoOwner}"") {{
+                    ref (qualifiedName: ""master"") {{
+                        target {{
+                            ... on Commit {{
+                                id
+                                history(first: 2) {{
+                                    pageInfo {{
+                                        hasNextPage
+                                    }}
+                                    edges {{
+                                        node {{
+                                            messageHeadline
+                                            oid
+                                            message
+                                            author {{
+                                                name
+                                                email
+                                                date
+                                            }}
+                                        }}
+                                    }}
+                                }}
+                            }}
+                        }}
+                    }}
+                }}
+            }}";
+            return result;
         }
 
-        internal static IO<Task<IGitObject>> Execute(IConnection conn, Repository repository, int take, string cursor = null) => () =>
-        {
-            var vars = new Dictionary<string, object>
-            {
-                {"repositoryName", repository.Name.Value},
-                {"repositoryOwner", repository.Owner.Value},
-                {"after", cursor},
-                {"first", take}
-            };
 
-            return conn.Run(Query, vars);
-        };
-
-        private static ICompiledQuery<IGitObject> CreateQuery() =>
-            new Query()
-                .Repository(Var("repositoryName"), Var("repositoryOwner"))
-                .Ref("master")
-                .Target.Compile();
 
         internal sealed class CommitDto
         {

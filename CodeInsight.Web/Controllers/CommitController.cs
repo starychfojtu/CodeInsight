@@ -46,60 +46,58 @@ namespace CodeInsight.Web.Controllers
         
         #region OverTimeTab
 
-        //TODO: OverTimeTab
-        //TODO: REFACTOR - add GetWeeks > send it to <option>
         public Task<IActionResult> OverTimeTab() => Action(async client =>
         {
-            //var commits = commitRepository.GetAll();
+            var commits = await commitRepository.GetAll();
 
-            //TEMP
-            var commits = new List<Commit>
-            {
-                new Commit(NonEmptyString.Create("1").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow), NonEmptyString.Create("CommitMsg").Get()),
-                new Commit(NonEmptyString.Create("2").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 1, 2,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(3)),
-                    NonEmptyString.Create("CommitMsg 2").Get()),
-                new Commit(NonEmptyString.Create("3").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(2)),
-                    NonEmptyString.Create("CommitMsg 3").Get())
-            };
+            //TODO: Add the use of datepicker
+            var interval = new DateInterval(
+                commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
+                commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date);
 
-            //TODO: View based choosing of week
-            var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MaxIsoValue);
-
-            return View("OverTimeStatisticsView", 
-                new WeekViewModel(ImmutableList.CreateRange(CreateOverTimeCharts(commits, interval))));
+            return View("OverTimeView", 
+                new OverTimeModel(
+                    null, 
+                    null,
+                    ImmutableList.CreateRange(CreateOverTimeCharts(commits, interval)))
+                );
         });
 
+        //TODO: Add the use of datepicker
         private static IEnumerable<Chart> CreateOverTimeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
             var config = new LineDataSetConfiguration("Number of commits", Color.Cyan);
-            var statsAll = GetAllWeekStats(commits);
-            var statsWeek = GetDayStats(commits, option.Day, option.Count);
+            var statsAll = GetDayStats(commits, commits.Min(cm => cm.CommittedAt), commits.Max(cm => cm.CommittedAt));
+            //var statsWeek = GetDayStats(commits, option.Day, option.Count);
+            var commitsCube = new DataCube1<LocalDate, double>();
+            var selectedWeekCube = new DataCube1<LocalDate, double>();
 
-            //TODO: Correctly use graph/chart
+            foreach (var stat in statsAll)
+            {
+                commitsCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.CommitCount);
+                //if (stat.Day = option.Day)
+                {
+                    selectedWeekCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.CommitCount);
+                }
+            }
+
+            yield return Chart.FromInterval(
+                "Selected",
+                interval,
+                new List<Dataset>() { CreateDataSet(interval, selectedWeekCube, config) },
+                xAxis: NonEmptyString.Create("Dates").Get(),
+                yAxis: NonEmptyString.Create("Number of commits").Get()
+            );
+
             yield return Chart.FromInterval(
                 "All Time",
                 interval,
-                new List<Dataset>()
-                { CreateCommitDataSet(interval, statsAll, config) }, 
-                xAxis: NonEmptyString.Create("Week").Get(),
+                new List<Dataset>() { CreateDataSet(interval, commitsCube, config) }, 
+                xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
 
-            var weeks = "test";
-            yield return Chart.FromInterval(
-                "Week" + weeks,
-                interval,
-                new List<Dataset>()
-                { CreateCodeDataSet(interval, statsWeek, config) }, 
-                xAxis: NonEmptyString.Create("Days").Get(),
-                yAxis: NonEmptyString.Create("Number of commits").Get()
-            );
+
         }
 
         #endregion
@@ -116,25 +114,36 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> CodeTab() => Action(async client =>
         {
             var commits = await commitRepository.GetAll();
-            var interval = new DateInterval(LocalDate.MinIsoValue, LocalDate.MaxIsoValue);
 
-            return View("OverTimeStatisticsView",
-                new WeekViewModel(ImmutableList.CreateRange(CreateCodeCharts(commits, interval))));
+            var interval = new DateInterval(
+                commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
+                commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date);
+
+            return View("CodeTabView",
+                new CodeTabModel(ImmutableList.CreateRange(CreateCodeCharts(commits, interval))));
         });
 
         private static IEnumerable<Chart> CreateCodeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
-            var configAdded = new LineDataSetConfiguration("Number of commits", Color.Green);
-            var configDeleted = new LineDataSetConfiguration("Number of commits", Color.DarkRed);
-            var stats = GetAllWeekStats(commits);
+            var configAdded = new LineDataSetConfiguration("Additions", Color.Green);
+            var configDeleted = new LineDataSetConfiguration("Deletions", Color.DarkRed);
+
+            var stats = GetDayStats(commits, commits.Min(cm => cm.CommittedAt), commits.Max(cm => cm.CommittedAt));
+            var addedCube = new DataCube1<LocalDate, double>();
+            var deletedCube = new DataCube1<LocalDate, double>();
+            foreach (var stat in stats)
+            {
+                addedCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.Additions);
+                deletedCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.Deletions);
+            }
 
             yield return Chart.FromInterval(
                 "All Time Code",
                 interval,
                 new List<Dataset>()
-                    { CreateCodeDataSet(interval, stats, configAdded),
-                      CreateCodeDataSet(interval, stats, configDeleted) },
-                xAxis: NonEmptyString.Create("Week").Get(),
+                    { CreateDataSet(interval, addedCube, configAdded),
+                      CreateDataSet(interval, deletedCube, configDeleted) },
+                xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Number of Code Changes").Get()
             );
         }
@@ -146,7 +155,7 @@ namespace CodeInsight.Web.Controllers
         public Task<IActionResult> AuthorTable() => Action( async client =>
         {
             var commits = commitRepository.GetAll();
-            var authors = commits.Result.Select(cm => cm.AuthorName);
+            var authors = commits.Result.Select(cm => cm.AuthorName).Distinct();
 
             var stats = authors.Select(author => AuthorCalculator.PerAuthor(commits.Result, author)).ToList();
 
@@ -156,28 +165,13 @@ namespace CodeInsight.Web.Controllers
         #endregion
 
         //COMMON
-        private static IEnumerable<WeekStats> GetAllWeekStats(IEnumerable<Commit> commits)
+        //TODO: Fix calculation issue with the loop
+        private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, Instant start, Instant end)
         {
-            var current = commits.Min(cm => cm.CommittedAt);
-            var max = commits.Max(cm => cm.CommittedAt);
-
-
-            while (max.ToDateTimeUtc().ToLocalDateTime() > current.ToDateTimeUtc().ToLocalDateTime())
+            for (int i = 0; i < 7; i++)
             {
-                var interval = new DateInterval(current.ToDateTimeOffset(), );
-                var period = Period.Between(current.ToDateTimeUtc().ToLocalDateTime(), LocalDateTime.Min(max.ToDateTimeUtc().ToLocalDateTime(), current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday))).Days;
-                yield return WeekCalculator.Calculate(GetDayStats(commits, current, period).ToImmutableList());
-                //TODO: Correct time change
-                //current = current.ToDateTimeUtc().ToLocalDateTime().Next(IsoDayOfWeek.Sunday);
-            }
-        }
-
-        private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, Instant day, int count)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                yield return DayCalculator.PerDay(commits, day);
-                day.Plus(Duration.FromDays(1));
+                yield return DayCalculator.PerDay(commits, start);
+                start = start.Plus(Duration.FromDays(1));
             }
         }
 
@@ -223,32 +217,11 @@ namespace CodeInsight.Web.Controllers
         }
 
 
-        private static LineDataset CreateCommitDataSet(DateInterval interval, IEnumerable<WeekStats> data, LineDataSetConfiguration configuration)
+        private static LineDataset CreateDataSet(DateInterval interval, DataCube1<LocalDate, double> data, LineDataSetConfiguration configuration)
         {
             var color = configuration.Color.ToArgbString();
             var colorList = new List<string> { color };
-            var dataSetData = interval.Select(date => data.Where(stat => stat.FirstDay == date).Select(stat => stat.CommitCount).GetOrElse(double.NaN)).ToList();
-            return new LineDataset
-            {
-                Label = configuration.Label,
-                Data = dataSetData,
-                BorderColor = color,
-                BackgroundColor = color,
-                PointBorderColor = colorList,
-                PointHoverBorderColor = colorList,
-                PointBackgroundColor = colorList,
-                PointHoverBackgroundColor = colorList,
-                Fill = "false"
-            };
-        }
-
-        private static LineDataset CreateCodeDataSet(DateInterval interval, IEnumerable<WeekStats> data, LineDataSetConfiguration configuration)
-        {
-            var color = configuration.Color.ToArgbString();
-            var colorList = new List<string> { color };
-            //TODO: Generalize or copy-paste
-            var dataSetData = interval.Select(date => data.Where(stat => stat.FirstDay == date).Select(stat => stat.Additions).GetOrElse(double.NaN)).ToList();
-
+            var dataSetData = interval.Select(date => data.Get(date).GetOrElse(double.NaN)).ToList();
             return new LineDataset
             {
                 Label = configuration.Label,

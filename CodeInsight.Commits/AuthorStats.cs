@@ -4,25 +4,11 @@ namespace CodeInsight.Commits
 {
     public class AuthorStats
     {
-        public string AuthorName { get; }
-
-        public uint Additions { get; }
-
-        public uint Deletions { get; }
-
-        public uint CodeChangeDiff => Additions - Deletions;
-
-        public Instant LastCommitAt { get; }
-
-        public Instant FirstCommitAt { get; }
-
-        public Duration TimeSpentOnProject => LastCommitAt - FirstCommitAt;
-
-        public AuthorStats (
+        public AuthorStats(
             string authorName,
-            uint additions, 
-            uint deletions, 
-            Instant lastCommitAt, 
+            uint additions,
+            uint deletions,
+            Instant lastCommitAt,
             Instant firstCommitAt)
         {
             AuthorName = authorName;
@@ -32,6 +18,20 @@ namespace CodeInsight.Commits
             FirstCommitAt = firstCommitAt;
         }
 
+        public string AuthorName { get; }
+
+        public uint Additions { get; }
+
+        public uint Deletions { get; }
+
+        public int CodeChangeDiff => (int) Additions - (int) Deletions;
+
+        public Instant LastCommitAt { get; }
+
+        public Instant FirstCommitAt { get; }
+
+        public Duration TimeSpentOnProject => LastCommitAt - FirstCommitAt;
+        
         public static AuthorStats Combine(AuthorStats a, AuthorStats b)
         {
             return new AuthorStats(

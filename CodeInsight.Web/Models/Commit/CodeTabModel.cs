@@ -3,9 +3,9 @@ using CodeInsight.Web.Common.Charts;
 
 namespace CodeInsight.Web.Models.Commit
 {
-    public class WeekViewModel : ChartsViewModel
+    public class CodeTabModel : ChartsViewModel
     {
-        public WeekViewModel(IReadOnlyList<Chart> charts) : base(charts)
+        public CodeTabModel(IReadOnlyList<Chart> charts) : base(charts)
         {
         }
     }

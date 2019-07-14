@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain.Commit;
 using CodeInsight.Domain.Repository;
-using CodeInsight.Github.Awaits;
+using CodeInsight.Github.Queries;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using FuncSharp;
@@ -27,44 +27,30 @@ namespace CodeInsight.Github.Import
             this.commitRepository = commitRepository;
         }
 
-        //TODO: Fix UpdateCommits
         public async Task<Repository> UpdateCommits(IConnection connection, Repository repository)
         {
-            var lastPrs = await commitRepository.GetAll();
-            var lastPr = lastPrs.SingleOption();
-            var cursor = (string)null;
-            var page = await GetAllCommitsQuery.Execute(connection, repository, take: 50, cursor: cursor).Execute();
-            do
+            //TODO: GetUpdate
+            //TODO: GetUpdatedOrNewCommits
+            //var lastPrs = await commitRepository.GetAll();
+            //var lastPr = lastPrs.SingleOption();
+            //var cursor = (string)null;
+            //TODO: Deserialize
+            //var page = await GetAllCommitsQuery.Execute(connection, repository, take: 50, cursor: cursor).Execute();
+
+            commitStorage.Add(new List<Commit>
             {
-                //var updatedOrNewPullRequests = GetUpdatedOrNewPullRequests(lastPr, page.Items).ToImmutableList();
-                //await UpdateOrAdd(updatedOrNewPullRequests).Execute();
-
-                //var allPrsWereNewOrUpdated = updatedOrNewPullRequests.Count == page.Items.Count;
-                //cursor = page.HasNextPage && allPrsWereNewOrUpdated ? page.EndCursor : null;
-            }
-            while (cursor != null);
-
-            return repository;
-
-            //TODO: Update
-            var tempList = new List<Commit>
-            {
-                new Commit(NonEmptyString.Create("1").Get(), NonEmptyString.Create(repository.Id.Value).Get(),
-                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
-                    Instant.FromDateTimeUtc(DateTime.UtcNow), NonEmptyString.Create("CommitMsg").Get()),
-                new Commit(NonEmptyString.Create("2").Get(), NonEmptyString.Create(repository.Id.Value).Get(),
+                new Commit(NonEmptyString.Create("1").Get(), NonEmptyString.Create("12").Get(),
+                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 4, 2,
+                    Instant.FromDateTimeOffset(DateTime.UtcNow), NonEmptyString.Create("CommitMsg").Get()),
+                new Commit(NonEmptyString.Create("2").Get(), NonEmptyString.Create("12").Get(),
                     NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 1, 2,
-                    Instant.FromDateTimeUtc(DateTime.UtcNow).Minus(Duration.FromDays(3)),
+                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(3)),
                     NonEmptyString.Create("CommitMsg 2").Get()),
-                new Commit(NonEmptyString.Create("3").Get(), NonEmptyString.Create(repository.Id.Value).Get(),
+                new Commit(NonEmptyString.Create("3").Get(), NonEmptyString.Create("12").Get(),
                     NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 1, 2,
-                    Instant.FromDateTimeUtc(DateTime.UtcNow).Minus(Duration.FromDays(2)),
+                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(2)),
                     NonEmptyString.Create("CommitMsg 3").Get())
-            };
-            var newEntries = await GetAllCommits.AwaitCommits((Octokit.Connection) connection, repository);
-            commitStorage.Add(tempList);
-            //commitStorage.Add(newEntries.Select(Map));
-            //commitStorage.Add(GetAllCommits.AwaitCommits((Octokit.Connection) connection, repository).Result.Select(Map));
+            });
 
             return repository;
         }
@@ -80,7 +66,7 @@ namespace CodeInsight.Github.Import
             return commitStorage.Update(updatedCommits);
         }
 
-        //TODO: GetUpdatedOrNewCommits
+
         /*
         private static IEnumerable<Commit> GetUpdatedOrNewPullRequests(IOption<Commit> lastUpdatedPr, IEnumerable<GetAllCommitsQuery.CommitDto> page) =>
             lastUpdatedPr
@@ -94,7 +80,7 @@ namespace CodeInsight.Github.Import
 
         
         */
-        private static Commit Map(GetAllCommits.CommitDto cm) =>
+        private static Commit Map(GetAllCommitsQuery.CommitDto cm) =>
             new Commit(
                 id: NonEmptyString.Create(cm.Id).Get(),
                 repositoryId: NonEmptyString.Create(cm.RepositoryId).Get(),

@@ -27,7 +27,6 @@ namespace CodeInsight.Github
                 {"after", cursor},
                 {"first", take}
             };
-
             return conn.Run(Query, vars);
         };
         
