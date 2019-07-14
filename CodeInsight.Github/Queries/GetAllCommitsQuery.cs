@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CodeInsight.Library.Types;
 using Monad;
@@ -14,7 +15,6 @@ namespace CodeInsight.Github.Queries
             string cursor = null) => () => conn.Run(CreateQuery(repository.Name.Value, repository.Owner.Value));
 
         //TODO: Parametrize correctly
-
         private static string CreateQuery(string repoName, string repoOwner)
         {
             var result = $@"query {{
@@ -22,21 +22,26 @@ namespace CodeInsight.Github.Queries
                     ref (qualifiedName: ""master"") {{
                         target {{
                             ... on Commit {{
-                                id
                                 history(first: 2) {{
                                     pageInfo {{
                                         hasNextPage
                                     }}
                                     edges {{
                                         node {{
-                                            messageHeadline
-                                            oid
-                                            message
-                                            author {{
-                                                name
-                                                email
-                                                date
+                                            id
+                                            repositoryId: repository {{
+                                                id
                                             }}
+                                            authorName: author {{
+                                                name
+                                            }}
+                                            authorId: author {{
+                                                id
+                                            }}
+                                            additions
+                                            deletions
+                                            committedDate
+                                            message
                                         }}
                                     }}
                                 }}
@@ -52,41 +57,21 @@ namespace CodeInsight.Github.Queries
 
         internal sealed class CommitDto
         {
-            public NonEmptyString Id { get; private set; }
+            public string Id { get; private set; }
 
-            public NonEmptyString RepositoryId { get; private set; }
+            public string RepositoryId { get; private set; }
 
-            public NonEmptyString AuthorName { get; private set; }
+            public string AuthorName { get; private set; }
 
-            public NonEmptyString AuthorId { get; private set; }
+            public string AuthorId { get; private set; }
 
             public uint Additions { get; private set; }
 
             public uint Deletions { get; private set; }
 
-            public Instant CommittedAt { get; private set; }
+            public DateTimeOffset CommittedAt { get; private set; }
 
-            public NonEmptyString CommitMsg { get; private set; }
-
-            public CommitDto(
-                NonEmptyString id,
-                NonEmptyString repositoryId,
-                NonEmptyString authorName,
-                NonEmptyString authorId,
-                uint additions,
-                uint deletions,
-                Instant committedAt,
-                NonEmptyString commitMsg)
-            {
-                Id = id;
-                RepositoryId = repositoryId;
-                AuthorName = authorName;
-                AuthorId = authorId;
-                Additions = additions;
-                Deletions = deletions;
-                CommittedAt = committedAt;
-                CommitMsg = commitMsg;
-            }
+            public string CommitMsg { get; private set; }
         }
     }
 }

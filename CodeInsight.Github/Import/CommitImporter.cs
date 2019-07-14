@@ -103,7 +103,7 @@ namespace CodeInsight.Github.Import
                 authorId: NonEmptyString.Create(cm.AuthorId).Get(),
                 additions: (uint)cm.Additions,
                 deletions: (uint)cm.Deletions,
-                committedAt: cm.CommittedAt,
+                committedAt: Instant.FromDateTimeOffset(cm.CommittedAt),
                 commitMsg: NonEmptyString.Create(cm.CommitMsg).Get()
             );
     }

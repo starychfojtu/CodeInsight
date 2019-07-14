@@ -168,11 +168,13 @@ namespace CodeInsight.Web.Controllers
         #endregion
 
         //COMMON
-        //TODO: Fix calculation issue with the loop
         private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, Instant start, Instant end)
         {
-            DateInterval a = new DateInterval(start.ToDateTimeOffset().Date.ToLocalDateTime().Date, end.ToDateTimeOffset().Date.ToLocalDateTime().Date);
-            for (int i = 0; i < a.Length; i++)
+            var length = (new DateInterval(
+                start.ToDateTimeOffset().Date.ToLocalDateTime().Date,
+                end.ToDateTimeOffset().Date.ToLocalDateTime().Date))
+                .Length;
+            for (int i = 0; i < length; i++)
             {
                 yield return DayCalculator.PerDay(commits, start);
                 start = start.Plus(Duration.FromDays(1));
