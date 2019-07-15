@@ -45,7 +45,7 @@ namespace CodeInsight.Web.Controllers
             var parseConfigurationResult =
                 from start in NonEmptyString.Create(fromDate)
                 from end in NonEmptyString.Create(toDate)
-                select ParseConfiguration(start, end, DateTimeZone.Utc);
+                select ParseConfiguration(start, end);
 
             var configuration = parseConfigurationResult
                 .FlatMap(c => c.Success)
@@ -209,11 +209,9 @@ namespace CodeInsight.Web.Controllers
 
         private static ITry<OTStatsConfig, ConfigurationError> ParseConfiguration(
             NonEmptyString fromDate,
-            NonEmptyString toDate,
-            DateTimeZone zone)
+            NonEmptyString toDate)
         {
-            var now = SystemClock.Instance.GetCurrentInstant();
-            var maxToDate = now.InZone(zone).Date.PlusDays(1);
+            var maxToDate = SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset().Date.ToLocalDateTime().Date;
 
             var start = ParseDate(fromDate).ToTry(_ => ConfigurationError.InvalidFromDate);
             var end = ParseDate(toDate)
