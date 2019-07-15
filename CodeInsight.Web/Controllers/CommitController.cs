@@ -34,18 +34,18 @@ namespace CodeInsight.Web.Controllers
             this.commitRepository = commitRepository;
             this.issueRepository = issueRepository;
         }
-        
+
         #region OverTimeTab
 
         public Task<IActionResult> OverTimeTab(string fromDate, string toDate) => Action(async client =>
         {
             var commits = await commitRepository.GetAll();
-            
+
             //TODO: Refactor
             var parseConfigurationResult =
                 from start in NonEmptyString.Create(fromDate)
                 from end in NonEmptyString.Create(toDate)
-                select ParseConfiguration(start, end, DateTimeZone.Utc);
+                select ParseConfiguration(start, end);
 
             var configuration = parseConfigurationResult
                 .FlatMap(c => c.Success)
@@ -60,7 +60,7 @@ namespace CodeInsight.Web.Controllers
                 configuration.Interval.Start,
                 configuration.Interval.End);
 
-            return View("OverTimeView", 
+            return View("OverTimeView",
                 new OverTimeModel(
                     configuration,
                     errorMessage,
@@ -100,12 +100,12 @@ namespace CodeInsight.Web.Controllers
             yield return Chart.FromInterval(
                 "All Time Numbers of Commits",
                 maxInterval,
-                new List<Dataset>() { CreateDataSet(maxInterval, commitsCube, config) }, 
+                new List<Dataset>() { CreateDataSet(maxInterval, commitsCube, config) },
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
         }
-        
+
         #endregion
 
         //Abandoned
@@ -153,12 +153,12 @@ namespace CodeInsight.Web.Controllers
                 yAxis: NonEmptyString.Create("Number of Code Changes").Get()
             );
         }
-        
+
         #endregion
 
         #region AuthorTab
 
-        public Task<IActionResult> AuthorTable() => Action( async client =>
+        public Task<IActionResult> AuthorTable() => Action(async client =>
         {
             var commits = commitRepository.GetAll();
             var authors = commits.Result.Select(cm => cm.AuthorName).Distinct();
@@ -171,7 +171,7 @@ namespace CodeInsight.Web.Controllers
         #endregion
 
         #region Common
-        
+
         private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, DateInterval interval)
         {
             var day = interval.Start;
@@ -209,11 +209,9 @@ namespace CodeInsight.Web.Controllers
 
         private static ITry<OTStatsConfig, ConfigurationError> ParseConfiguration(
             NonEmptyString fromDate,
-            NonEmptyString toDate,
-            DateTimeZone zone)
+            NonEmptyString toDate)
         {
-            var now = SystemClock.Instance.GetCurrentInstant();
-            var maxToDate = now.InZone(zone).Date.PlusDays(1);
+            var maxToDate = SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset().Date.ToLocalDateTime().Date;
 
             var start = ParseDate(fromDate).ToTry(_ => ConfigurationError.InvalidFromDate);
             var end = ParseDate(toDate)
@@ -257,7 +255,7 @@ namespace CodeInsight.Web.Controllers
                 Fill = "false"
             };
         }
-        
+
         #endregion
     }
 }
