@@ -32,6 +32,7 @@ namespace CodeInsight.Github.Import
         }
 
         public IO<Task<Repository>> ImportRepository(
+            Octokit.IConnection conn,
             IConnection connection, 
             NonEmptyString owner, 
             NonEmptyString name) => () =>
@@ -39,7 +40,7 @@ namespace CodeInsight.Github.Import
         {
             return GetOrCreateRepository(connection, owner, name)
                 .Bind(r => pullRequestImporter.UpdatePullRequests(connection, r))//;
-                .Bind(r => commitImporter.UpdateCommits(connection, r));
+                .Bind(r => commitImporter.UpdateCommits(conn, r));
             //    .Bind(r => issueImporter.UpdateIssues(connection, r));
         };
 

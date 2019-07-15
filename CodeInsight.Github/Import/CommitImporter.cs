@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain.Commit;
 using CodeInsight.Domain.Repository;
+using CodeInsight.Github.Awaits;
 using CodeInsight.Github.Queries;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
@@ -28,18 +29,12 @@ namespace CodeInsight.Github.Import
         }
 
         //TODO: Remove mock up
-        public async Task<Repository> UpdateCommits(IConnection connection, Repository repository)
+        public async Task<Repository> UpdateCommits(Octokit.IConnection connection, Repository repository)
         {
             //TO DO: Use GetUpdate
             //TO DO:  Make and Use GetUpdatedOrNewCommits
 
-            //var lastPrs = await commitRepository.GetAll();
-            //var lastPr = lastPrs.SingleOption();
-            //var cursor = (string)null;
-
-            //TO DO: Deserialize
-            //var page = await GetAllCommitsQuery.Execute(connection, repository, take: 50, cursor: cursor).Execute();
-
+            /*
             commitStorage.Add(new List<Commit>
             {
                 new Commit(NonEmptyString.Create("1").Get(), NonEmptyString.Create("12").Get(),
@@ -83,6 +78,13 @@ namespace CodeInsight.Github.Import
                     Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(4)),
                     NonEmptyString.Create("CommitMsg 10").Get())
             });
+            */
+
+            var commits = await GetAllCommits.AwaitCommits(connection, repository);
+
+            //var result = commits.Select(Map);
+
+            commitStorage.Add(commits.Select(Map));
 
             return repository;
         }
@@ -98,7 +100,6 @@ namespace CodeInsight.Github.Import
             return commitStorage.Update(updatedCommits);
         }
 
-
         /*
         private static IEnumerable<Commit> GetUpdatedOrCommits(IOption<Commit> lastUpdatedCm, IEnumerable<GetAllCommitsQuery.CommitDto> page) =>
             lastUpdatedCm
@@ -108,11 +109,10 @@ namespace CodeInsight.Github.Import
                     return page.TakeWhile(c => c.UpdatedAt >= minUpdatedAt);
                 })
                 .GetOrElse(page)
-                .Select(Map);
-
-        
+                .Select(Map);        
         */
-        private static Commit Map(GetAllCommitsQuery.CommitDto cm) =>
+
+        private static Commit Map(GetAllCommits.CommitDto cm) =>
             new Commit(
                 id: NonEmptyString.Create(cm.Id).Get(),
                 repositoryId: NonEmptyString.Create(cm.RepositoryId).Get(),
