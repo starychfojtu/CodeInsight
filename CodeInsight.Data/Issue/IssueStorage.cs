@@ -19,7 +19,7 @@ namespace CodeInsight.Data.Issue
 
         public Unit Add(IEnumerable<Domain.Issue.Issue> entities)
         {
-            dbContext.AddRange(entities.Select(i => Issue.FromDomain(i)));
+            dbContext.AddRange(entities.Select(Issue.FromDomain));
             dbContext.SaveChanges();
             return Unit.Value;
         }

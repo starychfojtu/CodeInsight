@@ -2,11 +2,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain.Commit;
-using CodeInsight.Domain.Repository;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using Microsoft.EntityFrameworkCore;
-using NodaTime;
 
 namespace CodeInsight.Data.Commit
 {
@@ -40,19 +38,6 @@ namespace CodeInsight.Data.Commit
         public Task<IEnumerable<Domain.Commit.Commit>> GetAll()
         {
             return dbContext.Commits
-                .ToListAsync()
-                .Map(c => c.Select(Commit.ToDomain));
-        }
-
-        public Task<IEnumerable<Domain.Commit.Commit>> GetAllIntersecting(RepositoryId repositoryId, Interval interval)
-        {
-            var start = interval.Start.ToDateTimeOffset();
-            var end = interval.End.ToDateTimeOffset();
-            return dbContext.Commits
-                .Where(c => 
-                    c.RepositoryId == repositoryId.Value.Value && 
-                    c.CommittedAt >= start && 
-                    c.CommittedAt <= end)
                 .ToListAsync()
                 .Map(c => c.Select(Commit.ToDomain));
         }

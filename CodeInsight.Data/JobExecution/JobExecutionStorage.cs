@@ -3,7 +3,6 @@ using CodeInsight.Jobs;
 using CodeInsight.Library.Extensions;
 using FuncSharp;
 using Monad;
-using ObjectExtensions = FuncSharp.ObjectExtensions;
 
 namespace CodeInsight.Data.JobExecution
 {

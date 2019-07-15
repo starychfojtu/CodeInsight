@@ -1,13 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using CodeInsight.Library.Types;
+﻿using CodeInsight.Library.Types;
 using NodaTime;
 
 namespace CodeInsight.Domain.Issue
 {
     public sealed class Issue
     {
+        public Issue(
+            NonEmptyString id,
+            NonEmptyString repositoryId,
+            uint additions,
+            uint deletions,
+            Instant lastCommitAt,
+            Instant lastUpdateAt,
+            uint changedFilesCount,
+            uint authorsCount)
+        {
+            Id = id;
+            RepositoryId = repositoryId;
+            Additions = additions;
+            Deletions = deletions;
+            LastCommitAt = lastCommitAt;
+            LastUpdateAt = lastUpdateAt;
+            ChangedFilesCount = changedFilesCount;
+            AuthorsCount = authorsCount;
+        }
         public NonEmptyString Id { get; private set; }
 
         public NonEmptyString RepositoryId { get; private set; }
@@ -24,25 +40,6 @@ namespace CodeInsight.Domain.Issue
 
         public uint AuthorsCount { get; private set; }
 
-        public Issue(
-            NonEmptyString id, 
-            NonEmptyString repositoryId, 
-            uint additions, 
-            uint deletions, 
-            Instant lastCommitAt, 
-            Instant lastUpdateAt, 
-            uint changedFilesCount, 
-            uint authorsCount)
-        {
-            Id = id;
-            RepositoryId = repositoryId;
-            Additions = additions;
-            Deletions = deletions;
-            LastCommitAt = lastCommitAt;
-            LastUpdateAt = lastUpdateAt;
-            ChangedFilesCount = changedFilesCount;
-            AuthorsCount = authorsCount;
-        }
 
         private bool Equals(Issue other)
         {

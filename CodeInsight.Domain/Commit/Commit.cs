@@ -1,13 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using CodeInsight.Library.Types;
+﻿using CodeInsight.Library.Types;
 using NodaTime;
 
 namespace CodeInsight.Domain.Commit
 {
     public sealed class Commit
     {
+        public Commit(
+            NonEmptyString id,
+            NonEmptyString repositoryId,
+            NonEmptyString authorName,
+            NonEmptyString authorId,
+            uint additions,
+            uint deletions,
+            Instant committedAt,
+            NonEmptyString commitMsg)
+        {
+            Id = id;
+            RepositoryId = repositoryId;
+            AuthorName = authorName;
+            AuthorId = authorId;
+            Additions = additions;
+            Deletions = deletions;
+            CommittedAt = committedAt;
+            CommitMsg = commitMsg;
+        }
+
         public NonEmptyString Id { get; private set; }
 
         public NonEmptyString RepositoryId { get; private set; }
@@ -24,27 +41,7 @@ namespace CodeInsight.Domain.Commit
 
         //TEMP - might be useful for task<->commit connection
         public NonEmptyString CommitMsg { get; private set; }
-
-        public Commit(
-            NonEmptyString id, 
-            NonEmptyString repositoryId, 
-            NonEmptyString authorName,
-            NonEmptyString authorId, 
-            uint additions, 
-            uint deletions, 
-            Instant committedAt,
-            NonEmptyString commitMsg)
-        {
-            Id = id;
-            RepositoryId = repositoryId;
-            AuthorName = authorName;
-            AuthorId = authorId;
-            Additions = additions;
-            Deletions = deletions;
-            CommittedAt = committedAt;
-            CommitMsg = commitMsg;
-        }
-
+        
         private bool Equals(Commit other)
         {
             return string.Equals(Id, other.Id);

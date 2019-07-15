@@ -4,7 +4,16 @@
 }
 
 <div class="container" style="padding-top: 25px">
-
+    @{
+        if (Model.Error.NonEmpty)
+        {
+            <div class="row" role="alert">
+                <div class="col-md-6 alert alert-danger">
+                    @Model.Error.Get()
+                </div>
+            </div>
+        }
+    }
     <div class="row">
         <form asp-controller="Commit" , asp-action="@ViewContext.RouteData.Values["action"]" method="post">
             <div class="form-row">

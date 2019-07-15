@@ -4,9 +4,29 @@ using NodaTime.Extensions;
 
 namespace CodeInsight.Data.Issue
 {
+    //TO DO: Solve the numbers of files changed in an issue
     public sealed class Issue
     {
-        //TO DO: Solve the numbers of files changed in an issue
+        public Issue(
+            string id,
+            string repositoryId,
+            int additions,
+            int deletions,
+            DateTimeOffset lastCommitAt,
+            DateTimeOffset lastUpdateAt,
+            int changedFilesCount,
+            int authorsCount)
+        {
+            Id = id;
+            RepositoryId = repositoryId;
+            Additions = additions;
+            Deletions = deletions;
+            LastCommitAt = lastCommitAt;
+            LastUpdateAt = lastUpdateAt;
+            ChangedFilesCount = changedFilesCount;
+            AuthorsCount = authorsCount;
+        }
+        
         public string Id { get; private set; }
 
         public string RepositoryId { get; private set; }
@@ -22,26 +42,7 @@ namespace CodeInsight.Data.Issue
         public int ChangedFilesCount { get; private set; }
 
         public int AuthorsCount { get; private set; }
-
-        public Issue(
-            string id, 
-            string repositoryId, 
-            int additions, 
-            int deletions,
-            DateTimeOffset lastCommitAt, 
-            DateTimeOffset lastUpdateAt, 
-            int changedFilesCount, 
-            int authorsCount)
-        {
-            Id = id;
-            RepositoryId = repositoryId;
-            Additions = additions;
-            Deletions = deletions;
-            LastCommitAt = lastCommitAt;
-            LastUpdateAt = lastUpdateAt;
-            ChangedFilesCount = changedFilesCount;
-            AuthorsCount = authorsCount;
-        }
+        
 
         public static Issue FromDomain(Domain.Issue.Issue issue)
         {

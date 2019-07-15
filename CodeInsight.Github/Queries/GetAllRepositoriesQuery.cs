@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Library.Extensions;
-using CodeInsight.Library.Types;
 using Monad;
 using Octokit.GraphQL;
 

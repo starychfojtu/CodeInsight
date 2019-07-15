@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data.Common;
 using CodeInsight.Data;
 using CodeInsight.Data.Commit;
 using CodeInsight.Data.Issue;
@@ -13,7 +12,6 @@ using CodeInsight.Domain.Repository;
 using CodeInsight.Github.Import;
 using CodeInsight.Jobs;
 using CodeInsight.Jobs.Instances;
-using CodeInsight.Library;
 using CodeInsight.Library.Types;
 using CodeInsight.Web.Common.Security;
 using FuncSharp;
@@ -23,8 +21,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

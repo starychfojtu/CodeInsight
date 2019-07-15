@@ -3,7 +3,6 @@ using System;
 using CodeInsight.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CodeInsight.Web.Migrations
 {

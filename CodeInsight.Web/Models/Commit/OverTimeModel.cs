@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CodeInsight.PullRequests;
+﻿using System.Collections.Generic;
+using CodeInsight.Commits;
 using CodeInsight.Web.Common.Charts;
 using FuncSharp;
 
@@ -11,7 +8,7 @@ namespace CodeInsight.Web.Models.Commit
     public class OverTimeModel : ChartsViewModel
     {
         public OverTimeModel (
-            IntervalStatisticsConfiguration configuration,
+            OTStatsConfig configuration,
             IOption<string> error,
             IReadOnlyList<Chart> charts) 
             : base(charts)
@@ -20,7 +17,7 @@ namespace CodeInsight.Web.Models.Commit
             Error = error;
         }
 
-        public IntervalStatisticsConfiguration Configuration { get; }
+        public OTStatsConfig Configuration { get; }
 
         public IOption<string> Error { get; }
     }

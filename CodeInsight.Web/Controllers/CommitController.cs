@@ -4,29 +4,19 @@ using System.Collections.Immutable;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using ChartJSCore.Models;
-using CodeInsight.Domain;
 using CodeInsight.Domain.Commit;
 using CodeInsight.Domain.Issue;
-using CodeInsight.Domain.Repository;
-using CodeInsight.Library;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using CodeInsight.Commits;
-using CodeInsight.PullRequests;
 using CodeInsight.Web.Common;
 using CodeInsight.Web.Common.Charts;
 using CodeInsight.Web.Common.Security;
-using CodeInsight.Web.Models;
 using CodeInsight.Web.Models.Commit;
-using CodeInsight.Web.Models.PullRequest;
 using FuncSharp;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using NodaTime.Extensions;
 using Chart = CodeInsight.Web.Common.Charts.Chart;
@@ -47,20 +37,33 @@ namespace CodeInsight.Web.Controllers
         
         #region OverTimeTab
 
-        public Task<IActionResult> OverTimeTab() => Action(async client =>
+        public Task<IActionResult> OverTimeTab(string fromDate, string toDate) => Action(async client =>
         {
             var commits = await commitRepository.GetAll();
+            
+            //TODO: Refactor
+            var parseConfigurationResult =
+                from start in NonEmptyString.Create(fromDate)
+                from end in NonEmptyString.Create(toDate)
+                select ParseConfiguration(start, end, DateTimeZone.Utc);
 
-            //TODO: Add the use of datepicker
+            var configuration = parseConfigurationResult
+                .FlatMap(c => c.Success)
+                .GetOrElse(CreateDefaultConfiguration());
+
+            var errorMessage = parseConfigurationResult
+                .FlatMap(c => c.Error)
+                .Map(ToErrorMessage);
+            //end
+
             var interval = new DateInterval(
-                commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
-                commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date);
+                configuration.Interval.Start,
+                configuration.Interval.End);
 
-            //TODO: Add error msg and config
             return View("OverTimeView", 
                 new OverTimeModel(
-                    new IntervalStatisticsConfiguration(new ZonedDateInterval(interval, DateTimeZone.Utc), Instant.FromDateTimeUtc(DateTime.UtcNow) ), //change
-                    null, //change
+                    configuration,
+                    errorMessage,
                     ImmutableList.CreateRange(CreateOverTimeCharts(commits, interval)))
                 );
         });
@@ -68,17 +71,21 @@ namespace CodeInsight.Web.Controllers
         private static IEnumerable<Chart> CreateOverTimeCharts(IEnumerable<Commit> commits, DateInterval interval)
         {
             var config = new LineDataSetConfiguration("Number of commits", Color.Cyan);
-            
+            var maxInterval = new DateInterval(
+                commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
+                commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date);
+
+
             var commitsCube = new DataCube1<LocalDate, double>();
             var selectedWeekCube = new DataCube1<LocalDate, double>();
 
-            var statsAll = GetDayStats(commits, commits.Min(cm => cm.CommittedAt), commits.Max(cm => cm.CommittedAt));
+            var statsAll = GetDayStats(commits, maxInterval);
             foreach (var stat in statsAll)
             {
-                commitsCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.CommitCount);
-                if (interval.Contains(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date))
+                commitsCube.Set(stat.Day, stat.CommitCount);
+                if (interval.Contains(stat.Day))
                 {
-                    selectedWeekCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.CommitCount);
+                    selectedWeekCube.Set(stat.Day, stat.CommitCount);
                 }
             }
 
@@ -92,17 +99,13 @@ namespace CodeInsight.Web.Controllers
 
             yield return Chart.FromInterval(
                 "All Time Numbers of Commits",
-                new DateInterval(
-                commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
-                commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date),
-                new List<Dataset>() { CreateDataSet(interval, commitsCube, config) }, 
+                maxInterval,
+                new List<Dataset>() { CreateDataSet(maxInterval, commitsCube, config) }, 
                 xAxis: NonEmptyString.Create("Dates").Get(),
                 yAxis: NonEmptyString.Create("Number of commits").Get()
             );
-
-
         }
-
+        
         #endregion
 
         //Abandoned
@@ -118,12 +121,12 @@ namespace CodeInsight.Web.Controllers
         {
             var commits = await commitRepository.GetAll();
 
-            var interval = new DateInterval(
+            var maxInterval = new DateInterval(
                 commits.Min(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date,
                 commits.Max(cm => cm.CommittedAt).ToDateTimeOffset().Date.ToLocalDateTime().Date);
 
             return View("CodeTabView",
-                new CodeTabModel(ImmutableList.CreateRange(CreateCodeCharts(commits, interval))));
+                new CodeTabModel(ImmutableList.CreateRange(CreateCodeCharts(commits, maxInterval))));
         });
 
         private static IEnumerable<Chart> CreateCodeCharts(IEnumerable<Commit> commits, DateInterval interval)
@@ -131,13 +134,13 @@ namespace CodeInsight.Web.Controllers
             var configAdded = new LineDataSetConfiguration("Additions", Color.Green);
             var configDeleted = new LineDataSetConfiguration("Deletions", Color.DarkRed);
 
-            var stats = GetDayStats(commits, commits.Min(cm => cm.CommittedAt), commits.Max(cm => cm.CommittedAt));
+            var stats = GetDayStats(commits, interval);
             var addedCube = new DataCube1<LocalDate, double>();
             var deletedCube = new DataCube1<LocalDate, double>();
             foreach (var stat in stats)
             {
-                addedCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.Additions);
-                deletedCube.Set(stat.Day.ToDateTimeOffset().Date.ToLocalDateTime().Date, stat.Deletions);
+                addedCube.Set(stat.Day, stat.Additions);
+                deletedCube.Set(stat.Day, stat.Deletions);
             }
 
             yield return Chart.FromInterval(
@@ -167,30 +170,44 @@ namespace CodeInsight.Web.Controllers
 
         #endregion
 
-        //COMMON
-        private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, Instant start, Instant end)
+        #region Common
+        
+        private static IEnumerable<DayStats> GetDayStats(IEnumerable<Commit> commits, DateInterval interval)
         {
-            var length = (new DateInterval(
-                start.ToDateTimeOffset().Date.ToLocalDateTime().Date,
-                end.ToDateTimeOffset().Date.ToLocalDateTime().Date))
-                .Length;
-            for (int i = 0; i < length; i++)
+            var day = interval.Start;
+            for (int i = 0; i < interval.Length; i++)
             {
-                yield return DayCalculator.PerDay(commits, start);
-                start = start.Plus(Duration.FromDays(1));
+                yield return DayCalculator.PerDay(commits, day);
+                day = day.Plus(Period.FromDays(1));
             }
         }
 
-        //TODO: interval parser
-        private static IntervalStatisticsConfiguration CreateDefaultConfiguration(DateTimeZone zone)
+        public enum ConfigurationError
         {
-            var now = SystemClock.Instance.GetCurrentInstant();
-            var end = now.InZone(zone).Date.PlusDays(1);
-            var start = end.PlusDays(-30);
-            return new IntervalStatisticsConfiguration(new ZonedDateInterval(new DateInterval(start, end), zone), now);
+            InvalidFromDate,
+            InvalidToDate,
+            ToDateIsAfterFrom,
+            ToDateIsAfterTomorrow
+        }
+        private static string ToErrorMessage(ConfigurationError error)
+        {
+            return error.Match(
+                ConfigurationError.InvalidFromDate, _ => "Invalid Start date.",
+                ConfigurationError.InvalidToDate, _ => "Invalid End date.",
+                ConfigurationError.ToDateIsAfterFrom, _ => "Start cannot be after end.",
+                ConfigurationError.ToDateIsAfterTomorrow, _ => "End cannot be after tomorrow."
+            );
         }
 
-        private static ITry<IntervalStatisticsConfiguration, PullRequestController.ConfigurationError> ParseConfiguration(
+        //TODO: Refactor Interval parser
+        private static OTStatsConfig CreateDefaultConfiguration()
+        {
+            var end = SystemClock.Instance.GetCurrentInstant().ToDateTimeOffset().Date.ToLocalDateTime().Date;
+            var start = end.PlusDays(-7);
+            return new OTStatsConfig(new DateInterval(start, end));
+        }
+
+        private static ITry<OTStatsConfig, ConfigurationError> ParseConfiguration(
             NonEmptyString fromDate,
             NonEmptyString toDate,
             DateTimeZone zone)
@@ -198,16 +215,16 @@ namespace CodeInsight.Web.Controllers
             var now = SystemClock.Instance.GetCurrentInstant();
             var maxToDate = now.InZone(zone).Date.PlusDays(1);
 
-            var start = ParseDate(fromDate).ToTry(_ => PullRequestController.ConfigurationError.InvalidFromDate);
+            var start = ParseDate(fromDate).ToTry(_ => ConfigurationError.InvalidFromDate);
             var end = ParseDate(toDate)
-                .ToTry(_ => PullRequestController.ConfigurationError.InvalidToDate)
-                .FlatMap(d => (d <= maxToDate).ToTry(t => d, f => PullRequestController.ConfigurationError.ToDateIsAfterTomorrow));
+                .ToTry(_ => ConfigurationError.InvalidToDate)
+                .FlatMap(d => (d <= maxToDate).ToTry(t => d, f => ConfigurationError.ToDateIsAfterTomorrow));
 
             return
                 from e in end
                 from s in start
-                from interval in CreateInterval(s, e).ToTry(_ => PullRequestController.ConfigurationError.ToDateIsAfterFrom)
-                select new IntervalStatisticsConfiguration(new ZonedDateInterval(interval, zone), now);
+                from interval in CreateInterval(s, e).ToTry(_ => ConfigurationError.ToDateIsAfterFrom)
+                select new OTStatsConfig(interval);
         }
 
         private static IOption<DateInterval> CreateInterval(LocalDate start, LocalDate end)
@@ -221,7 +238,6 @@ namespace CodeInsight.Web.Controllers
             var resultAsOffset = dateIsValid ? Some(result) : None<DateTimeOffset>();
             return resultAsOffset.Map(ZonedDateTime.FromDateTimeOffset).Map(d => d.Date);
         }
-
 
         private static LineDataset CreateDataSet(DateInterval interval, DataCube1<LocalDate, double> data, LineDataSetConfiguration configuration)
         {
@@ -241,5 +257,7 @@ namespace CodeInsight.Web.Controllers
                 Fill = "false"
             };
         }
+        
+        #endregion
     }
 }

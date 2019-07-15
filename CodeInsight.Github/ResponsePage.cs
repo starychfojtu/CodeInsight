@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Octokit.GraphQL.Model;
 
 namespace CodeInsight.Github
 {

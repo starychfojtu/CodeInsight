@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using CodeInsight.Domain.Commit;
 using NodaTime;
 
@@ -9,14 +7,14 @@ namespace CodeInsight.Commits
 {
     public static class DayCalculator
     {
-        public static DayStats PerDay(IEnumerable<Commit> commits, Instant day)
+        public static DayStats PerDay(IEnumerable<Commit> commits, LocalDate day)
         {
-            var count = (uint) commits.Count(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeOffset().Date);
+            var count = (uint) commits.Count(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeUnspecified());
             var additions = commits
-                .Where(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeOffset().Date)
+                .Where(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeUnspecified())
                 .Sum(cm => cm.Additions);
             var deletions = commits
-                .Where(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeOffset().Date)
+                .Where(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeUnspecified())
                 .Sum(cm => cm.Deletions);
 
             return new DayStats(

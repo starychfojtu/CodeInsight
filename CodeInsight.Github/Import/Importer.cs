@@ -1,11 +1,9 @@
-using System;
 using System.Threading.Tasks;
 using CodeInsight.Domain.Common;
 using CodeInsight.Domain.Repository;
 using CodeInsight.Github.Queries;
 using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
-using FuncSharp;
 using Monad;
 using Octokit.GraphQL;
 

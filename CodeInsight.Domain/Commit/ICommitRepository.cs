@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using CodeInsight.Domain.Repository;
 using CodeInsight.Library.Types;
-using NodaTime;
 
 namespace CodeInsight.Domain.Commit
 {
@@ -13,7 +11,5 @@ namespace CodeInsight.Domain.Commit
         Task<IEnumerable<Commit>> GetAllByIds(IEnumerable<NonEmptyString> ids);
 
         Task<IEnumerable<Commit>> GetAll();
-
-        Task<IEnumerable<Commit>> GetAllIntersecting(RepositoryId repositoryId, Interval interval);
     }
 }

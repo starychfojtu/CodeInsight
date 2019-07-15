@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using CodeInsight.Library.Types;
 using Monad;
-using NodaTime;
 using Octokit.GraphQL;
 using Repository = CodeInsight.Domain.Repository.Repository;
 
@@ -12,17 +9,17 @@ namespace CodeInsight.Github.Queries
     internal static class GetAllCommitsQuery
     {
         internal static IO<Task<string>> Execute(IConnection conn, Repository repository, int take,
-            string cursor = null) => () => conn.Run(CreateQuery(repository.Name.Value, repository.Owner.Value));
+            string cursor = null) => () => conn.Run(CreateQuery(repository.Name.Value, repository.Owner.Value, take, cursor));
 
-        //TODO: Parametrize correctly
-        private static string CreateQuery(string repoName, string repoOwner)
+        //TODO: Refactor Query
+        private static string CreateQuery(string repoName, string repoOwner, int take, string cursor)
         {
             var result = $@"query {{
                 repository(name: ""{repoName}"", owner: ""{repoOwner}"") {{
                     ref (qualifiedName: ""master"") {{
                         target {{
                             ... on Commit {{
-                                history(first: 2) {{
+                                history(first: {take}, after: {cursor}) {{
                                     pageInfo {{
                                         hasNextPage
                                     }}
@@ -52,9 +49,7 @@ namespace CodeInsight.Github.Queries
             }}";
             return result;
         }
-
-
-
+        
         internal sealed class CommitDto
         {
             public string Id { get; private set; }

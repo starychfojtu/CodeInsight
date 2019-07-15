@@ -1,10 +1,7 @@
 using System.Collections.Generic;
-using CodeInsight.Library;
-using CodeInsight.Library.Types;
 using CodeInsight.PullRequests;
 using CodeInsight.Web.Common.Charts;
 using FuncSharp;
-using NodaTime;
 
 namespace CodeInsight.Web.Models.PullRequest
 {

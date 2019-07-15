@@ -2,7 +2,6 @@ using CodeInsight.Domain;
 using CodeInsight.Domain.PullRequest;
 using FuncSharp;
 using NodaTime;
-using static CodeInsight.Library.Prelude;
 
 namespace CodeInsight.PullRequests
 {

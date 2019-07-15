@@ -19,7 +19,6 @@ using static CodeInsight.Library.Prelude;
 using Monad;
 using Connection = Octokit.GraphQL.Connection;
 using IConnection = Octokit.GraphQL.IConnection;
-using ObjectExtensions = FuncSharp.ObjectExtensions;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 
 namespace CodeInsight.Web.Controllers

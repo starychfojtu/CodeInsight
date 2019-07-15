@@ -1,5 +1,4 @@
 ﻿using System;
-using CodeInsight.Domain;
 using CodeInsight.Library.Types;
 using NodaTime.Extensions;
 
