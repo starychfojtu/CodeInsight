@@ -38,7 +38,6 @@ namespace CodeInsight.Jobs.Instances
         
         public Task Execute(Guid executionId, string connectionToken, string applicationName, string name, string owner)
         {
-            //TODO: Test
             var connection = new Connection(new ProductHeaderValue(applicationName), connectionToken);
             var conn = new Octokit.Connection(new Octokit.ProductHeaderValue(applicationName), new InMemoryCredentialStore(new Credentials(connectionToken)));
             var repoOwner = NonEmptyString.Create(owner).Get();

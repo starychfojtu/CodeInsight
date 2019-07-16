@@ -133,7 +133,7 @@ namespace CodeInsight.Web.Controllers
             foreach (var stat in stats)
             {
                 addedCube.Set(stat.Day, stat.Additions);
-                deletedCube.Set(stat.Day, stat.Deletions);
+                deletedCube.Set(stat.Day, -stat.Deletions);
             }
 
             yield return Chart.FromInterval(
