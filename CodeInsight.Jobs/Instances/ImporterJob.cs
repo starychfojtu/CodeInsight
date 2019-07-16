@@ -5,8 +5,11 @@ using CodeInsight.Library.Extensions;
 using CodeInsight.Library.Types;
 using Hangfire;
 using Monad;
-using Octokit.GraphQL;
+using Octokit;
+using Octokit.Internal;
 using static CodeInsight.Library.Prelude;
+using Connection = Octokit.GraphQL.Connection;
+using ProductHeaderValue = Octokit.GraphQL.ProductHeaderValue;
 
 namespace CodeInsight.Jobs.Instances
 {
@@ -35,13 +38,15 @@ namespace CodeInsight.Jobs.Instances
         
         public Task Execute(Guid executionId, string connectionToken, string applicationName, string name, string owner)
         {
+            //TODO: Test
             var connection = new Connection(new ProductHeaderValue(applicationName), connectionToken);
+            var conn = new Octokit.Connection(new Octokit.ProductHeaderValue(applicationName), new InMemoryCredentialStore(new Credentials(connectionToken)));
             var repoOwner = NonEmptyString.Create(owner).Get();
             var repoName = NonEmptyString.Create(name).Get();
             
             var result = GetExecution(executionId)
                 .SelectMany(
-                    _ => importer.ImportRepository(connection, repoOwner, repoName),
+                    _ => importer.ImportRepository(conn, connection, repoOwner, repoName),
                     (e, r) => e.With(progress: 100, result: Some(r.Id.Value.Value))
                 )
                 .Bind(storage.Update);

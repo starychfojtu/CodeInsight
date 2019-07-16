@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using CodeInsight.Domain.Commit;
 using CodeInsight.Domain.Repository;
-using CodeInsight.Github.Queries;
-using CodeInsight.Library.Extensions;
+using CodeInsight.Github.Awaits;
 using CodeInsight.Library.Types;
 using FuncSharp;
-using Monad;
 using NodaTime;
-using Octokit.GraphQL;
 using Commit = CodeInsight.Domain.Commit.Commit;
 
 namespace CodeInsight.Github.Import
@@ -27,92 +23,26 @@ namespace CodeInsight.Github.Import
             this.commitRepository = commitRepository;
         }
 
-        //TODO: Remove mock up
-        public async Task<Repository> UpdateCommits(IConnection connection, Repository repository)
+        public async Task<Repository> UpdateCommits(Octokit.IConnection connection, Repository repository)
         {
-            //TO DO: Use GetUpdate
-            //TO DO:  Make and Use GetUpdatedOrNewCommits
+            var commits = await GetAllCommits.AwaitCommits(connection, repository);
 
-            //var lastPrs = await commitRepository.GetAll();
-            //var lastPr = lastPrs.SingleOption();
-            //var cursor = (string)null;
-
-            //TO DO: Deserialize
-            //var page = await GetAllCommitsQuery.Execute(connection, repository, take: 50, cursor: cursor).Execute();
-
-            commitStorage.Add(new List<Commit>
-            {
-                new Commit(NonEmptyString.Create("1").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 60, 34,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow),
-                    NonEmptyString.Create("CommitMsg ,").Get()),
-                new Commit(NonEmptyString.Create("2").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 50, 24,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(2)),
-                    NonEmptyString.Create("CommitMsg 2").Get()),
-                new Commit(NonEmptyString.Create("3").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 10, 45,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(3)),
-                    NonEmptyString.Create("CommitMsg 3").Get()),
-                new Commit(NonEmptyString.Create("4").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 1").Get(), NonEmptyString.Create("1").Get(), 15, 50,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(4)),
-                    NonEmptyString.Create("CommitMsg 4").Get()),
-                new Commit(NonEmptyString.Create("5").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 100, 20,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(3)),
-                    NonEmptyString.Create("CommitMsg 2").Get()),
-                new Commit(NonEmptyString.Create("6").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 115, 26,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(5)),
-                    NonEmptyString.Create("CommitMsg 6").Get()),
-                new Commit(NonEmptyString.Create("7").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 24, 22,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(5)),
-                    NonEmptyString.Create("CommitMsg 7").Get()),
-                new Commit(NonEmptyString.Create("8").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 2").Get(), NonEmptyString.Create("2").Get(), 75, 20,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(5)),
-                    NonEmptyString.Create("CommitMsg 8").Get()),
-                new Commit(NonEmptyString.Create("9").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 3").Get(), NonEmptyString.Create("1").Get(), 65, 52,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(2)),
-                    NonEmptyString.Create("CommitMsg 9").Get()),
-                new Commit(NonEmptyString.Create("10").Get(), NonEmptyString.Create("12").Get(),
-                    NonEmptyString.Create("Tester 3").Get(), NonEmptyString.Create("1").Get(), 11, 22,
-                    Instant.FromDateTimeOffset(DateTime.UtcNow).Minus(Duration.FromDays(4)),
-                    NonEmptyString.Create("CommitMsg 10").Get())
-            });
+            AddNew(commits.Select(Map).ToImmutableList());
 
             return repository;
         }
 
-        private IO<Task<Unit>> UpdateOrAdd(IReadOnlyList<Commit> commits)
+        private Unit AddNew(IReadOnlyList<Commit> commits)
         {
-            var ids = commits.Select(pr => pr.Id);
+            var ids = commits.Select(cm => cm.Id);
             var existingCommits = commitRepository.GetAllByIds(ids).Result;
-            var existingCommitIds = existingCommits.Select(pr => pr.Id).ToImmutableHashSet();
-            var (updatedCommits, newCommits) = commits.Partition(cm => existingCommitIds.Contains(cm.Id));
+            var existingCommitIds = existingCommits.Select(cm => cm.Id).ToImmutableHashSet();
+            var newEntries = commits.Where(cm => !existingCommitIds.Contains(cm.Id));
 
-            commitStorage.Add(newCommits);
-            return commitStorage.Update(updatedCommits);
+            return commitStorage.Add(newEntries);
         }
 
-
-        /*
-        private static IEnumerable<Commit> GetUpdatedOrCommits(IOption<Commit> lastUpdatedCm, IEnumerable<GetAllCommitsQuery.CommitDto> page) =>
-            lastUpdatedCm
-                .Map(cm =>
-                {
-                    var minUpdatedAt = cm.CommittedAt.ToDateTimeOffset();
-                    return page.TakeWhile(c => c.UpdatedAt >= minUpdatedAt);
-                })
-                .GetOrElse(page)
-                .Select(Map);
-
-        
-        */
-        private static Commit Map(GetAllCommitsQuery.CommitDto cm) =>
+        private static Commit Map(GetAllCommits.CommitDto cm) =>
             new Commit(
                 id: NonEmptyString.Create(cm.Id).Get(),
                 repositoryId: NonEmptyString.Create(cm.RepositoryId).Get(),

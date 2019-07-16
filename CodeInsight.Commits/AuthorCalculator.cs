@@ -8,17 +8,16 @@ namespace CodeInsight.Commits
     {
         public static AuthorStats PerAuthor(IEnumerable<Commit> commits, string authName)
         {
-            var min = commits
+            var authoredCommits = commits
                 .Where(cm => cm.AuthorName == authName)
+                .ToList();
+            var min = authoredCommits
                 .Min(a => a.CommittedAt);
-            var max = commits
-                .Where(cm => cm.AuthorName == authName)
+            var max = authoredCommits
                 .Max(a => a.CommittedAt);
-            var additions = commits
-                .Where(cm => cm.AuthorName == authName)
+            var additions = authoredCommits
                 .Sum(cm => cm.Additions);
-            var deletions = commits
-                .Where(cm => cm.AuthorName == authName)
+            var deletions = authoredCommits
                 .Sum(cm => cm.Deletions);
 
             return new AuthorStats(
