@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using CodeInsight.Domain.Commit;
-using Monad.Parsec.Token.Chars;
 using NodaTime;
 
 namespace CodeInsight.Commits
