@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Repository = CodeInsight.Domain.Repository.Repository;
-using CodeInsight.Library.Types;
-using NodaTime;
-using NodaTime.Extensions;
 using Octokit;
 
 
@@ -19,18 +15,24 @@ namespace CodeInsight.Github.Awaits
 
             var commits = await github.Repository.Commit.GetAll(repository.Owner.Value, repository.Name.Value);
 
-            //TODO: Fix return
-            return commits.Select(commit => new CommitDto
-                {
-                    Id = commit.Sha,
-                    RepositoryId = commit.Repository.Id.ToString(),
-                    AuthorName = commit.Commit.Author.Name,
-                    AuthorId = commit.Author.Id.ToString(),
-                    Additions = commit.Stats.Additions,
-                    Deletions = commit.Stats.Deletions,
-                    CommittedAt = commit.Commit.Author.Date,
-                    CommitMsg = commit.Commit.Message
-                });
+            var result = new List<CommitDto>();
+            foreach (var commit in commits)
+            {
+                var details = await github.Repository.Commit.Get(repository.Owner.Value, repository.Name.Value, commit.Sha);
+                result.Add(new CommitDto
+                    {
+                        Id = details.Sha,
+                        RepositoryId = repository.Id.Value.Value,
+                        AuthorName = details.Commit.Author.Name,
+                        AuthorId = details.Author.Id.ToString(),
+                        Additions = details.Stats.Additions,
+                        Deletions = details.Stats.Deletions,
+                        CommittedAt = details.Commit.Author.Date,
+                        CommitMsg = details.Commit.Message
+                    });
+            }
+
+            return result;
         }
         internal sealed class CommitDto
         {

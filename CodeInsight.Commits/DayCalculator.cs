@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using CodeInsight.Domain.Commit;
+using Monad.Parsec.Token.Chars;
 using NodaTime;
 
 namespace CodeInsight.Commits
@@ -9,19 +10,20 @@ namespace CodeInsight.Commits
     {
         public static DayStats PerDay(IEnumerable<Commit> commits, LocalDate day)
         {
-            var count = (uint) commits.Count(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeUnspecified());
-            var additions = commits
+            var commitsSpecified = commits
                 .Where(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeUnspecified())
+                .ToList();
+            var count = commitsSpecified.Count;
+            var additions = commitsSpecified
                 .Sum(cm => cm.Additions);
-            var deletions = commits
-                .Where(cm => cm.CommittedAt.ToDateTimeOffset().Date == day.ToDateTimeUnspecified())
+            var deletions = commitsSpecified
                 .Sum(cm => cm.Deletions);
 
             return new DayStats(
                 day: day, 
                 additions: (uint) additions, 
                 deletions: (uint) deletions, 
-                commitCount: count
+                commitCount: (uint) count
                 );
         }
     }

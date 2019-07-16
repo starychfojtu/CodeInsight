@@ -82,9 +82,9 @@ namespace CodeInsight.Github.Import
 
             var commits = await GetAllCommits.AwaitCommits(connection, repository);
 
-            //var result = commits.Select(Map);
+            var result = commits.ToImmutableList().Select(Map);
 
-            commitStorage.Add(commits.Select(Map));
+            commitStorage.Add(result);
 
             return repository;
         }
