@@ -37,11 +37,10 @@ namespace CodeInsight.Github.Import
                 var page = await GetAllIssuesQuery.Execute(connection, repository, take: 50, cursor: cursor).Execute();
                 var updatedOrNewIssues = GetUpdatedOrNewIssues(lastIss, page.Items).ToImmutableList();
 
-                // TODO - the code doesn't have to wait for this to finish, but DbContext is not thread safe so it is not easy, refactor to separate transaction.
                 await UpdateOrAdd(updatedOrNewIssues).Execute();
 
-                var allPrsWereNewOrUpdated = updatedOrNewIssues.Count == page.Items.Count;
-                cursor = page.HasNextPage && allPrsWereNewOrUpdated ? page.EndCursor : null;
+                var allIssuesWereNewOrUpdated = updatedOrNewIssues.Count == page.Items.Count;
+                cursor = page.HasNextPage && allIssuesWereNewOrUpdated ? page.EndCursor : null;
             }
             while (cursor != null);
 
@@ -52,8 +51,8 @@ namespace CodeInsight.Github.Import
         {
             var ids = issues.Select(i => i.Id);
             var existingIssues = issueRepository.GetAllOrderedByIds(ids).Result;
-            var existingIssueIds = existingIssues.Select(pr => pr.Id).ToImmutableHashSet();
-            var (updatedIss, newIss) = issues.Partition(pr => existingIssueIds.Contains(pr.Id));
+            var existingIssueIds = existingIssues.Select(i => i.Id).ToImmutableHashSet();
+            var (updatedIss, newIss) = issues.Partition(i => existingIssueIds.Contains(i.Id));
 
             issueStorage.Add(newIss);
             return issueStorage.Update(updatedIss);
@@ -67,7 +66,7 @@ namespace CodeInsight.Github.Import
                 .Map(i =>
                 {
                     var minUpdatedAt = i.LastUpdateAt.ToDateTimeOffset();
-                    return page.TakeWhile(p => p.LastUpdateAt >= minUpdatedAt);
+                    return page.TakeWhile(newI => newI.LastUpdateAt >= minUpdatedAt);
                 })
                 .GetOrElse(page)
                 .Select(Map);
