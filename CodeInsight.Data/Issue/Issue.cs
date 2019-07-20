@@ -12,6 +12,7 @@ namespace CodeInsight.Data.Issue
         public Issue(
             int id, 
             string title,
+            string url,
             string repositoryId, 
             DateTimeOffset? closedAt,
             DateTimeOffset lastUpdateAt, 
@@ -19,6 +20,7 @@ namespace CodeInsight.Data.Issue
         {
             Id = id;
             Title = title;
+            Url = url;
             RepositoryId = repositoryId;
             ClosedAt = closedAt;
             LastUpdateAt = lastUpdateAt;
@@ -28,6 +30,8 @@ namespace CodeInsight.Data.Issue
         public int Id { get; private set; }
 
         public string Title { get; private set; }
+
+        public string Url { get; private set; }
 
         public string RepositoryId { get; private set; }
 
@@ -45,6 +49,7 @@ namespace CodeInsight.Data.Issue
             return new Issue(
                 (int) issue.Id,
                 issue.Title.Value,
+                issue.Url.Value,
                 issue.RepositoryId.Value,
                 issue.ClosedAt.Map(c => c.ToDateTimeOffset()).ToNullable(),
                 issue.LastUpdateAt.ToDateTimeOffset(),
@@ -57,6 +62,7 @@ namespace CodeInsight.Data.Issue
             return new Domain.Issue.Issue(
                 (uint) issue.Id,
                 NonEmptyString.Create(issue.Title).Get(),
+                NonEmptyString.Create(issue.Url).Get(),
                 NonEmptyString.Create(issue.RepositoryId).Get(),
                 issue.ClosedAt.ToOption().Map(c => c.ToInstant()),
                 issue.CreatedAt.ToInstant(),

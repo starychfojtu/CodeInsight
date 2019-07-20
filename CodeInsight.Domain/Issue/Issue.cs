@@ -8,8 +8,9 @@ namespace CodeInsight.Domain.Issue
     {
         public Issue(
             uint id,
-            NonEmptyString title, 
-            NonEmptyString repositoryId, 
+            NonEmptyString title,
+            NonEmptyString url,
+            NonEmptyString repositoryId,
             IOption<Instant> closedAt, 
             Instant createdAt,
             Instant lastUpdateAt, 
@@ -17,6 +18,7 @@ namespace CodeInsight.Domain.Issue
         {
             Id = id;
             Title = title;
+            Url = url;
             RepositoryId = repositoryId;
             ClosedAt = closedAt;
             CreatedAt = createdAt;
@@ -27,6 +29,8 @@ namespace CodeInsight.Domain.Issue
         public uint Id { get; private set; }
 
         public NonEmptyString Title { get; private set; }
+
+        public NonEmptyString Url { get; private set; }
 
         public NonEmptyString RepositoryId { get; private set; }
 

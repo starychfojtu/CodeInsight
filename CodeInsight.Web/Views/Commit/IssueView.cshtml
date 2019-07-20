@@ -19,8 +19,8 @@
                 @foreach (var issue in Model.Issues.OrderByDescending(i => i.Id))
                 {
                     <tr>
-                        <td>@issue.Id</td>
-                        <td>@issue.Title</td>
+                        <td><a href="@issue.Url.Value" title="@issue.Title.Value">@issue.Id</a></td>
+                        <td>@issue.Title.Value</td>
                         <td>@issue.LastUpdateAt.ToString("dd/MM/yyyy", null)</td>
                         <td>@issue.ClosedAt.Map(d => d.ToString("dd/MM/yyyy", null)).GetOrElse("Open")</td>
                         <td>@issue.CommentCount</td>

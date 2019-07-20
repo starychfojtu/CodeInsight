@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using CodeInsight.Commits;
 using CodeInsight.Domain.Issue;
 
 namespace CodeInsight.Web.Models.Commit

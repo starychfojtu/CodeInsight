@@ -79,6 +79,7 @@ namespace CodeInsight.Github.Import
             return new Issue(
                 id: (uint) i.Id,
                 title: NonEmptyString.Create(i.Title).Get(),
+                url: NonEmptyString.Create(i.Url).Get(),
                 repositoryId: NonEmptyString.Create(i.RepositoryId).Get(),
                 closedAt: i.ClosedAt.ToOption().Map(Instant.FromDateTimeOffset),
                 createdAt: Instant.FromDateTimeOffset(i.CreatedAt), 

@@ -55,6 +55,7 @@ namespace CodeInsight.Github.Queries
                         {
                             Id = issue.Number,
                             Title = issue.Title,
+                            Url = issue.Url,
                             RepositoryId = issue.Repository.Id.Value,
                             ClosedAt = issue.ClosedAt,
                             CreatedAt = issue.CreatedAt,
@@ -71,6 +72,8 @@ namespace CodeInsight.Github.Queries
             public int Id { get; set; }
 
             public string Title { get; set; }
+
+            public string Url { get; set; }
 
             public string RepositoryId { get; set; }
             
