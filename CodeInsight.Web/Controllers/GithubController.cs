@@ -100,8 +100,12 @@ namespace CodeInsight.Web.Controllers
         {
             var errorMessage = GetErrorMessage(errorCode);
 
+            var repositoriesQueryResult = GetAllRepositoriesQuery.Execute(connection).Bind(r1 =>
+                GetAllRepositoriesPrivateQuery.Execute(connection).Map(r2 => r1.Concat(r2))
+            );
+
             var result =
-                from repositories in GetAllRepositoriesQuery.Execute(connection)
+                from repositories in repositoriesQueryResult
                 let inputs = repositories.Select(r => new RepositoryInputDto(r.Name, r.Owner))
                 select (IActionResult) View(new ChooseRepositoryViewModel(inputs, errorMessage));
 
