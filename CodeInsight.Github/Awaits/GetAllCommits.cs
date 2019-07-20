@@ -21,24 +21,17 @@ namespace CodeInsight.Github.Awaits
             foreach (var commit in commits)
             {
                 var details = await github.Repository.Commit.Get(repo.Owner.Value, repo.Name.Value, commit.Sha);
-                var id = details.Sha;
-                var repId = repo.Id.Value.Value;
-                var authName = details.Commit.Author.Name;
-                var add = details.Stats.Additions;
-                var del = details.Stats.Deletions;
-                var com = details.Commit.Author.Date;
-                var msg = details.Commit.Message;
 
                 result.Add(new CommitDto
                     {
-                        Id = id,
-                        RepositoryId = repId,
-                        AuthorName = authName,
-                        Additions = add,
-                        Deletions = del,
-                        CommittedAt = com,
-                        CommitMsg = msg
-                    });
+                        Id = details.Sha,
+                        RepositoryId = repo.Id.Value.Value,
+                        AuthorName = details.Commit.Author.Name,
+                        Additions = details.Stats.Additions,
+                        Deletions = details.Stats.Deletions,
+                        CommittedAt = details.Commit.Author.Date,
+                        CommitMsg = details.Commit.Message
+                });
             }
 
             return result;
