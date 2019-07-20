@@ -12,8 +12,6 @@ namespace CodeInsight.Data.Commit
         
         public string AuthorName { get; private set; }
 
-        public string AuthorId { get; private set; }
-
         public int Additions { get; private set; }
 
         public int Deletions { get; private set; }
@@ -27,7 +25,6 @@ namespace CodeInsight.Data.Commit
             string id, 
             string repositoryId, 
             string authorName, 
-            string authorId, 
             int additions, 
             int deletions, 
             DateTimeOffset committedAt, 
@@ -36,7 +33,6 @@ namespace CodeInsight.Data.Commit
             Id = id;
             RepositoryId = repositoryId;
             AuthorName = authorName;
-            AuthorId = authorId;
             Additions = additions;
             Deletions = deletions;
             CommittedAt = committedAt;
@@ -49,7 +45,6 @@ namespace CodeInsight.Data.Commit
                 commit.Id,
                 commit.RepositoryId,
                 commit.AuthorName,
-                commit.AuthorId,
                 (int)commit.Additions,
                 (int)commit.Deletions,
                 commit.CommittedAt.ToDateTimeOffset(),
@@ -62,7 +57,6 @@ namespace CodeInsight.Data.Commit
                 NonEmptyString.Create(commit.Id).Get(),
                 NonEmptyString.Create(commit.RepositoryId).Get(),
                 NonEmptyString.Create(commit.AuthorName).Get(),
-                NonEmptyString.Create(commit.AuthorId).Get(),
                 (uint) commit.Additions,
                 (uint) commit.Deletions,
                 commit.CommittedAt.ToInstant(),

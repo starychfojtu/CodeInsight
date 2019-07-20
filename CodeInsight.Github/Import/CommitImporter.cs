@@ -47,7 +47,6 @@ namespace CodeInsight.Github.Import
                 id: NonEmptyString.Create(cm.Id).Get(),
                 repositoryId: NonEmptyString.Create(cm.RepositoryId).Get(),
                 authorName: NonEmptyString.Create(cm.AuthorName).Get(),
-                authorId: NonEmptyString.Create(cm.AuthorId).Get(),
                 additions: (uint)cm.Additions,
                 deletions: (uint)cm.Deletions,
                 committedAt: Instant.FromDateTimeOffset(cm.CommittedAt),
