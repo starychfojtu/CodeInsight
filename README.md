@@ -15,6 +15,6 @@ You will be offered to select one of your repositories to analyze and after a wh
 
 [Commit frequency page](https://github.com/starychfojtu/CodeInsight/blob/CommitFeatures/docs/cm-stats-commit-frequency.md)
 
-[Code change page](https://github.com/starychfojtu/CodeInsight/blob/blob/CommitFeatures/cm-stats-code-change.md)
+[Code change page](https://github.com/starychfojtu/CodeInsight/blob/CommitFeatures/docs/cm-stats-code-change.md)
 
 [Per Author data page](https://github.com/starychfojtu/CodeInsight/blob/CommitFeatures/docs/cm-stats-per-author.md)
