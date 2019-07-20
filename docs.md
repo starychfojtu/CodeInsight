@@ -2,6 +2,7 @@
 
 # Projects 
 
+- CodeInsight.Commits: Commits specific things like statistics, could be part fo Domain
 - CodeInsight.Data: Access to database.
 - CodeInsight.Domain: Plain domain objects without dependency on some tools/infrastructure.
 - CodeInsight.Github: Specific project for Github related things.
@@ -66,7 +67,17 @@ Data layer should only leak its abstraction to outer projects.
 ## Repository lifecycle
 
 When selected by user, repository is imported. Only changes are retrieved and cached in database.
-This is done in background with `ImporterJob`.
+This is done in background with `ImporterJob` but because the `Octokit.GraphQL` does not implement queries on commits to a repository the authors were forced to use `Octokit`'s connection, client and their methods:
+
+```csharp
+var github = new GitHubClient(connection);
+var commits = await github.Repository.Commit.GetAll(repository.Owner.Value, repository.Name.Value);
+
+foreach (var commit in commits)
+{
+    var details = await github.Repository.Commit.Get(repository.Owner.Value, repository.Name.Value, commit.Sha);
+}
+```
 
 # General style of programming
 
