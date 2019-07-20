@@ -1,4 +1,5 @@
 ﻿using CodeInsight.Library.Types;
+using FuncSharp;
 using NodaTime;
 
 namespace CodeInsight.Domain.Issue
@@ -6,39 +7,36 @@ namespace CodeInsight.Domain.Issue
     public sealed class Issue
     {
         public Issue(
-            NonEmptyString id,
-            NonEmptyString repositoryId,
-            uint additions,
-            uint deletions,
-            Instant lastCommitAt,
-            Instant lastUpdateAt,
-            uint changedFilesCount,
-            uint authorsCount)
+            uint id,
+            NonEmptyString title, 
+            NonEmptyString repositoryId, 
+            IOption<Instant> closedAt, 
+            Instant createdAt,
+            Instant lastUpdateAt, 
+            uint commentCount)
         {
             Id = id;
+            Title = title;
             RepositoryId = repositoryId;
-            Additions = additions;
-            Deletions = deletions;
-            LastCommitAt = lastCommitAt;
+            ClosedAt = closedAt;
+            CreatedAt = createdAt;
             LastUpdateAt = lastUpdateAt;
-            ChangedFilesCount = changedFilesCount;
-            AuthorsCount = authorsCount;
+            CommentCount = commentCount;
         }
-        public NonEmptyString Id { get; private set; }
+
+        public uint Id { get; private set; }
+
+        public NonEmptyString Title { get; private set; }
 
         public NonEmptyString RepositoryId { get; private set; }
 
-        public uint Additions { get; private set; }
+        public IOption<Instant> ClosedAt { get; private set; }
 
-        public uint Deletions { get; private set; }
-
-        public Instant LastCommitAt { get; private set; }
+        public Instant CreatedAt { get; private set; }
 
         public Instant LastUpdateAt { get; private set; }
 
-        public uint ChangedFilesCount { get; private set; }
-
-        public uint AuthorsCount { get; private set; }
+        public uint CommentCount { get; private set; }
 
 
         private bool Equals(Issue other)

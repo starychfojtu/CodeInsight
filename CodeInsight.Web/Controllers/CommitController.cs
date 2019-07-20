@@ -100,10 +100,14 @@ namespace CodeInsight.Web.Controllers
 
         #endregion
 
-        //Abandoned
         #region ByTaskTab
 
-        public Task<IActionResult> PerTaskTable() => Action(async client => View("FeatureUnavailable"));
+        public Task<IActionResult> PerTaskTable() => Action(async client =>
+        {
+            var issues = await issueRepository.GetAll();
+
+            return View("IssueView", new IssueViewModel(ImmutableList.CreateRange(issues)));
+        });
 
         #endregion
 
@@ -153,10 +157,12 @@ namespace CodeInsight.Web.Controllers
 
         public Task<IActionResult> AuthorTable() => Action(async client =>
         {
-            var commits = commitRepository.GetAll();
-            var authors = commits.Result.Select(cm => cm.AuthorName).Distinct();
+            var commits = await commitRepository.GetAll();
+            var enumeratedCommits = commits.ToList();
 
-            var stats = authors.Select(author => AuthorCalculator.PerAuthor(commits.Result, author)).ToList();
+            var authors = enumeratedCommits.Select(cm => cm.AuthorName).Distinct();
+
+            var stats = authors.Select(author => AuthorCalculator.PerAuthor(enumeratedCommits, author)).ToList();
 
             return View("AuthorView", new AuthorViewModel(ImmutableList.CreateRange(stats)));
         });

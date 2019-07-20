@@ -49,6 +49,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Update="Views\Commit\IssueView.cshtml">
+        <Pack>$(IncludeRazorContentInPack)</Pack>
+      </Content>
       <Content Update="Views\Commit\AuthorView.cshtml">
         <Pack>$(IncludeRazorContentInPack)</Pack>
       </Content>

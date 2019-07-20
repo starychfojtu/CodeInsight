@@ -1,0 +1,33 @@
+﻿@using FuncSharp
+@model CodeInsight.Web.Models.Commit.IssueViewModel
+@{
+    ViewData["Title"] = "Per Author Analysis";
+}
+
+<div class="container" style="padding-top: 25px">
+    <h2 class="display-4" style="margin-bottom: 25px">Issues (@Model.Issues.Count)</h2>
+    <div class="row">
+        <table class="table">
+            <thead class="thead-light">
+            <th>N°</th>
+            <th>Title</th>
+            <th>Last Update (dd/mm/yyyy)</th>
+            <th>Closed At (dd/mm/yyyy)</th>
+            <th>Number of Comments</th>
+            </thead>
+            <tbody>
+                @foreach (var issue in Model.Issues.OrderByDescending(i => i.Id))
+                {
+                    <tr>
+                        <td>@issue.Id</td>
+                        <td>@issue.Title</td>
+                        <td>@issue.LastUpdateAt.ToString("dd/MM/yyyy", null)</td>
+                        <td>@issue.ClosedAt.Map(d => d.ToString("dd/MM/yyyy", null)).GetOrElse("Open")</td>
+                        <td>@issue.CommentCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

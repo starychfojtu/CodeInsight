@@ -18,11 +18,17 @@ namespace CodeInsight.Data.Issue
             this.dbContext = dbContext;
         }
 
-        public Task<IEnumerable<Domain.Issue.Issue>> GetAllOrderedByIds(IEnumerable<NonEmptyString> ids)
+        public Task<IEnumerable<Domain.Issue.Issue>> GetAll()
         {
-            var issIds = ids.Select(i => i.Value);
             return dbContext.Issues
-                .Where(i => issIds.Contains(i.Id))
+                .ToListAsync()
+                .Map(l => l.Select(Issue.ToDomain));
+        }
+
+        public Task<IEnumerable<Domain.Issue.Issue>> GetAllOrderedByIds(IEnumerable<uint> ids)
+        {
+            return dbContext.Issues
+                .Where(i => ids.Contains((uint) i.Id))
                 .ToListAsync()
                 .Map(l => l.Select(Issue.ToDomain));
         }
@@ -31,7 +37,7 @@ namespace CodeInsight.Data.Issue
         {
             return dbContext.Issues
                 .Where(i => i.RepositoryId == repositoryId.Value.Value)
-                .OrderByDescending(i => i.LastCommitAt)
+                .OrderByDescending(i => i.ClosedAt)
                 .Take((int) take)
                 .ToListAsync()
                 .Map(l => l.Select(Issue.ToDomain));

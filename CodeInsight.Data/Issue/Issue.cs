@@ -1,74 +1,67 @@
 ﻿using System;
+using System.Runtime.InteropServices;
+using CodeInsight.Domain;
 using CodeInsight.Library.Types;
+using FuncSharp;
 using NodaTime.Extensions;
 
 namespace CodeInsight.Data.Issue
 {
-    //TO DO: Solve the numbers of files changed in an issue
     public sealed class Issue
     {
         public Issue(
-            string id,
-            string repositoryId,
-            int additions,
-            int deletions,
-            DateTimeOffset lastCommitAt,
-            DateTimeOffset lastUpdateAt,
-            int changedFilesCount,
-            int authorsCount)
+            int id, 
+            string title,
+            string repositoryId, 
+            DateTimeOffset? closedAt,
+            DateTimeOffset lastUpdateAt, 
+            int commentCount)
         {
             Id = id;
+            Title = title;
             RepositoryId = repositoryId;
-            Additions = additions;
-            Deletions = deletions;
-            LastCommitAt = lastCommitAt;
+            ClosedAt = closedAt;
             LastUpdateAt = lastUpdateAt;
-            ChangedFilesCount = changedFilesCount;
-            AuthorsCount = authorsCount;
+            CommentCount = commentCount;
         }
-        
-        public string Id { get; private set; }
+
+        public int Id { get; private set; }
+
+        public string Title { get; private set; }
 
         public string RepositoryId { get; private set; }
 
-        public int Additions { get; private set; }
+        public DateTimeOffset? ClosedAt { get; private set; }
 
-        public int Deletions { get; private set; }
-
-        public DateTimeOffset LastCommitAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
 
         public DateTimeOffset LastUpdateAt { get; private set; }
 
-        public int ChangedFilesCount { get; private set; }
+        public int CommentCount { get; private set; }
 
-        public int AuthorsCount { get; private set; }
-        
 
         public static Issue FromDomain(Domain.Issue.Issue issue)
         {
             return new Issue(
-                issue.Id,
-                issue.RepositoryId,
-                (int)issue.Additions,
-                (int)issue.Deletions,
-                issue.LastCommitAt.ToDateTimeOffset(),
+                (int) issue.Id,
+                issue.Title.Value,
+                issue.RepositoryId.Value,
+                issue.ClosedAt.Map(c => c.ToDateTimeOffset()).ToNullable(),
                 issue.LastUpdateAt.ToDateTimeOffset(),
-                (int)issue.ChangedFilesCount,
-                (int)issue.AuthorsCount
+                (int) issue.CommentCount
                 );
         }
 
         public static Domain.Issue.Issue ToDomain(Issue issue)
         {
             return new Domain.Issue.Issue(
-                NonEmptyString.Create(issue.Id).Get(),
+                (uint) issue.Id,
+                NonEmptyString.Create(issue.Title).Get(),
                 NonEmptyString.Create(issue.RepositoryId).Get(),
-                (uint)issue.Additions,
-                (uint)issue.Deletions,
-                issue.LastCommitAt.ToInstant(),
+                issue.ClosedAt.ToOption().Map(c => c.ToInstant()),
+                issue.CreatedAt.ToInstant(),
                 issue.LastUpdateAt.ToInstant(),
-                (uint)issue.ChangedFilesCount,
-                (uint)issue.AuthorsCount
+                (uint) issue.CommentCount
                 );
         }
     }

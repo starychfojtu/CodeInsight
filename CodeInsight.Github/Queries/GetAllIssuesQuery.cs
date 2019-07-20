@@ -9,7 +9,6 @@ using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github.Queries
 {
-    //USUSED
     public static class GetAllIssuesQuery
     {
         private static ICompiledQuery<ResponsePage<IssueDto>> Query { get; }
@@ -39,7 +38,7 @@ namespace CodeInsight.Github.Queries
         private static ICompiledQuery<ResponsePage<IssueDto>> CreateQuery()
         {
             return new Query()
-                .Repository("name", "owner")
+                .Repository(Var("repositoryName"), Var("repositoryOwner"))
                 .Issues(
                     first: Var("first"),
                     after: Var("after"),
@@ -49,20 +48,18 @@ namespace CodeInsight.Github.Queries
                         Direction = OrderDirection.Desc
                     }
                 )
-                //TO DO: GetAllIssuesQuery - correctly add additions, deletions etc
                 .Select(issues => new ResponsePage<IssueDto>(
                     issues.PageInfo.HasNextPage,
                     issues.PageInfo.EndCursor,
                     issues.Nodes.Select(issue => new IssueDto
                         {
-                            Id = issue.Id.Value,
+                            Id = issue.Number,
+                            Title = issue.Title,
                             RepositoryId = issue.Repository.Id.Value,
-                            Additions = 0,
-                            Deletions = 0,
-                            LastCommitAt = new DateTimeOffset(1998, 02, 17, 7, 00, 00, new TimeSpan(0, 0, 0, 0)),
+                            ClosedAt = issue.ClosedAt,
+                            CreatedAt = issue.CreatedAt,
                             LastUpdateAt = issue.UpdatedAt,
-                            ChangedFilesCount = 0,
-                            AuthorsCount = 0
+                            CommentCount = issue.Comments(null, null, null, null).TotalCount
                         })
                         .ToList()
                 ))
@@ -71,21 +68,19 @@ namespace CodeInsight.Github.Queries
 
         internal sealed class IssueDto
         {
-            public string Id { get; set; }
+            public int Id { get; set; }
+
+            public string Title { get; set; }
 
             public string RepositoryId { get; set; }
+            
+            public DateTimeOffset? ClosedAt { get; set; }
 
-            public int Additions { get; set; }
-
-            public int Deletions { get; set; }
-
-            public DateTimeOffset LastCommitAt { get; set; }
+            public DateTimeOffset CreatedAt { get; set; }
 
             public DateTimeOffset LastUpdateAt { get; set; }
 
-            public int ChangedFilesCount { get; set; }
-
-            public int AuthorsCount { get; set; }
+            public int CommentCount { get; set; }
         }
     }
 }

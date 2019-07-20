@@ -7,7 +7,9 @@ namespace CodeInsight.Domain.Issue
 {
     public interface IIssueRepository
     {
-        Task<IEnumerable<Issue>> GetAllOrderedByIds(IEnumerable<NonEmptyString> ids);
+        Task<IEnumerable<Issue>> GetAll();
+
+        Task<IEnumerable<Issue>> GetAllOrderedByIds(IEnumerable<uint> ids);
 
         Task<IEnumerable<Issue>> GetAllOrderedByLastCommitAt(RepositoryId repositoryId, uint take);
 

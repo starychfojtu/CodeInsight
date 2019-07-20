@@ -15,7 +15,6 @@ using Repository = CodeInsight.Domain.Repository.Repository;
 
 namespace CodeInsight.Github.Import
 {
-    //USUSED
     public sealed class IssueImporter
     {
         private readonly IIssueStorage issueStorage;
@@ -51,7 +50,7 @@ namespace CodeInsight.Github.Import
 
         private IO<Task<Unit>> UpdateOrAdd(IReadOnlyList<Issue> issues)
         {
-            var ids = issues.Select(pr => pr.Id);
+            var ids = issues.Select(i => i.Id);
             var existingIssues = issueRepository.GetAllOrderedByIds(ids).Result;
             var existingIssueIds = existingIssues.Select(pr => pr.Id).ToImmutableHashSet();
             var (updatedIss, newIss) = issues.Partition(pr => existingIssueIds.Contains(pr.Id));
@@ -78,14 +77,13 @@ namespace CodeInsight.Github.Import
         private static Issue Map(GetAllIssuesQuery.IssueDto i)
         {
             return new Issue(
-                id: NonEmptyString.Create(i.Id).Get(),
+                id: (uint) i.Id,
+                title: NonEmptyString.Create(i.Title).Get(),
                 repositoryId: NonEmptyString.Create(i.RepositoryId).Get(),
-                additions: (uint) i.Additions,
-                deletions: (uint) i.Deletions,
-                lastCommitAt: Instant.FromDateTimeOffset(i.LastCommitAt),
+                closedAt: i.ClosedAt.ToOption().Map(Instant.FromDateTimeOffset),
+                createdAt: Instant.FromDateTimeOffset(i.CreatedAt), 
                 lastUpdateAt: Instant.FromDateTimeOffset(i.LastUpdateAt),
-                changedFilesCount: (uint) i.ChangedFilesCount,
-                authorsCount: (uint) i.AuthorsCount
+                commentCount: (uint) i.CommentCount
                 );
         }
     }

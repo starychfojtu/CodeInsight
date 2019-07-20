@@ -40,8 +40,8 @@ namespace CodeInsight.Github.Import
         {
             return GetOrCreateRepository(connection, owner, name)
                 .Bind(r => pullRequestImporter.UpdatePullRequests(connection, r))
-                .Bind(r => commitImporter.UpdateCommits(conn, r));
-            //    .Bind(r => issueImporter.UpdateIssues(connection, r));
+                .Bind(r => commitImporter.UpdateCommits(conn, r))//;
+                .Bind(r => issueImporter.UpdateIssues(connection, r));
         };
 
         
