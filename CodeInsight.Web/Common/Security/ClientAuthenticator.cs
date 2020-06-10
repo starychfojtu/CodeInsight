@@ -4,6 +4,7 @@ using CodeInsight.Library.Types;
 using FuncSharp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Octokit.GraphQL;
 using static CodeInsight.Library.Prelude;
 
@@ -15,9 +16,9 @@ namespace CodeInsight.Web.Common.Security
         public static readonly string GithubRepositoryIdSessionKey = "GithubRepositoryId";
 
         private readonly ApplicationConfiguration applicationConfiguration;
-        private readonly IHostingEnvironment environment;
+        private readonly IWebHostEnvironment environment;
 
-        public ClientAuthenticator(ApplicationConfiguration applicationConfiguration, IHostingEnvironment environment)
+        public ClientAuthenticator(ApplicationConfiguration applicationConfiguration, IWebHostEnvironment environment)
         {
             this.applicationConfiguration = applicationConfiguration;
             this.environment = environment;
@@ -30,12 +31,12 @@ namespace CodeInsight.Web.Common.Security
             {
                 return githubClient;
             }
-            
+
             if (environment.IsDevelopment())
             {
                 return Some(Client.None());
             }
-            
+
             return None<Client>();
         }
 

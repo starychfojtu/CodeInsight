@@ -23,20 +23,21 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace CodeInsight.Web
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration, IHostingEnvironment env)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
             Env = env;
         }
 
         public IConfiguration Configuration { get; }
-        
-        public IHostingEnvironment Env { get; }
+
+        public IWebHostEnvironment Env { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -46,7 +47,7 @@ namespace CodeInsight.Web
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
                 options.Cookie.HttpOnly = false;
             });
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc(o => o.EnableEndpointRouting = false).SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
             services.AddHangfire(config =>
             {
                 config.UseMemoryStorage();
@@ -74,7 +75,7 @@ namespace CodeInsight.Web
             });
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
@@ -90,7 +91,7 @@ namespace CodeInsight.Web
             GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(serviceProvider));
             app.UseHangfireDashboard();
             app.UseHangfireServer();
-            
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseSession();
@@ -105,7 +106,7 @@ namespace CodeInsight.Web
 
         private IOption<string> GetMysqlConnectionString() =>
             Environment.GetEnvironmentVariable("JAWSDB_MARIA_URL").ToOption();
-        
+
         private IOption<Github.ApplicationConfiguration> GetGithubAppConfig() =>
             from name in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_APP_NAME"))
             from clientId in NonEmptyString.Create(Environment.GetEnvironmentVariable("GITHUB_CLIENT_ID"))
