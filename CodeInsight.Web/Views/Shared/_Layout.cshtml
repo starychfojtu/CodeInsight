@@ -4,13 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>@ViewData["Title"] - CodeInsight</title>
-
+   
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://unpkg.com/@@coreui/coreui/dist/css/coreui.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/@@coreui/icons@2.0.0-beta.3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@@coreui/icons/css/coreui-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.8.0/css/bootstrap-datepicker.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.8.0/css/bootstrap-datepicker3.min.css">
-
+    <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    
 </head>
 <body class="app bg-light">
 <header class="app-header navbar">
@@ -26,7 +27,7 @@
 </header>
 
 <div class="app-body">
-
+    
     <div class="sidebar">
         <nav class="sidebar-nav">
             <ul class="nav">
@@ -45,8 +46,8 @@
             </ul>
         </nav>
         <button class="sidebar-minimizer brand-minimizer" type="button"></button>
-    </div>
-
+    </div>    
+    
     <main class="main">
         @RenderBody()
     </main>
@@ -58,6 +59,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
 <script src="https://unpkg.com/@@coreui/coreui/dist/js/coreui.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.8.0/js/bootstrap-datepicker.min.js"></script>
+<script src="~/js/site.min.js" asp-append-version="true"></script>
 
 @RenderSection("Scripts", required: false)
 
