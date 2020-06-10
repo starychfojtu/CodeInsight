@@ -12,12 +12,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.8.0/css/bootstrap-datepicker3.min.css">
 
 </head>
-<body class="app bg-light">
-<header class="app-header navbar">
-    <button class="navbar-toggler sidebar-toggler" type="button" data-toggle="sidebar-show">
+<body class="c-app bg-light">
+<header class="c-header navbar">
+    <button class="c-header-toggler sidebar-toggler" type="button" data-toggle="sidebar-show">
         <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="navbar-brand" style="padding-right: 25px">
+    <div class="c-header-brand" style="padding-right: 25px">
         <a class="btn-lg" href="https://github.com/starychfojtu/CodeInsight/blob/master/README.md" target="_blank">
             <i class="fa fa-question-circle"></i>
         </a>
@@ -25,26 +25,26 @@
     </div>
 </header>
 
-<div class="app-body">
+<div class="c-body">
 
-    <div class="sidebar">
-        <nav class="sidebar-nav">
-            <ul class="nav">
+    <div class="c-sidebar">
+        <nav class="c-sidebar-nav">
+            <ul class="c-header-nav">
                 <li class="nav-title">Nav Title</li>
-                <li class="nav-item">
-                    <a class="nav-link" href="@Url.Action("Index", "PullRequest")">
+                <li class="c-sidebar-nav-item">
+                    <a class="c-sidebar-nav-link" href="@Url.Action("Index", "PullRequest")">
                         <i class="nav-icon cui-graph"></i> Pull Requests
                     </a>
-                    <a class="nav-link" href="@Url.Action("PerAuthors", "PullRequest")">
+                    <a class="c-sidebar-nav-link" href="@Url.Action("PerAuthors", "PullRequest")">
                         <i class="nav-icon cui-graph"></i> Pull Requests per authors
                     </a>
-                    <a class="nav-link" href="@Url.Action("EfficiencyAndChanges", "PullRequest")">
+                    <a class="c-sidebar-nav-link" href="@Url.Action("EfficiencyAndChanges", "PullRequest")">
                         <i class="nav-icon cui-graph"></i> Pull Request efficiency
                     </a>
                 </li>
             </ul>
         </nav>
-        <button class="sidebar-minimizer brand-minimizer" type="button"></button>
+        <button class="c-sidebar-minimizer brand-minimizer" type="button"></button>
     </div>
 
     <main class="main">
